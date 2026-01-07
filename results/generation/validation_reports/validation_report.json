@@ -1,0 +1,59 @@
+{
+    "overall_valid": true,
+    "checks": {
+        "score_range": {
+            "min": 0.0,
+            "max": 27.0,
+            "valid": true
+        },
+        "autocorrelation": {
+            "mean": 0.8040584052844272,
+            "std": 0.1459609103734584,
+            "min": 0.15001490584715854,
+            "max": 0.9855242485107883,
+            "n_patients": 1000,
+            "in_expected_range": [
+                false
+            ]
+        },
+        "baseline": {
+            "mean": 16.250372987649108,
+            "std": 5.0200867481217255,
+            "min": 0.0,
+            "max": 27.0,
+            "n_patients": 921,
+            "in_expected_range": true
+        },
+        "improvement": {
+            "early_mean": 16.037968007957538,
+            "late_mean": 5.594824309290036,
+            "absolute_improvement": 10.443143698667502,
+            "percent_improvement": 65.11512988107933,
+            "shows_improvement": true
+        },
+        "response_rate": {
+            "rate": 0.7517517517517518,
+            "n_evaluable_patients": 999,
+            "n_responders": 751,
+            "in_expected_range": false
+        },
+        "missingness": {
+            "overall_rate": 0.1242,
+            "mean_per_patient": 0.12420000000000002,
+            "std_per_patient": 0.12370635902516593,
+            "min_per_patient": 0.0,
+            "max_per_patient": 0.6
+        },
+        "distributions": {
+            "mean": 11.55652251942984,
+            "std": 6.830762832383346,
+            "skewness": 0.04575417620580878,
+            "kurtosis": -0.8060231146194079,
+            "normality_p_value": 3.360539585546553e-14
+        }
+    },
+    "warnings": [
+        "Response rate 75.2% outside expected range (0.4, 0.7). Literature: STAR*D Level 1 ~47%"
+    ],
+    "errors": []
+}
