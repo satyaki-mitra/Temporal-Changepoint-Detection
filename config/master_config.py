@@ -172,7 +172,7 @@ class MasterConfig(BaseModel):
 
 
 
-# CONVENIENCE FUNCTIONS
+# Convenience functions
 def load_config(path: Path = Path('config/master_config.json')) -> MasterConfig:
     """
     Load configuration from JSON file

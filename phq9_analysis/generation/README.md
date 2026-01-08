@@ -1,386 +1,230 @@
-# PHQ-9 Data Generation Module
+# PHQ-9 Synthetic Data Generation — Conceptual Overview
 
-## Overview
+## 1. Purpose of This README
 
-This module generates clinically realistic synthetic PHQ-9 (Patient Health Questionnaire-9) data for depression research and algorithm development.
+This document explains **the data itself**, not the implementation.
 
-### Key Features
+Its goal is to ensure that a reader can understand:
 
-✅ **Temporal Autocorrelation** - AR(1) model captures day-to-day symptom stability  
-✅ **Heterogeneous Trajectories** - Patient-specific recovery rates and baselines  
-✅ **Realistic Missingness** - MCAR + informative dropout patterns  
-✅ **Symptom Relapses** - Occasional temporary worsening  
-✅ **Literature Validation** - All parameters validated against clinical papers  
+- What PHQ-9 represents clinically
+- How the synthetic data is generated
+- What modeling and statistical assumptions are made
+- What mathematical structure governs the data
+- What statistical properties the dataset exhibits
+- What kind of analyses the data is suitable for
 
----
-
-## Quick Start
-
-### Basic Usage
-
-```python
-from config.generation_config import DataGenerationConfig
-from phq9_analysis.generation import PHQ9DataGenerator
-
-# Create configuration
-config = DataGenerationConfig()
-
-# Generate data
-generator = PHQ9DataGenerator(config)
-data, validation = generator.generate_and_validate()
-
-# Data is a pandas DataFrame (Days × Patients)
-print(data.shape)  # e.g., (50, 100)
-print(data.head())
-```
-
-### Command-Line Usage
-
-```bash
-# Generate with defaults
-python scripts/run_generation.py
-
-# Custom parameters
-python scripts/run_generation.py \
-    --patients 200 \
-    --days 365 \
-    --observation-days 75 \
-    --ar-coef 0.75 \
-    --baseline 17.0 \
-    --seed 42
-
-# Skip literature validation (faster)
-python scripts/run_generation.py --skip-validation
-
-# View all options
-python scripts/run_generation.py --help
-```
+A reader should be able to reason about the dataset **without seeing any code**.
 
 ---
 
-## Clinical Model
+## 2. What Is PHQ-9?
 
-### AR(1) Autoregressive Model
+The **Patient Health Questionnaire-9 (PHQ-9)** is a validated clinical instrument used to:
 
-The generator uses a first-order autoregressive model:
+- Screen for depression
+- Quantify depression severity
+- Monitor symptom change over time
+- Evaluate treatment response
 
-```
-Y_t = α·Y_{t-1} + (1-α)·μ_t + ε_t + relapse_t
-```
+It is widely used in:
+- Clinical trials
+- Outpatient mental health care
+- Longitudinal monitoring studies
 
-**Where:**
-- `Y_t` = PHQ-9 score on day t
-- `α` = Autocorrelation coefficient (~0.70)
-- `Y_{t-1}` = Previous day's score
-- `μ_t` = Expected score from treatment trend
-- `ε_t` = Daily measurement noise
-- `relapse_t` = Occasional symptom spike
+### PHQ-9 Score Interpretation
 
-### Treatment Trajectory
+| Score Range | Clinical Meaning |
+|-----------|------------------|
+| 0–4 | Minimal depression |
+| 5–9 | Mild depression |
+| 10–14 | Moderate depression |
+| 15–19 | Moderately severe depression |
+| 20–27 | Severe depression |
 
-Expected score follows linear recovery:
+PHQ-9 is:
+- Self-reported
+- Bounded (0–27)
+- Repeated over time
+- Non-Gaussian in practice
 
-```
-μ_t = baseline + recovery_rate × (t - treatment_start)
-```
-
-**Typical Values:**
-- `baseline` = 16 ± 4 (moderate-severe depression)
-- `recovery_rate` = -0.10 points/day (50% reduction over ~80 days)
-
-### Missing Data Mechanisms
-
-1. **MCAR (Missing Completely At Random)**
-   - Random missed appointments (~5% per observation)
-   
-2. **Informative Dropout**
-   - Study dropout (~12% overall)
-   - Exponentially distributed timing (later dropout more likely)
+This generator produces **longitudinal PHQ-9 trajectories**, not isolated measurements.
 
 ---
 
-## Parameter Justification
+## 3. What Kind of Dataset Is Generated?
 
-All default parameters are based on clinical literature:
+The generated dataset represents:
 
-| Parameter | Value | Literature Reference |
-|-----------|-------|---------------------|
-| **AR Coefficient** | 0.70 | Kroenke et al. (2001): Test-retest r=0.84 |
-| **Baseline Mean** | 16.0 | Typical moderate-severe RCT enrollment |
-| **Recovery Rate** | -0.10/day | Rush et al. (2006): STAR*D 47% response |
-| **Noise Std** | 2.5 | Löwe et al. (2004): MCID ~5 points |
-| **Dropout Rate** | 12% | Fournier et al. (2010): Meta-analysis 13% |
+- A **population of patients** (default: 1000)
+- Observed over a **365-day study window**
+- With **sparse and irregular survey completion**
 
----
+### Core Characteristics
 
-## Configuration
+- Each patient completes **2–7 PHQ-9 surveys total**
+- Observations occur on **irregular days**
+- Missing values are expected and meaningful
+- Patients differ in:
+  - Baseline severity
+  - Treatment response rate
+  - Symptom stability
+  - Dropout behavior
 
-### Full Configuration Example
-
-```python
-from config.generation_config import DataGenerationConfig
-
-config = DataGenerationConfig(
-    # Sample size
-    total_patients=100,
-    total_days=365,
-    required_sample_count=50,
-    maximum_surveys_attempted=7,
-    random_seed=2023,
-    
-    # Temporal model
-    ar_coefficient=0.70,
-    baseline_mean_score=16.0,
-    baseline_std_score=4.0,
-    recovery_rate_mean=-0.10,
-    recovery_rate_std=0.03,
-    noise_std=2.5,
-    
-    # Relapses
-    relapse_probability=0.10,
-    relapse_magnitude_mean=3.5,
-    
-    # Missingness
-    dropout_rate=0.12,
-    mcar_missingness_rate=0.05,
-)
-```
-
-### Parameter Constraints
-
-All parameters are validated with Pydantic:
-
-- `total_patients`: 50-500
-- `total_days`: 180-730
-- `ar_coefficient`: 0.5-0.9
-- `baseline_mean_score`: 10.0-20.0
-- `recovery_rate_mean`: -0.20 to -0.05
-- `noise_std`: 1.0-4.0
-
-Invalid values will raise `ValidationError`.
+This structure mirrors **real-world mental health monitoring**, not idealized daily data.
 
 ---
 
-## Validation
+## 4. Core Modeling Assumptions
 
-### Automatic Validation
+### Clinical Assumptions
 
-Generated data is automatically validated against:
+- Patients enter care with moderate to severe depression
+- Symptoms improve gradually under treatment
+- Treatment response is heterogeneous
+- Symptoms exhibit day-to-day persistence
+- Temporary relapses occur
+- Some patients discontinue follow-up
 
-1. **Score Range** - All scores in [0, 27]
-2. **Autocorrelation** - Mean ≈ 0.70 (range 0.6-0.8)
-3. **Baseline Severity** - Mean 14-20 (moderate-severe)
-4. **Response Rate** - 40-60% with ≥50% reduction
-5. **Improvement Trend** - Early > Late scores
-6. **Missingness Pattern** - 15-30% missing
+### Statistical Assumptions
 
-### Validation Report
-
-```python
-validation = generator.validate(data)
-
-print(f"Valid: {validation['overall_valid']}")
-print(f"Autocorrelation: {validation['checks']['autocorrelation']['mean']:.3f}")
-print(f"Response Rate: {validation['checks']['response_rate']['rate']:.1%}")
-
-# Print full report
-from phq9_analysis.generation.validators import print_validation_report
-print_validation_report(validation)
-```
+- PHQ-9 scores are bounded and non-Gaussian
+- Observations are irregular in time
+- Data is missing due to both random and informative mechanisms
+- Temporal dependence decays with observation gaps
+- Population statistics are computed from observed values only
 
 ---
 
-## Output Files
+## 5. Latent Treatment Trajectory
 
-### Data File
+Each patient follows an expected recovery trend:
 
-**Path:** `data/raw/synthetic_phq9_data.csv`
+\[
+\mu_t = \text{baseline} + \text{recovery\_rate} \times (t - t_0)
+\]
 
-**Format:**
-```
-Day,Patient_1,Patient_2,...,Patient_100
-Day_1,18.2,15.6,...,19.1
-Day_7,17.8,14.9,...,18.3
-...
-```
+Where:
+- `baseline` is initial PHQ-9 severity
+- `recovery_rate < 0` represents improvement
+- `t` is the calendar day
+- `t_0` is treatment start
 
-### Validation Report
-
-**Path:** `results/generation/validation_reports/validation_report.json`
-
-**Contents:**
-```json
-{
-  "overall_valid": true,
-  "checks": {
-    "autocorrelation": {
-      "mean": 0.712,
-      "in_expected_range": true
-    },
-    "response_rate": {
-      "rate": 0.48,
-      "n_responders": 48
-    }
-  },
-  "warnings": [],
-  "errors": []
-}
-```
+This represents **gradual symptom improvement**, not abrupt change.
 
 ---
 
-## Advanced Usage
+## 6. Temporal Dependency (Gap-Aware AR(1))
 
-### Custom Trajectory Models
+Observed scores follow a **gap-aware autoregressive process**:
 
-```python
-from phq9_analysis.generation.trajectory_models import PatientTrajectory, AR1Model
+\[
+Y_t =
+\alpha^{\Delta t} Y_{t-\Delta t}
++
+(1 - \alpha^{\Delta t}) \mu_t
++
+\varepsilon_t
++
+\text{relapse}_t
+\]
 
-# Create custom trajectory
-trajectory = PatientTrajectory(
-    baseline=20.0,
-    recovery_rate=-0.15,  # Fast responder
-    noise_std=1.5,  # Low variability
-    ar_coefficient=0.80  # High stability
-)
+### Why Gap Awareness Matters
 
-# Generate scores manually
-model = AR1Model(random_seed=42)
-scores = []
-for day in range(1, 366):
-    score = model.generate_score(trajectory, day)
-    scores.append(score)
-```
+- PHQ-9 symptoms are temporally persistent
+- Observation gaps reduce correlation
+- Treating sparse data as daily data overestimates stability
+- This formulation preserves realism under irregular sampling
 
-### Batch Generation
+### Components
 
-```python
-# Generate multiple datasets with different seeds
-datasets = []
-for seed in range(10):
-    config = DataGenerationConfig(random_seed=seed)
-    generator = PHQ9DataGenerator(config)
-    data, _ = generator.generate_and_validate()
-    datasets.append(data)
-
-# Analyze cross-dataset properties
-import pandas as pd
-all_data = pd.concat(datasets, keys=range(10))
-```
+| Term | Meaning |
+|----|--------|
+| \( \alpha \) | Symptom persistence (≈ 0.7) |
+| \( \Delta t \) | Days since last observation |
+| \( \varepsilon_t \) | Measurement noise |
+| `relapse_t` | Temporary symptom worsening |
 
 ---
 
-## Troubleshooting
+## 7. Relapse Modeling
 
-### Validation Warnings
+Relapses represent:
 
-**Warning:** `Autocorrelation outside expected range`
+- Stressful life events
+- Treatment interruptions
+- Temporary symptom worsening
 
-**Solution:** Increase `ar_coefficient` (e.g., from 0.65 to 0.75)
+They are modeled as:
+- Low-probability events
+- Positive score shocks
+- Heavy-tailed magnitude
 
----
-
-**Warning:** `Response rate outside expected range`
-
-**Solution:** Adjust `recovery_rate_mean`:
-- Too low response → Decrease magnitude (e.g., -0.12 to -0.10)
-- Too high response → Increase magnitude (e.g., -0.08 to -0.10)
-
----
-
-**Warning:** `Baseline mean outside typical range`
-
-**Solution:** Adjust `baseline_mean_score` to 15-17 for typical trials
+Relapses introduce:
+- Nonlinearity
+- Realistic volatility
+- Clinically plausible instability
 
 ---
 
-### Common Errors
+## 8. Missing Data Mechanisms
 
-**Error:** `ValidationError: Sample count exceeds total days`
+Two missingness mechanisms are intentionally introduced:
 
-**Solution:** Ensure `required_sample_count` ≤ `total_days`
+### 1. Missed Appointments (MCAR)
 
----
+- Random missed surveys
+- Independent of symptom severity
 
-**Error:** `ValidationError: AR coefficient outside range [0.5, 0.9]`
+### 2. Informative Dropout (MNAR)
 
-**Solution:** Use realistic autocorrelation (0.6-0.8 typical)
+- Some patients stop responding entirely
+- Dropout timing follows an exponential distribution
+- Later dropout is more common than early dropout
 
----
-
-## Testing
-
-Run module tests:
-
-```bash
-# Test trajectory models
-python -m phq9_analysis.generation.trajectory_models
-
-# Test validators
-python -m phq9_analysis.generation.validators
-
-# Test generator
-python -c "from phq9_analysis.generation import PHQ9DataGenerator; \
-           from config.generation_config import DataGenerationConfig; \
-           config = DataGenerationConfig(total_patients=10, total_days=50); \
-           gen = PHQ9DataGenerator(config); \
-           data, val = gen.generate_and_validate(); \
-           print('✅ Test passed!')"
-```
+Together, these create **high sparsity**, consistent with real PHQ-9 usage.
 
 ---
 
-## References
+## 9. Statistical Properties of the Generated Data
 
-### Primary Literature
+The dataset exhibits:
 
-1. **Kroenke, K., Spitzer, R. L., & Williams, J. B. (2001)**  
-   *The PHQ-9: validity of a brief depression severity measure.*  
-   Journal of General Internal Medicine, 16(9), 606-613.
+- Bounded support (0–27)
+- Right-skewed distributions
+- Heterogeneous variance
+- Moderate but attenuated autocorrelation
+- Non-stationary population trends
+- Strong between-patient heterogeneity
+- High missingness by design
 
-2. **Rush, A. J., et al. (2006)**  
-   *Acute and longer-term outcomes in depressed outpatients requiring one or several treatment steps: a STAR*D report.*  
-   American Journal of Psychiatry, 163(11), 1905-1917.
-
-3. **Löwe, B., et al. (2004)**  
-   *Monitoring depression treatment outcomes with the Patient Health Questionnaire-9.*  
-   Medical Care, 42(12), 1194-1201.
-
-4. **Fournier, J. C., et al. (2010)**  
-   *Antidepressant drug effects and depression severity: a patient-level meta-analysis.*  
-   JAMA, 303(1), 47-53.
-
-### Methodology References
-
-5. **Killick, R., Fearnhead, P., & Eckley, I. A. (2012)**  
-   *Optimal detection of changepoints with a linear computational cost.*  
-   Journal of the American Statistical Association, 107(500), 1590-1598.
+The data is **not IID**, **not Gaussian**, and **not complete**.
 
 ---
 
-## Contributing
+## 10. Intended Use Cases
 
-To add new features:
+This dataset is suitable for:
 
-1. Update `trajectory_models.py` for new model components
-2. Update `validators.py` for new validation checks
-3. Update `generator.py` to use new features
-4. Add tests and documentation
+- Temporal change-point detection
+- Aggregated instability metrics (CV, variance)
+- Population-level trend analysis
+- Robust statistical modeling
+- Clinical analytics demonstrations
 
----
-
-## License
-
-MIT License - See project root LICENSE file
-
----
-
-## Contact
-
-For questions or issues:
-- **GitHub Issues:** [project-url]/issues
-- **Email:** [your-email]
+It is **not intended** for:
+- Supervised accuracy benchmarks
+- Fully observed time-series models
+- IID statistical assumptions
 
 ---
 
-**Last Updated:** January 2025
+## 11. Summary
+
+This generation module produces:
+
+- Clinically grounded PHQ-9 trajectories
+- Sparse, irregular longitudinal data
+- Statistically defensible behavior
+- A realistic foundation for downstream temporal analysis
+
+The objective is **clinical realism and modeling correctness**, not synthetic perfection.

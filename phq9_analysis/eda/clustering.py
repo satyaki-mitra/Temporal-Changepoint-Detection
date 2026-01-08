@@ -36,10 +36,34 @@ class ClusteringEngine:
          
         np.random.seed(random_seed)
 
+
+    def extract_day_features(self, data: pd.DataFrame) -> pd.DataFrame:
+        """
+        Extract clinically meaningful daily features for clustering
+        
+        Returns:
+        --------
+        pd.DataFrame : Days × Features
+        """
+        features                = pd.DataFrame(index = data.index)
+
+        features['mean']        = data.mean(axis = 1, skipna = True)
+        features['std']         = data.std(axis = 1, skipna = True)
+        features['cv']          = features['std'] / (features['mean'] + 1e-6)
+        features['n_obs']       = data.notna().sum(axis = 1)
+        features['pct_severe']  = (data >= 20).sum(axis = 1) / features['n_obs'].replace(0, np.nan)
+
+        return features.fillna(0)
+
     
     def prepare_data(self, data: pd.DataFrame) -> np.ndarray:
         """
-        Prepare data for clustering with proper missing data handling
+        Prepare data for clustering with proper missing data handling.
+
+        NOTE:
+        -----
+        Clustering is performed on extracted day-level features,
+        NOT on raw patient-by-day matrices.
         
         Arguments:
         ----------
@@ -47,41 +71,23 @@ class ClusteringEngine:
         
         Returns:
         --------
-              { np.ndarray }      : Prepared data array (Days x Patients) with no missing values
+            { np.ndarray }      : Prepared feature matrix (Days x Features)
         """
-        # Transpose so rows = days (what we cluster)
-        data_T = data.T
-        
-        # Handle missing values properly
-        if (self.imputation_method == 'mean'):
-            imputer      = SimpleImputer(strategy = 'mean')
-            data_imputed = imputer.fit_transform(data_T)
-        
-        elif (self.imputation_method == 'median'):
-            imputer      = SimpleImputer(strategy = 'median')
-            data_imputed = imputer.fit_transform(data_T)
-        
-        elif (self.imputation_method == 'forward_fill'):
-            # Forward fill then backward fill for any remaining
-            data_imputed = data_T.copy()
-            data_imputed = pd.DataFrame(data_imputed).fillna(method = 'ffill', 
-                                                             axis   = 1,
-                                                            )
+        # Extract day-level features
+        features = self.extract_day_features(data = data)
+        X        = features.values
 
-            data_imputed = data_imputed.fillna(method = 'bfill', 
-                                               axis   = 1,
-                                              )
-            
-            # Final fallback
-            data_imputed = data_imputed.fillna(data_imputed.mean())  
-            data_imputed = data_imputed.values
-        
+        # Handle missing values (feature-wise)
+        if (self.imputation_method in ['mean', 'median']):
+            imputer = SimpleImputer(strategy = self.imputation_method)
+            X       = imputer.fit_transform(X)
+
         # Standardize if requested
         if self.standardize:
-            scaler        = StandardScaler()
-            data_imputed = scaler.fit_transform(data_imputed)
-        
-        return data_imputed
+            scaler = StandardScaler()
+            X      = scaler.fit_transform(X)
+
+        return X
 
     
     def fit_kmeans(self, data: pd.DataFrame, n_clusters: int) -> Tuple[np.ndarray, float, float]:
@@ -139,7 +145,7 @@ class ClusteringEngine:
                                           - silhouette_score
         """
         # Prepare data
-        X          = self.prepare_data(data)
+        X          = self.prepare_data(data = data)
         
         # Fit Agglomerative
         agg        = AgglomerativeClustering(n_clusters = n_clusters,
@@ -262,10 +268,10 @@ class OptimalClusterSelector:
 
     def gap_statistic(self, data: pd.DataFrame, max_clusters: int = 10, n_refs: int = 10) -> Tuple[int, List[float]]:
         """
-        Find optimal clusters using Gap Statistic: 
-        - Gap(k) = E[log(W_k)] - log(W_k), 
-        - where W_k is within-cluster sum of squares
-        
+        Find optimal clusters using Gap Statistic.
+
+        Gap(k) = E[log(W_k_ref)] - log(W_k_real)
+
         Arguments:
         ----------
             data         { pd.DataFrame } : PHQ-9 DataFrame
@@ -276,49 +282,48 @@ class OptimalClusterSelector:
         
         Returns:
         --------
-                    { tuple }             : A python tuple containing:
-                                            - optimal_k
-                                            - gap_values
+                        { tuple }         : (optimal_k, gap_values)
         """
         # Prepare real data
-        X    = self.engine.prepare_data(data = data)
-        
-        gaps = list()
-        
+        features = self.engine.extract_day_features(data=data)
+        X        = features.values
+
+        gaps     = list()
+
         for k in range(1, max_clusters + 1):
             # Cluster real data
             if (k == 1):
-                # Single cluster: total variance
-                real_wk = np.sum((X - X.mean(axis = 0))**2)
-
+                real_wk = np.sum((X - X.mean(axis=0)) ** 2)
+            
             else:
                 _, inertia, _ = self.engine.fit_kmeans(data, k)
                 real_wk       = inertia
-            
-            # Generate reference datasets
+
+            # Reference datasets
             ref_wks = list()
 
             for _ in range(n_refs):
-                # Uniform random data in same bounds
                 X_ref = np.random.uniform(X.min(axis = 0), X.max(axis = 0), size = X.shape)
-                
-                if (k == 1):
-                    ref_wk = np.sum((X_ref - X_ref.mean(axis = 0))**2)
 
-                else:
-                    kmeans_ref = KMeans(n_clusters = k, random_state = None, n_init = 10)
-                    kmeans_ref.fit(X_ref)
-                    ref_wk     = kmeans_ref.inertia_
+                if (k == 1):
+                    ref_wk = np.sum((X_ref - X_ref.mean(axis = 0)) ** 2)
                 
+                else:
+                    kmeans_ref = KMeans(n_clusters = k, 
+                                        n_init     = 10,
+                                       )
+
+                    kmeans_ref.fit(X_ref)
+
+                    ref_wk     = kmeans_ref.inertia_
+
                 ref_wks.append(np.log(ref_wk))
-            
-            # Calculate gap
+
             gap = np.mean(ref_wks) - np.log(real_wk)
             gaps.append(gap)
-        
-        # Optimal k is where gap is maximum
-        optimal_k = np.argmax(gaps) + 1
-        
+
+        optimal_k = (np.argmax(gaps) + 1)
+
         return optimal_k, gaps
 
 

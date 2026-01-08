@@ -111,7 +111,7 @@ class VisualizationGenerator:
         # Plot daily averages
         ax.plot(days, 
                 daily_avg, 
-                marker     = 'o-', 
+                'o-', 
                 color      = 'steelblue', 
                 linewidth  = 2, 
                 markersize = 8,
@@ -125,7 +125,7 @@ class VisualizationGenerator:
 
         ax.plot(days, 
                 p(days), 
-                marker    = '--', 
+                '--', 
                 color     = 'red', 
                 linewidth = 2,
                 alpha     = 0.8, 
@@ -322,7 +322,7 @@ class VisualizationGenerator:
         days = np.arange(len(daily_avg))
         ax2.plot(days, 
                  daily_avg, 
-                 marker    = 'k-', 
+                 'k-', 
                  alpha     = 0.3, 
                  linewidth = 1, 
                  label     = 'Average Trend',
@@ -347,6 +347,7 @@ class VisualizationGenerator:
 
         else:
             plt.show()
+
 
 
 # Convenience functions

@@ -26,16 +26,16 @@ class DataGenerationConfig(BaseModel):
                                               description = "Study duration in days (6 months to 2 years typical for depression trials)",
                                              )
     
-    required_sample_count     : int   = Field(default     = 50,
-                                              ge          = 20,
-                                              le          = 100,
-                                              description = "Number of observation days (sparse sampling)",
-                                             )
-    
     maximum_surveys_attempted : int   = Field(default     = 7,
                                               ge          = 4,
                                               le          = 10,
                                               description = "Maximum PHQ-9 surveys per patient (clinical realistic: 4-8)",
+                                             )
+
+    min_surveys_attempted     : int   = Field(default     = 2,
+                                              ge          = 2,
+                                              le          = 4,
+                                              description = "Minimum PHQ-9 surveys per patient (to ensure data presence)",
                                              )
     
     random_seed               : int   = Field(default     = 2023,
@@ -113,23 +113,7 @@ class DataGenerationConfig(BaseModel):
     validation_report_path    : Path  = Field(default     = Path("results/generation/validation_reports/validation_report.json"),
                                               description = "Path to save data validation report",
                                              )
-    
 
-    @validator('required_sample_count')
-    def validate_sample_count(cls, v, values):
-        """
-        Ensure sample count is reasonable relative to total days
-        """
-        total_days = values.get('total_days', 365)
-        
-        if (v > total_days):
-            raise ValueError(f"Sample count ({v}) cannot exceed total days ({total_days})")
-        
-        if (v < 0.1 * total_days):
-            raise ValueError(f"Sample count ({v}) should be at least 10% of total days (minimum: {int(0.1 * total_days)})")
-        
-        return v
-    
 
     @validator('ar_coefficient')
     def validate_autocorrelation(cls, v):
@@ -211,8 +195,8 @@ class DataGenerationConfig(BaseModel):
         """
         return {'Study Design'   : {'Patients'            : self.total_patients,
                                     'Duration (days)'     : self.total_days,
-                                    'Observation days'    : self.required_sample_count,
                                     'Max surveys/patient' : self.maximum_surveys_attempted,
+                                    'Min surveys/patient' : self.min_surveys_attempted,
                                    },
                 'Temporal Model' : {'AR(1) coefficient' : f"{self.ar_coefficient:.2f}",
                                     'Baseline severity' : f"{self.baseline_mean_score:.1f} ± {self.baseline_std_score:.1f}",
@@ -228,6 +212,8 @@ class DataGenerationConfig(BaseModel):
                }
 
 
+
+# Convenience functions
 def validate_against_literature(config: DataGenerationConfig) -> dict:
     """
     Validate configuration parameters against clinical literature

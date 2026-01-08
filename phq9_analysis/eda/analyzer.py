@@ -241,48 +241,44 @@ class PHQ9DataAnalyzer:
 
     def analyze_clusters(self, labels: np.ndarray) -> pd.DataFrame:
         """
-        Analyze cluster characteristics
-        
-        Arguments:
-        ----------
-            labels { np.ndarray } : Cluster labels
-        
-        Returns:
-        --------
-             { pd.DataFrame }     : DataFrame with cluster statistics
+        Analyze cluster characteristics.
+
+        Each cluster summarizes:
+        - Average severity
+        - Variability
+        - Observation density
+        - Clinical severity band
         """
         log_section_header(self.logger, "ANALYZING CLUSTER CHARACTERISTICS")
-        
-        daily_avg       = self.data.mean(axis   = 1, 
-                                         skipna = True,
-                                        )
-        
-        cluster_stats   = list()
 
+        daily_avg       = self.data.mean(axis = 1, skipna = True)
+        daily_std       = self.data.std(axis = 1, skipna = True)
+
+        cluster_stats   = list()
         unique_clusters = np.unique(labels)
-        
+
         for cluster_id in unique_clusters:
             cluster_mask   = (labels == cluster_id)
             cluster_days   = np.where(cluster_mask)[0]
             cluster_scores = daily_avg.iloc[cluster_days]
-            
-            stats          = {'cluster_id' : int(cluster_id),
-                              'n_days'     : len(cluster_days),
-                              'avg_score'  : float(cluster_scores.mean()),
-                              'std_score'  : float(cluster_scores.std()),
-                              'min_score'  : float(cluster_scores.min()),
-                              'max_score'  : float(cluster_scores.max()),
-                              'day_range'  : f"{cluster_days.min()}-{cluster_days.max()}",
-                              'severity'   : self._classify_severity(cluster_scores.mean()),
+
+            stats          = {'cluster_id'        : int(cluster_id),
+                              'n_days'            : len(cluster_days),
+                              'avg_score'         : float(cluster_scores.mean()),
+                              'std_score_cluster' : float(cluster_scores.std()),
+                              'std_score_daily'   : float(daily_std.iloc[cluster_days].mean()),
+                              'n_obs_avg'         : float(self.data.notna().sum(axis=1).iloc[cluster_days].mean()),
+                              'min_score'         : float(cluster_scores.min()),
+                              'max_score'         : float(cluster_scores.max()),
+                              'day_range'         : f"{cluster_days.min()}-{cluster_days.max()}",
+                              'severity'          : self._classify_severity(cluster_scores.mean()),
                              }
-            
+
             cluster_stats.append(stats)
-            
-            self.logger.info(f"Cluster {cluster_id}: {stats['n_days']} days, avg={stats['avg_score']:.2f} ({stats['severity']})")
-        
-        cluster_analysis_result = pd.DataFrame(data = cluster_stats)
-        
-        return cluster_analysis_result
+
+            self.logger.info(f"Cluster {cluster_id}: {stats['n_days']} days | avg={stats['avg_score']:.2f} | {stats['severity']}")
+
+        return pd.DataFrame(cluster_stats)
     
 
     def _classify_severity(self, avg_score: float) -> str:
@@ -417,13 +413,13 @@ class PHQ9DataAnalyzer:
                                           )
         
         # Save JSON summary
-        json_results = {'data_shape'         : results['data_shape'],
-                        'total_observations' : results['total_observations'],
-                        'missing_pct'        : results['missing_pct'],
-                        'elbow_k'            : results['elbow_k'],
-                        'silhouette_k'       : results['silhouette_k'],
-                        'optimal_k'          : results['optimal_k'],
-                        'labels'             : results['labels'],
+        json_results = {'data_shape'         : [int(results['data_shape'][0]), int(results['data_shape'][1])],
+                        'total_observations' : int(results['total_observations']),
+                        'missing_pct'        : float(results['missing_pct']),
+                        'elbow_k'            : int(results['elbow_k']),
+                        'silhouette_k'       : int(results['silhouette_k']),
+                        'optimal_k'          : int(results['optimal_k']),
+                        'labels'             : [int(x) for x in results['labels']],
                        }
         
         with open(output_dir / "analysis_summary.json", 'w') as f:

@@ -3,15 +3,13 @@ import json
 import numpy as np
 import pandas as pd
 from typing import Dict
-from typing import List
 from typing import Tuple
 from pathlib import Path
 from typing import Optional
 from phq9_analysis.utils.logging_util import setup_logger
-from phq9_analysis.utils.logging_util import log_parameters
 from phq9_analysis.generation.validators import DataValidator
-from phq9_analysis.generation.trajectory_models import AR1Model
 from phq9_analysis.utils.logging_util import log_section_header
+from phq9_analysis.generation.trajectory_models import AR1Model
 from phq9_analysis.generation.validators import print_validation_report
 from phq9_analysis.generation.trajectory_models import PatientTrajectory
 from phq9_analysis.generation.trajectory_models import initialize_patient_trajectories
@@ -20,77 +18,77 @@ from phq9_analysis.generation.trajectory_models import initialize_patient_trajec
 class PHQ9DataGenerator:
     """
     Generate clinically realistic synthetic PHQ-9 data
-    
-    Features:
-    ---------
-    - AR(1) temporal autocorrelation for symptom stability
-    - Patient-specific heterogeneous trajectories
-    - Realistic missing data (MCAR + informative dropout)
-    - Symptom relapse modeling
-    - Automatic validation against literature
+
+    Design Goals:
+    -------------
+    - Sparse, irregular survey sampling
+    - Patient-specific longitudinal trajectories
+    - Clinically grounded missingness (MCAR + dropout)
+    - Population-level aggregation readiness (CV, change points)
     """
     def __init__(self, config):
         """
-        Initialize generator with configuration
-        
+        Initialize generator with validated configuration
+
         Arguments:
         ----------
-            config { DataGenerationConfig } : DataGenerationConfig instance
+            config { DataGenerationConfig } : Data generation configuration
         """
         self.config               = config
-        
-        # Set up logging
+
+        # Logger
         self.logger               = setup_logger(module_name = 'generation',
                                                  log_level   = 'INFO',
                                                  log_dir     = Path('logs')
                                                 )
-        
-        # Initialize components
+
+        # Models & state
         self.ar_model             = AR1Model(random_seed = config.random_seed)
         self.patient_trajectories = dict()
         self.missingness_patterns = dict()
+        self.patient_schedules    = dict()
         self.observation_days     = list()
-        
-        # Set random seed
-        np.random.seed(config.random_seed)
-        
-        self.logger.info(f"Initialized PHQ9DataGenerator | N={config.total_patients}, Days={config.total_days}, AR(1)={config.ar_coefficient:.2f}")
-    
 
+        np.random.seed(config.random_seed)
+
+        self.logger.info(f"Initialized PHQ9DataGenerator | Patients={config.total_patients}, Study Days={config.total_days}, AR(1)={config.ar_coefficient:.2f}")
+
+    
     def generate(self) -> pd.DataFrame:
         """
         Generate complete synthetic PHQ-9 dataset
-        
+
         Returns:
         --------
-            { pd.DataFram }    : DataFrame with Days as index, Patients as columns
+            { pd.DataFrame } : Rows    = observation days 
+                               Columns = patients
         """
         log_section_header(self.logger, "STARTING DATA GENERATION")
-        
-        # Initialize patient trajectories
-        self.logger.info("Step 1/4: Initializing patient trajectories...")
+
+        self.logger.info("Step 1/5: Initializing patient trajectories")
         self._initialize_trajectories()
-        
-        # Generate missingness patterns
-        self.logger.info("Step 2/4: Generating missingness patterns...")
+
+        self.logger.info("Step 2/5: Generating missingness patterns")
         self._generate_missingness_patterns()
-        
-        # Select observation days
-        self.logger.info("Step 3/4: Selecting observation days...")
-        self._select_observation_days()
-        
-        # Generate scores
-        self.logger.info("Step 4/4: Generating PHQ-9 scores...")
-        data = self._generate_scores()
-        
-        self.logger.info(f"Generation complete | Shape: {data.shape} | Sparsity: {data.isna().sum().sum() / data.size:.2%}")
-        
+
+        self.logger.info("Step 3/5: Generating patient survey schedules")
+        self._generate_patient_schedules()
+
+        self.logger.info("Step 4/5: Consolidating observation days")
+        self._consolidate_observation_days()
+
+        self.logger.info("Step 5/5: Generating PHQ-9 scores")
+        data     = self._generate_scores()
+
+        sparsity = data.isna().sum().sum() / data.size
+        self.logger.info(f"Generation complete | Shape={data.shape} | Missingness={sparsity:.2%}")
+
         return data
-    
+
 
     def _initialize_trajectories(self):
         """
-        Initialize all patient trajectories
+        Initialize patient-level trajectory parameters
         """
         self.patient_trajectories = initialize_patient_trajectories(n_patients         = self.config.total_patients,
                                                                     baseline_mean      = self.config.baseline_mean_score,
@@ -101,233 +99,176 @@ class PHQ9DataGenerator:
                                                                     ar_coefficient     = self.config.ar_coefficient,
                                                                     random_seed        = self.config.random_seed,
                                                                    )
-        
-        self.logger.info(f"Initialized {len(self.patient_trajectories)} patient trajectories")
-    
+
+        self.logger.info(f"Initialized trajectories for {len(self.patient_trajectories)} patients")
+
 
     def _generate_missingness_patterns(self):
         """
-        Generate realistic missing data patterns
+        Generate dropout and MCAR missingness patterns per patient
         """
-        for patient_id in range(1, self.config.total_patients + 1):
-            # Determine dropout
+        for pid in range(1, self.config.total_patients + 1):
             dropout_day = None
 
-            if (np.random.random() < self.config.dropout_rate):
-                # Exponential distribution for dropout timing
-                dropout_day = int(np.random.exponential(scale = self.config.total_days * 0.3) + 100)
+            if (np.random.rand() < self.config.dropout_rate):
+                dropout_day = int(np.random.exponential(scale = self.config.total_days * 0.3) + 60)
                 dropout_day = min(dropout_day, self.config.total_days)
-            
-            # Random missed appointments (MCAR)
-            n_missed                              = int(self.config.total_days * self.config.mcar_missingness_rate)
-            missed_appointments                   = set(np.random.choice(range(1, self.config.total_days + 1), size = n_missed, replace = False))
-            
-            self.missingness_patterns[patient_id] = {'dropout_day'         : dropout_day,
-                                                     'missed_appointments' : missed_appointments,
-                                                    }
-        
+
+            self.missingness_patterns[pid] = {'dropout_day' : dropout_day}
+
         n_dropouts = sum(1 for p in self.missingness_patterns.values() if p['dropout_day'])
-        self.logger.info(f"Generated missingness patterns | Dropouts: {n_dropouts}/{self.config.total_patients}")
+
+        self.logger.info(f"Generated dropout patterns | Dropouts={n_dropouts}/{self.config.total_patients}")
 
     
-    def _select_observation_days(self):
+    def _generate_patient_schedules(self):
         """
-        Select days when surveys are administered
+        Generate patient-specific survey days
+
+        Guarantees:
+        -----------
+        - min_surveys_attempted ≤ surveys ≤ max_surveys_attempted
+        - Surveys occur before dropout (if applicable)
+        - Irregular spacing (clinically realistic)
         """
-        probabilities = list()
-        
-        for day in range(1, self.config.total_days + 1):
-            if (day <= 30):
-                prob = 0.85 + 0.10 * np.exp(-day / 10)
+        for pid in range(1, self.config.total_patients + 1):
+            n_surveys                   = np.random.randint(self.config.min_surveys_attempted,
+                                                            self.config.maximum_surveys_attempted + 1,
+                                                           )
 
-            elif (day <= 100):
-                prob = 0.50 + 0.20 * np.exp(-(day - 30) / 20)
+            last_day                    = self.missingness_patterns[pid]['dropout_day']
+            max_day                     = last_day - 1 if last_day else self.config.total_days
 
-            else:
-                prob = 0.15 + 0.10 * np.exp(-(day - 100) / 80)
-            
-            probabilities.append(prob)
-        
-        # Normalize
-        probabilities         = np.array(probabilities)
-        probabilities         = probabilities / probabilities.sum()
-        
-        # Sample
-        self.observation_days = sorted(np.random.choice(range(1, self.config.total_days + 1),
-                                                        size    = self.config.required_sample_count,
-                                                        replace = False,
-                                                        p       = probabilities,
-                                                       )
-                                      )
-        
-        self.logger.info(f"Selected {len(self.observation_days)} observation days (Days {self.observation_days[0]}-{self.observation_days[-1]})")
+            survey_days                 = np.sort(np.random.choice(np.arange(1, max_day + 1),
+                                                                   size    = n_surveys,
+                                                                   replace = False,
+                                                                  )
+                                                 )
 
-    
+            self.patient_schedules[pid] = survey_days.tolist()
+
+
+    def _consolidate_observation_days(self):
+        """
+        Create global observation day index from all patient schedules
+        """
+        all_days              = set()
+
+        for days in self.patient_schedules.values():
+            all_days.update(days)
+
+        self.observation_days = sorted(all_days)
+
+        self.logger.info(f"Total unique observation days: {len(self.observation_days)} (Range: {self.observation_days[0]}–{self.observation_days[-1]})")
+
+   
     def _generate_scores(self) -> pd.DataFrame:
         """
-        Generate all PHQ-9 scores
+        Generate PHQ-9 scores for all patients and observation days
         """
-        data_dict = {f"Patient_{pid}": [np.nan] * len(self.observation_days) for pid in range(1, self.config.total_patients + 1)}
-        
-        for day_idx, day in enumerate(self.observation_days):
-            for patient_id in range(1, self.config.total_patients + 1):
-                # Check if missing
-                if self._is_patient_missing(patient_id, day):
-                    continue
-                
-                # Generate score
-                trajectory                                  = self.patient_trajectories[patient_id]
-                score                                       = self.ar_model.generate_score(trajectory             = trajectory,
-                                                                                           day                    = day,
-                                                                                           relapse_probability    = self.config.relapse_probability,
-                                                                                           relapse_magnitude_mean = self.config.relapse_magnitude_mean,
-                                                                                          )
-                
-                data_dict[f"Patient_{patient_id}"][day_idx] = score
-        
-        # Create DataFrame
-        df            = pd.DataFrame(data  = data_dict,
-                                     index = [f"Day_{day}" for day in self.observation_days],
+        data      = {f"Patient_{pid}": [np.nan] * len(self.observation_days) for pid in range(1, self.config.total_patients + 1)}
+
+        day_index = {day: idx for idx, day in enumerate(self.observation_days)}
+
+        for pid, days in self.patient_schedules.items():
+            trajectory = self.patient_trajectories[pid]
+
+            for day in days:
+                idx                         = day_index[day]
+                score                       = self.ar_model.generate_score(trajectory             = trajectory,
+                                                                           day                    = day,
+                                                                           relapse_probability    = self.config.relapse_probability,
+                                                                           relapse_magnitude_mean = self.config.relapse_magnitude_mean,
+                                                                          )
+
+                trajectory.last_day         = day
+                data[f"Patient_{pid}"][idx] = score
+
+        df            = pd.DataFrame(data  = data,
+                                     index = [f"Day_{d}" for d in self.observation_days],
                                     )
-        df.index.name = 'Day'
-        
+
+        df.index.name = "Day"
+
         return df
 
     
-    def _is_patient_missing(self, patient_id: int, day: int) -> bool:
-        """
-        Check if patient data is missing on given day
-        """
-        pattern     = self.missingness_patterns.get(patient_id, {})
-        
-        # Check dropout
-        dropout_day = pattern.get('dropout_day')
-
-        if (dropout_day and day >= dropout_day):
-            return True
-        
-        # Check MCAR
-        if (day in pattern.get('missed_appointments', set())):
-            return True
-        
-        return False
-    
-
     def validate(self, data: pd.DataFrame) -> Dict:
         """
-        Validate generated data against literature
-        
-        Arguments:
-        ----------
-            data { pd.DataFrame} : Generated PHQ-9 DataFrame
-        
-        Returns:
-        --------
-                 { dict }        : Validation results dictionary
+        Validate generated data against clinical and statistical expectations
         """
         log_section_header(self.logger, "VALIDATING GENERATED DATA")
-        
+
         validator  = DataValidator()
         validation = validator.validate_all(data)
-        
-        # Log results
+
         if validation['overall_valid']:
             self.logger.info("Validation PASSED")
-
+        
         else:
-            self.logger.warning("Validation has warnings/errors")
-        
-        # Log warnings
-        for warning in validation['warnings']:
-            self.logger.warning(warning)
-        
-        # Log errors
-        for error in validation['errors']:
-            self.logger.error(error)
-        
+            self.logger.warning("Validation completed with warnings/errors")
+
+        for w in validation['warnings']:
+            self.logger.warning(w)
+
+        for e in validation['errors']:
+            self.logger.error(e)
+
         return validation
-    
-    
-    def to_json_safe(self, obj):
+
+
+    def _to_json_safe(self, obj):
         """
-        utility that sanitize before json.dump 
+        Convert NumPy / non-serializable objects to JSON-safe equivalents
         """
         if isinstance(obj, dict):
-            return {k: self.to_json_safe(v) for k, v in obj.items()}
+            return {k: self._to_json_safe(v) for k, v in obj.items()}
+
+        if isinstance(obj, list):
+            return [self._to_json_safe(v) for v in obj]
         
-        elif isinstance(obj, list):
-            return [self.to_json_safe(v) for v in obj]
+        if isinstance(obj, tuple):
+            return [self._to_json_safe(v) for v in obj]
         
-        elif isinstance(obj, tuple):
-            return tuple(self.to_json_safe(v) for v in obj)
+        if isinstance(obj, np.generic):
+            return obj.item()
         
-        elif isinstance(obj, np.bool_):
-            return bool(obj)
-        
-        elif isinstance(obj, np.integer):
-            return int(obj)
-        
-        elif isinstance(obj, np.floating):
-            return float(obj)
-        
-        else:
-            return obj
-            
+        return obj
+
 
     def save(self, data: pd.DataFrame, validation: Optional[Dict] = None):
         """
-        Save data and validation results
-        
-        Arguments:
-        ----------
-            data       { pd.DataFrame } : Generated DataFrame
-
-            validation     { dict }     : Validation results
+        Persist generated data and validation report
         """
-        # Save data
-        data_path = self.config.output_data_path
+        self.config.output_data_path.parent.mkdir(parents  = True, 
+                                                  exist_ok = True,
+                                                 )
 
-        data_path.parent.mkdir(parents  = True, 
-                               exist_ok = True,
-                              )
+        data.to_csv(path_or_buf = self.config.output_data_path)
 
-        data.to_csv(path_or_buf = data_path, 
-                    index       = True,
-                   )
+        self.logger.info(f"Data saved to {self.config.output_data_path}")
 
-        self.logger.info(f"Data saved to: {data_path}")
-        
-        # Save validation
         if validation:
-            val_path = self.config.validation_report_path
-            val_path.parent.mkdir(parents  = True, 
-                                  exist_ok = True,
-                                 )
-            
-            with open(val_path, 'w') as f:
-                json.dump(obj    = self.to_json_safe(obj = validation), 
+            self.config.validation_report_path.parent.mkdir(parents  = True, 
+                                                            exist_ok = True,
+                                                           )
+
+            with open(self.config.validation_report_path, "w") as f:
+                json.dump(obj    = self._to_json_safe(validation), 
                           fp     = f, 
                           indent = 4,
                          )
-            
-            self.logger.info(f"Validation report saved to: {val_path}")
-    
+
+            self.logger.info(f"Validation report saved to {self.config.validation_report_path}")
+
 
     def generate_and_validate(self) -> Tuple[pd.DataFrame, Dict]:
         """
-        Complete pipeline: generate, validate, and save
-        
-        Returns:
-        --------
-            { tuple }    : A python tuple of (data, validation_results)
+        End-to-end pipeline: generate → validate → save.
         """
-        # Generate
         data       = self.generate()
-        
-        # Validate
         validation = self.validate(data)
-        
-        # Save
+
         self.save(data, validation)
         
         return data, validation

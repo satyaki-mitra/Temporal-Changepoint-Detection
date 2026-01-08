@@ -7,53 +7,54 @@
             "valid": true
         },
         "autocorrelation": {
-            "mean": 0.8040584052844272,
-            "std": 0.1459609103734584,
-            "min": 0.15001490584715854,
-            "max": 0.9855242485107883,
-            "n_patients": 1000,
-            "in_expected_range": [
-                false
-            ]
+            "mean": 0.28796533562759336,
+            "std": 0.6649877343092873,
+            "min": -1.0,
+            "max": 1.0,
+            "n_patients": 821,
+            "in_expected_range": false
         },
         "baseline": {
-            "mean": 16.250372987649108,
-            "std": 5.0200867481217255,
+            "mean": 12.6347252819475,
+            "std": 5.995271066713807,
             "min": 0.0,
             "max": 27.0,
-            "n_patients": 921,
-            "in_expected_range": true
+            "n_patients": 1000,
+            "in_expected_range": false
         },
         "improvement": {
-            "early_mean": 16.037968007957538,
-            "late_mean": 5.594824309290036,
-            "absolute_improvement": 10.443143698667502,
-            "percent_improvement": 65.11512988107933,
+            "mean_improvement": 7.613206323667918,
+            "std": 6.24077441287733,
+            "min": -14.134221796038513,
+            "max": 27.0,
+            "n_patients": 1000,
             "shows_improvement": true
         },
         "response_rate": {
-            "rate": 0.7517517517517518,
-            "n_evaluable_patients": 999,
-            "n_responders": 751,
-            "in_expected_range": false
+            "rate": 0.673890608875129,
+            "n_evaluable_patients": 969,
+            "n_responders": 653,
+            "in_expected_range": true
         },
         "missingness": {
-            "overall_rate": 0.1242,
-            "mean_per_patient": 0.12420000000000002,
-            "std_per_patient": 0.12370635902516593,
-            "min_per_patient": 0.0,
-            "max_per_patient": 0.6
+            "overall_rate": 0.9873972602739726,
+            "mean_per_patient": 0.9873972602739725,
+            "std_per_patient": 0.00470319834397467,
+            "min_per_patient": 0.9808219178082191,
+            "max_per_patient": 0.9945205479452055
         },
         "distributions": {
-            "mean": 11.55652251942984,
-            "std": 6.830762832383346,
-            "skewness": 0.04575417620580878,
-            "kurtosis": -0.8060231146194079,
-            "normality_p_value": 3.360539585546553e-14
+            "mean": 8.277119967669584,
+            "std": 6.694098690630506,
+            "skewness": 0.4430461423569987,
+            "kurtosis": -0.7588391938492656,
+            "normality_p_value": 1.039692315224414e-40
         }
     },
     "warnings": [
-        "Response rate 75.2% outside expected range (0.4, 0.7). Literature: STAR*D Level 1 ~47%"
+        "Mean autocorrelation 0.288 outside expected range (0.6, 0.85). Literature: Kroenke et al. (2001)",
+        "Baseline mean 12.63 outside expected range (14.0, 18.0). Typical RCT enrollment: PHQ-9 15\u201317.",
+        "Missingness rate 98.7% outside typical depression trial range (10\u201340%)."
     ],
     "errors": []
 }
