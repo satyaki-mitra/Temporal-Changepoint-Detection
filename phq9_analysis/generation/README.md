@@ -99,9 +99,9 @@ This structure mirrors **real-world mental health monitoring**, not idealized da
 
 Each patient follows an expected recovery trend:
 
-\[
+$$
 \mu_t = \text{baseline} + \text{recovery\_rate} \times (t - t_0)
-\]
+$$
 
 Where:
 - `baseline` is initial PHQ-9 severity
@@ -117,7 +117,7 @@ This represents **gradual symptom improvement**, not abrupt change.
 
 Observed scores follow a **gap-aware autoregressive process**:
 
-\[
+$$
 Y_t =
 \alpha^{\Delta t} Y_{t-\Delta t}
 +
@@ -126,7 +126,7 @@ Y_t =
 \varepsilon_t
 +
 \text{relapse}_t
-\]
+$$
 
 ### Why Gap Awareness Matters
 

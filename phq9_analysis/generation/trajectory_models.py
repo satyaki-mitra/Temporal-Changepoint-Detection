@@ -71,8 +71,9 @@ class PatientTrajectory:
         """
         days_since_treatment = day - self.treatment_start_day
         expected_score       = self.baseline + (self.recovery_rate * days_since_treatment)
+        clipped_score        = np.clip(expected_score, 0.0, 27.0)
 
-        return max(expected_score, 0.0)
+        return clipped_score
 
 
     def update_last_observation(self, score: float, day: int):

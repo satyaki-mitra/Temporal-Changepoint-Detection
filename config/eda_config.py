@@ -78,7 +78,7 @@ class EDAConfig(BaseModel):
                                                                                                                     description = "Weight for temporal proximity in clustering (0=ignore time, 1=only time)",
                                                                                                                    )
     
-    standardize_features         : bool                                                                     = Field(default     = False,
+    standardize_features         : bool                                                                     = Field(default     = True,
                                                                                                                     description = "Standardize features before clustering (usually not needed for PHQ-9)",
                                                                                                                    )
     

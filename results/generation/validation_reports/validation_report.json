@@ -1,5 +1,5 @@
 {
-    "overall_valid": true,
+    "overall_valid": false,
     "checks": {
         "score_range": {
             "min": 0.0,
@@ -7,12 +7,16 @@
             "valid": true
         },
         "autocorrelation": {
-            "mean": 0.28796533562759336,
-            "std": 0.6649877343092873,
-            "min": -1.0,
-            "max": 1.0,
-            "n_patients": 821,
-            "in_expected_range": false
+            "mean_gap_aware": 0.15390879977518288,
+            "mean_naive": 0.28796533562759336,
+            "std": 0.894945261247276,
+            "min": -1.0000000000000002,
+            "max": 1.0000000000000002,
+            "n_patients": 213,
+            "in_expected_range": false,
+            "median_temporal_gap": 38.0,
+            "valid_lag_pairs_pct": 12.957582800697267,
+            "total_observation_pairs": 3442
         },
         "baseline": {
             "mean": 12.6347252819475,
@@ -52,7 +56,8 @@
         }
     },
     "warnings": [
-        "Mean autocorrelation 0.288 outside expected range (0.6, 0.85). Literature: Kroenke et al. (2001)",
+        "Gap-aware autocorrelation 0.154 outside expected range (0.6, 0.85). Literature: Kroenke et al. (2001) test-retest r=0.84. Note: Sparse sampling may reduce observed correlation.",
+        "Median temporal gap between observations is 38.0 days. Large gaps reduce autocorrelation estimation reliability.",
         "Baseline mean 12.63 outside expected range (14.0, 18.0). Typical RCT enrollment: PHQ-9 15\u201317.",
         "Missingness rate 98.7% outside typical depression trial range (10\u201340%)."
     ],

@@ -49,7 +49,7 @@ class ClusteringEngine:
 
         features['mean']        = data.mean(axis = 1, skipna = True)
         features['std']         = data.std(axis = 1, skipna = True)
-        features['cv']          = features['std'] / (features['mean'] + 1e-6)
+        features['cv']          = np.clip(features['std'] / (features['mean'] + 1e-6), 0, 5)
         features['n_obs']       = data.notna().sum(axis = 1)
         features['pct_severe']  = (data >= 20).sum(axis = 1) / features['n_obs'].replace(0, np.nan)
 
@@ -218,26 +218,75 @@ class OptimalClusterSelector:
         x         = np.arange(len(inertias))
         y         = np.array(inertias)
         
-        x_norm    = (x - x.min()) / (x.max() - x.min())
-        y_norm    = (y - y.min()) / (y.max() - y.min())
+        # Handle edge case: constant inertias (no elbow exists)
+        if (np.std(y) < 1e-10):
+            return 0  # Return first point as default
+        
+        x_norm      = (x - x.min()) / (x.max() - x.min())
+        y_norm      = (y - y.min()) / (y.max() - y.min())
         
         # Line from first to last point: ax + by + c = 0
-        x1, y1    = x_norm[0], y_norm[0]
-        x2, y2    = x_norm[-1], y_norm[-1]
+        x1, y1      = x_norm[0], y_norm[0]
+        x2, y2      = x_norm[-1], y_norm[-1]
         
-        a         = y2 - y1
-        b         = x1 - x2
-        c         = x2 * y1 - x1 * y2
+        a           = y2 - y1
+        b           = x1 - x2
+        c           = x2 * y1 - x1 * y2
+        
+        # CRITICAL FIX: Check for degenerate line (denominator near zero)
+        denominator = np.sqrt(a**2 + b**2)
+        
+        if (denominator < 1e-10):
+            # Fallback: use derivative method when angle method fails
+            return self._find_elbow_derivative(inertias = inertias)
         
         # Distance from each point to line
-        distances = np.abs(a * x_norm + b * y_norm + c) / np.sqrt(a**2 + b**2)
+        distances = np.abs(a * x_norm + b * y_norm + c) / denominator
         
         # Elbow is point with maximum distance
         elbow_idx = np.argmax(distances)
         
         return elbow_idx
 
-    
+
+    def _find_elbow_derivative(self, inertias: List[float]) -> int:
+        """
+        Fallback elbow detection using second derivative method
+        
+        Strategy:
+        ---------
+        - Compute first derivative (rate of change)
+        - Compute second derivative (acceleration)
+        - Elbow is where second derivative is maximum (sharpest turn)
+        
+        Arguments:
+        ----------
+            inertias { list } : List of inertia values
+        
+        Returns:
+        --------
+               { int }        : Index of elbow point
+        """
+        if (len(inertias) < 3):
+            # Not enough points for derivatives
+            return 0  
+        
+        y         = np.array(inertias)
+        
+        # First derivative (discrete)
+        dy        = np.diff(y)
+        
+        # Second derivative (discrete)
+        d2y       = np.diff(dy)
+        
+        # Elbow is where curvature is maximum (most negative second derivative for decreasing function)
+        # For inertia curves (decreasing), most negative d2y is needed
+        elbow_idx = np.argmin(d2y)
+        
+        # Add 1 because diff reduces length by 1
+        return elbow_idx + 1
+
+        
     def silhouette_method(self, data: pd.DataFrame, max_clusters: int = 15) -> Tuple[int, List[float]]:
         """
         Find optimal clusters using silhouette analysis

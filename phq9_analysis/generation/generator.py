@@ -36,6 +36,13 @@ class PHQ9DataGenerator:
         """
         self.config               = config
 
+        # CRITICAL: Validate survey count constraints
+        if (self.config.min_surveys_attempted > self.config.maximum_surveys_attempted):
+            raise ValueError(
+                f"min_surveys_attempted ({self.config.min_surveys_attempted}) cannot exceed "
+                f"maximum_surveys_attempted ({self.config.maximum_surveys_attempted})"
+            )
+
         # Logger
         self.logger               = setup_logger(module_name = 'generation',
                                                  log_level   = 'INFO',
@@ -111,6 +118,9 @@ class PHQ9DataGenerator:
             dropout_day = None
 
             if (np.random.rand() < self.config.dropout_rate):
+                # Exponential dropout: most dropouts occur mid-to-late study
+                # Scale factor   : controls typical dropout timing
+                # Minimum offset : ensures some follow-up before dropout
                 dropout_day = int(np.random.exponential(scale = self.config.total_days * 0.3) + 60)
                 dropout_day = min(dropout_day, self.config.total_days)
 
@@ -130,6 +140,7 @@ class PHQ9DataGenerator:
         - min_surveys_attempted ≤ surveys ≤ max_surveys_attempted
         - Surveys occur before dropout (if applicable)
         - Irregular spacing (clinically realistic)
+        - Handles edge cases where max_day < n_surveys
         """
         for pid in range(1, self.config.total_patients + 1):
             n_surveys                   = np.random.randint(self.config.min_surveys_attempted,
@@ -138,6 +149,17 @@ class PHQ9DataGenerator:
 
             last_day                    = self.missingness_patterns[pid]['dropout_day']
             max_day                     = last_day - 1 if last_day else self.config.total_days
+
+            # CRITICAL FIX: Handle case where n_surveys > available days
+            if (n_surveys > max_day):
+                n_surveys = max_day
+                self.logger.debug(f"Patient {pid}: Reduced surveys to {n_surveys} (max_day={max_day})")
+
+            # Edge case: If max_day < 1, skip this patient
+            if (max_day < 1):
+                self.logger.warning(f"Patient {pid}: Insufficient days for any surveys (max_day={max_day})")
+                self.patient_schedules[pid] = []
+                continue
 
             survey_days                 = np.sort(np.random.choice(np.arange(1, max_day + 1),
                                                                    size    = n_surveys,
@@ -165,6 +187,11 @@ class PHQ9DataGenerator:
     def _generate_scores(self) -> pd.DataFrame:
         """
         Generate PHQ-9 scores for all patients and observation days
+        
+        CRITICAL FIX:
+        -------------
+        - Removed redundant trajectory.last_day assignment (already handled in generate_score)
+        - State updates are now exclusively managed by AR1Model.generate_score()
         """
         data      = {f"Patient_{pid}": [np.nan] * len(self.observation_days) for pid in range(1, self.config.total_patients + 1)}
 
@@ -175,13 +202,16 @@ class PHQ9DataGenerator:
 
             for day in days:
                 idx                         = day_index[day]
+                
+                # Generate score using AR(1) model
+                # NOTE: generate_score() internally calls trajectory.update_last_observation()
+                # which sets both trajectory.last_score and trajectory.last_day
                 score                       = self.ar_model.generate_score(trajectory             = trajectory,
                                                                            day                    = day,
                                                                            relapse_probability    = self.config.relapse_probability,
                                                                            relapse_magnitude_mean = self.config.relapse_magnitude_mean,
                                                                           )
 
-                trajectory.last_day         = day
                 data[f"Patient_{pid}"][idx] = score
 
         df            = pd.DataFrame(data  = data,

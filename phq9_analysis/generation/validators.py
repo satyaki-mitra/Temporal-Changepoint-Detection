@@ -99,41 +99,111 @@ class DataValidator:
     def _validate_autocorrelation(self, data: pd.DataFrame, validation: Dict):
         """
         Validate temporal autocorrelation using patient-level lag-1 correlations
-
+        
         Notes:
         ------
         - Operates only on observed sequences (ignores NaNs)
-        - Avoids pandas .autocorr() due to irregular sampling
+        - Requires at least 3 observations per patient
+        - Reports diagnostic statistics for irregular sampling
         """
-        autocorrs = list()
-
+        autocorrs           = list()
+        naive_autocorrs     = list()
+        temporal_gaps       = list()
+        valid_lag_pairs     = 0
+        total_pairs         = 0
+        
         for col in data.columns:
-            scores = data[col].dropna().values
+            patient_data = data[col].dropna()
+            
+            if (len(patient_data) < 3):
+                continue
+            
+            scores       = patient_data.values
+            days         = [int(idx.split('_')[1]) for idx in patient_data.index]
+            
+            # Naive autocorrelation (observation sequence, ignoring gaps)
+            r_naive      = np.corrcoef(scores[:-1], scores[1:])[0, 1]
+            
+            if not np.isnan(r_naive):
+                naive_autocorrs.append(r_naive)
+            
+            # Gap-aware autocorrelation (only pairs with reasonable temporal proximity)
+            for i in range(len(scores) - 1):
+                gap          = days[i + 1] - days[i]
+                temporal_gaps.append(gap)
 
-            if (len(scores) >= 3):
-                r = np.corrcoef(scores[:-1], scores[1:])[0, 1]
+                total_pairs += 1
                 
-                if not np.isnan(r):
-                    autocorrs.append(r)
-
+                # Only use pairs with lag â‰¤ 7 days for autocorrelation estimation
+                if (gap <= 7):
+                    valid_lag_pairs += 1
+            
+            # Compute weighted autocorrelation for this patient
+            if (len(scores) >= 3):
+                weighted_pairs = []
+                
+                for i in range(len(scores) - 1):
+                    gap = days[i + 1] - days[i]
+                    
+                    # Exponential decay weight: closer observations get higher weight
+                    if (gap <= 14):  # Only consider gaps up to 2 weeks
+                        weight = np.exp(-gap / 7.0)  # Half-life of 7 days
+                        weighted_pairs.append((scores[i], scores[i + 1], weight))
+                
+                if weighted_pairs:
+                    s1, s2, weights = zip(*weighted_pairs)
+                    s1              = np.array(s1)
+                    s2              = np.array(s2)
+                    weights         = np.array(weights)
+                    
+                    # Weighted correlation
+                    mean_s1         = np.average(s1, weights = weights)
+                    mean_s2         = np.average(s2, weights = weights)
+                    
+                    cov             = np.average((s1 - mean_s1) * (s2 - mean_s2), weights = weights)
+                    var_s1          = np.average((s1 - mean_s1) ** 2, weights = weights)
+                    var_s2          = np.average((s2 - mean_s2) ** 2, weights = weights)
+                    
+                    if ((var_s1 > 0) and (var_s2 > 0)):
+                        r_weighted = cov / np.sqrt(var_s1 * var_s2)
+                        
+                        if not np.isnan(r_weighted):
+                            autocorrs.append(r_weighted)
+        
+        # Error handling
         if not autocorrs:
-            validation['errors'].append("Autocorrelation could not be computed (insufficient longitudinal data).")
+            validation['errors'].append("Autocorrelation could not be computed (insufficient longitudinal data with adequate temporal proximity).")
             return
-
+        
+        # Compute summary statistics
         mean_r                                  = float(np.mean(autocorrs))
-
+        mean_r_naive                            = float(np.mean(naive_autocorrs)) if naive_autocorrs else np.nan
+        median_gap                              = float(np.median(temporal_gaps)) if temporal_gaps else np.nan
+        
         in_range                                = (self.expected_autocorr_range[0] <= mean_r <= self.expected_autocorr_range[1])
-
-        validation['checks']['autocorrelation'] = {'mean'              : mean_r,
-                                                   'std'               : float(np.std(autocorrs)),
-                                                   'min'               : float(np.min(autocorrs)),
-                                                   'max'               : float(np.max(autocorrs)),
-                                                   'n_patients'        : len(autocorrs),
-                                                   'in_expected_range' : in_range,
+        
+        # Store comprehensive results
+        validation['checks']['autocorrelation'] = {'mean_gap_aware'          : mean_r,
+                                                   'mean_naive'              : mean_r_naive,
+                                                   'std'                     : float(np.std(autocorrs)),
+                                                   'min'                     : float(np.min(autocorrs)),
+                                                   'max'                     : float(np.max(autocorrs)),
+                                                   'n_patients'              : len(autocorrs),
+                                                   'in_expected_range'       : in_range,
+                                                   'median_temporal_gap'     : median_gap,
+                                                   'valid_lag_pairs_pct'     : float(valid_lag_pairs / total_pairs * 100) if total_pairs > 0 else 0.0,
+                                                   'total_observation_pairs' : total_pairs,
                                                   }
-
+        
+        # Warnings
         if not in_range:
-            validation['warnings'].append(f"Mean autocorrelation {mean_r:.3f} outside expected range {self.expected_autocorr_range}. Literature: Kroenke et al. (2001)")
+            validation['warnings'].append(f"Gap-aware autocorrelation {mean_r:.3f} outside expected range {self.expected_autocorr_range}. Literature: Kroenke et al. (2001) test-retest r=0.84. Note: Sparse sampling may reduce observed correlation.")
+        
+        if (median_gap > 14):
+            validation['warnings'].append(f"Median temporal gap between observations is {median_gap:.1f} days. Large gaps reduce autocorrelation estimation reliability.")
+        
+        if (mean_r_naive > mean_r + 0.15):
+            validation['warnings'].append(f"Naive autocorrelation ({mean_r_naive:.3f}) substantially exceeds gap-aware estimate ({mean_r:.3f}). This suggests temporal gaps are not properly accounted for in naive calculation.")
 
 
     def _validate_baseline(self, data: pd.DataFrame, validation: Dict):

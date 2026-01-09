@@ -309,13 +309,39 @@ class VisualizationGenerator:
                             label = f'Cluster {cluster_id}',
                            )
         
-        # Add cluster boundaries
-        cluster_boundaries = (np.where(labels[:-1] != labels[1:])[0] + 0.5)
+        # Only draw boundaries at true segment transitions: Filter out isolated single-day flips by checking neighbors
+        cluster_boundaries = list()
+
+        for i in range(len(labels) - 1):
+            if (labels[i] != labels[i + 1]):
+                # Check if this is a true segment boundary or just noise
+                is_valid_boundary = False
+                
+                # Edge cases: first and last transitions are always valid
+                if (i == 0) or (i == len(labels) - 2):
+                    is_valid_boundary = True
+                
+                # Middle transitions: valid if either side has consistent cluster
+                else:
+                    # Check if current cluster continues before this point
+                    left_consistent   = (labels[i - 1] == labels[i])
+                    
+                    # Check if next cluster continues after this point
+                    right_consistent  = (labels[i + 1] == labels[i + 2])
+                    
+                    # Valid boundary if at least one side is consistent (not isolated flip)
+                    is_valid_boundary = (left_consistent or right_consistent)
+                
+                if is_valid_boundary:
+                    cluster_boundaries.append(i + 0.5)
+        
+        # Draw filtered boundaries
         for boundary in cluster_boundaries:
-            ax2.axvline(x = boundary, 
+            ax2.axvline(x         = boundary, 
                         linestyle = '--', 
                         color     = 'gray', 
-                        alpha     = 0.5,
+                        alpha     = 0.6,
+                        linewidth = 1.5,
                        )
         
         # Add trend line
