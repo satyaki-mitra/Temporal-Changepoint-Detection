@@ -3,13 +3,13 @@
 # Exploratory Data Analysis Report
 ## PHQ-9 Temporal Change-Point Detection Study
 
----
 
 **Analysis Duration:** 11 seconds  
 **Dataset:** Synthetic PHQ-9 Longitudinal Data  
 **Analyst:** Satyaki Mitra
 
 </div>
+
 ---
 
 ## Executive Summary
