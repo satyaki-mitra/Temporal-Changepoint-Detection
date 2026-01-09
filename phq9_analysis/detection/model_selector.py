@@ -3,56 +3,48 @@ import numpy as np
 from typing import Any
 from typing import Dict
 from typing import List
-from typing import Optional
 from dataclasses import dataclass
 from collections import defaultdict
 from config.model_selection_config import ModelSelectorConfig
 
 
-# Result Schema
+# Canonical Model Result
 @dataclass
 class ModelResult:
     """
     Canonical representation of a completed change-point model run
 
-    All detector outputs (PELT / BOCPD variants) are mapped into this structure to allow fair comparison and explainable ranking
+    - All detector outputs (PELT / BOCPD variants) are mapped into this structure to enable fair comparison, scoring, and explainable selection
     """
-    model_id              : str
-    family                : str                       # 'pelt' | 'bocpd'
-    change_points         : List[int]
+    model_id          : str
+    family            : str                    # 'pelt' | 'bocpd'
+    change_points     : List[int]
 
-    # Frequentist metrics (PELT)
-    n_significant_cps     : int            = 0
-    mean_effect_size      : float          = 0.0
+    # Frequentist (PELT)
+    n_significant_cps : int   = 0
+    mean_effect_size  : float = 0.0
 
-    # Bayesian metrics (BOCPD)
-    posterior_mass        : float          = 0.0
-    cp_persistence        : float          = 0.0
+    # Bayesian (BOCPD)
+    posterior_mass    : float = 0.0
+    cp_persistence    : float = 0.0
 
     # Cross-model agreement
-    stability_score       : float          = 0.0
+    stability_score   : float = 0.0
 
-    # Raw detector output (for traceability)
-    raw_result            : Dict[str, Any] = None
+    # Traceability
+    raw_result        : Dict[str, Any] = None
 
 
-# Result Adapters (Detector → ModelResult)
+# Detector → Canonical Adapters
 class ModelResultAdapter:
     """
-    Convert detector-specific outputs into ModelResult
+    Convert detector-specific outputs into canonical ModelResult objects.
     """
     @staticmethod
     def from_pelt(model_id: str, result: Dict) -> ModelResult:
-        """
-        Adapt PELT detector output
-        """
         validation = result.get('validation', {})
         summary    = validation.get('summary', {})
-
-        cps        = result.get('change_points', [])
-        
-        if (cps and cps[-1] >= len(cps)):
-            cps = cps[:-1]
+        cps        = list(result.get('change_points', []))
 
         return ModelResult(model_id          = model_id,
                            family            = 'pelt',
@@ -65,25 +57,22 @@ class ModelResultAdapter:
 
     @staticmethod
     def from_bocpd(model_id: str, result: Dict) -> ModelResult:
-        """
-        Adapt BOCPD detector output
-        """
         validation = result.get('validation', {})
         summary    = validation.get('summary', {})
 
-        return ModelResult(model_id       = model_id,
-                           family         = 'bocpd',
-                           change_points  = validation.get('indices', []),
-                           posterior_mass = summary.get('mean_posterior_at_cp', 0.0),
-                           cp_persistence = summary.get('coverage_ratio', 0.0),
-                           raw_result     = result,
+        return ModelResult(model_id        = model_id,
+                           family          = 'bocpd',
+                           change_points   = validation.get('indices', []),
+                           posterior_mass  = summary.get('mean_posterior_at_cp', 0.0),
+                           cp_persistence  = summary.get('coverage_ratio', 0.0),
+                           raw_result      = result,
                           )
 
 
 # Metric Normalization
 class MetricNormalizer:
     """
-    Normalize metrics across all models using a specified strategy
+    Normalize metrics across models using a chosen strategy
     """
     @staticmethod
     def normalize(values: Dict[str, float], method: str) -> Dict[str, float]:
@@ -94,19 +83,19 @@ class MetricNormalizer:
             return values
 
         if (method == 'minmax'):
-            min_v, max_v = np.min(vals), np.max(vals)
-
-            if (max_v - min_v < 1e-9):
+            lo, hi = np.min(vals), np.max(vals)
+            
+            if ((hi - lo) < 1e-9):
                 return {k: 0.0 for k in keys}
 
-            norm = (vals - min_v) / (max_v - min_v)
+            norm = (vals - lo) / (hi - lo)
 
         elif (method == 'zscore'):
             std = np.std(vals)
-
+            
             if (std < 1e-9):
                 return {k: 0.0 for k in keys}
-
+            
             norm = (vals - np.mean(vals)) / std
 
         elif (method == 'rank'):
@@ -120,40 +109,31 @@ class MetricNormalizer:
         return dict(zip(keys, norm))
 
 
-# Agreement Computation
+# Cross-Model Agreement
 class AgreementComputer:
     """
     Compute cross-model agreement metrics
     """
     @staticmethod
-    def temporal_consensus(model_cps : List[int], all_cps   : List[List[int]], tolerance : int = 2) -> float:
-        """
-        Fraction of model CPs that align with at least one other model.
-        """
-        if not model_cps:
+    def temporal_consensus(model_cps: List[int], other_cps: List[List[int]], tolerance: int = 2) -> float:
+        if not model_cps or not other_cps:
             return 0.0
 
         matches = 0
-
         for cp in model_cps:
-            for other in all_cps:
-                if any(abs(cp - ocp) <= tolerance for ocp in other):
-                    matches += 1
-                    break
+            if any((abs(cp - ocp) <= tolerance) for cps in other_cps for ocp in cps):
+                matches += 1
 
         return matches / len(model_cps)
 
 
     @staticmethod
-    def boundary_density(model_cps : List[int], all_cps   : List[List[int]]) -> float:
-        """
-        Density of model CPs within the global CP pool
-        """
+    def boundary_density(model_cps: List[int], other_cps: List[List[int]]) -> float:
         if not model_cps:
             return 0.0
 
-        flat = [cp for cps in all_cps for cp in cps]
-
+        flat = [cp for cps in other_cps for cp in cps]
+        
         if not flat:
             return 0.0
 
@@ -163,113 +143,101 @@ class AgreementComputer:
 # Model Selector
 class ModelSelector:
     """
-    Select the best change-point model from a pool of completed PELT and BOCPD variants
+    Select the best change-point model using agreement-first strategy
     """
     def __init__(self, config: ModelSelectorConfig):
-        """
-        Initialize model selector
-        """
         self.config = config
+
+        if self.config.selection_strategy != 'agreement_first':
+            raise NotImplementedError("Only 'agreement_first' strategy is currently implemented. Other strategies are intentionally blocked to prevent silent misuse.")
 
 
     def select(self, raw_results: Dict[str, Dict]) -> Dict:
-        """
-        Select the best model
+        models = self._canonicalize(raw_results)
 
-        Arguments:
-        ----------
-            raw_results { dict } : Dictionary of completed detector results
+        if not models:
+            return {'best_model'  : None,
+                    'ranking'     : [],
+                    'scores'      : {},
+                    'explanation' : "No eligible models after filtering.",
+                   }
 
-        Returns:
-        --------
-                 { dict }        : Ranking, scores, and explanation
-        """
-        canonical_models  = self._canonicalize(raw_results = raw_results)
+        self._compute_agreement(models = models)
 
-        self._compute_agreement(models = canonical_models)
+        scores      = self._score_models(models = models)
 
-        scores            = self._score_models(canonical_models)
+        ranked      = sorted(models.values(),
+                             key     = lambda m: scores.get(m.model_id, 0.0),
+                             reverse = True,
+                            )
 
-        ranked_models     = sorted(canonical_models.values(),
-                                   key     = lambda m: scores.get(m.model_id, 0.0),
-                                   reverse = True,
-                                  )
+        explanation = self._generate_explanation(ranked = ranked, 
+                                                 scores = scores,
+                                                )
 
-        explanation       = self._generate_explanation(ranked_models, scores)
-
-        return {'best_model'  : ranked_models[0].model_id if ranked_models else None,
-                'ranking'     : [m.model_id for m in ranked_models],
+        return {'best_model'  : ranked[0].model_id,
+                'ranking'     : [m.model_id for m in ranked],
                 'scores'      : scores,
                 'explanation' : explanation,
                }
 
 
-    # Internal Helpers
     def _canonicalize(self, raw_results: Dict[str, Dict]) -> Dict[str, ModelResult]:
-        """
-        Convert raw detector outputs into canonical representations
-        """
         models = dict()
 
         for model_id, result in raw_results.items():
-            method = result.get('method')
+            family = result.get('method')
 
-            if (method == 'pelt'):
+            if family not in self.config.allowed_families:
+                continue
+
+            if self.config.allowed_model_ids and model_id not in self.config.allowed_model_ids:
+                continue
+
+            if (family == 'pelt'):
                 models[model_id] = ModelResultAdapter.from_pelt(model_id, result)
 
-            elif (method == 'bocpd'):
+            elif (family == 'bocpd'):
                 models[model_id] = ModelResultAdapter.from_bocpd(model_id, result)
 
         return models
 
 
     def _compute_agreement(self, models: Dict[str, ModelResult]):
-        """
-        Compute agreement-based stability scores
-        """
-        all_cps = [m.change_points for m in models.values()]
-
         for m in models.values():
-            tc                = AgreementComputer.temporal_consensus(m.change_points, all_cps)
-            bd                = AgreementComputer.boundary_density(m.change_points, all_cps)
-
+            others            = [o.change_points for o in models.values() if o.model_id != m.model_id]
+            tc                = AgreementComputer.temporal_consensus(m.change_points, others)
+            bd                = AgreementComputer.boundary_density(m.change_points, others)
             m.stability_score = 0.5 * tc + 0.5 * bd
 
 
     def _score_models(self, models: Dict[str, ModelResult]) -> Dict[str, float]:
-        """
-        Compute weighted scores for each model
-        """
         scores = defaultdict(float)
 
         for metric, weight in self.config.metric_weights.items():
-            raw_values = {m.model_id: getattr(m, metric, 0.0) for m in models.values()}
+            raw  = {m.model_id: getattr(m, metric, 0.0) for m in models.values()}
+            norm = MetricNormalizer.normalize(raw, self.config.metric_normalization.get(metric, 'minmax'))
 
-            normalized = MetricNormalizer.normalize(raw_values,
-                                                    self.config.metric_normalization.get(metric, 'minmax'),
-                                                   )
+            for mid, val in norm.items():
+                scores[mid] += weight * val
 
-            for model_id, value in normalized.items():
-                scores[model_id] += weight * value
-
-        # Agreement bonus
         for m in models.values():
             scores[m.model_id] += self.config.agreement_weight * m.stability_score
 
         return dict(scores)
 
 
-    def _generate_explanation(self, ranked_models: List[ModelResult], scores : Dict[str, float]) -> str:
-        """
-        Generate human-readable explanation for model selection
-        """
-        if not ranked_models:
-            return "No valid models were available for selection."
+    def _generate_explanation(self, ranked: List[ModelResult], scores: Dict[str, float]) -> str:
+        best = ranked[0]
 
-        best = ranked_models[0]
+        if (best.family == 'pelt'):
+            signal_line = f"meaningful effect size (d={best.mean_effect_size:.2f})"
+
+        else:
+            signal_line = f"strong posterior support (mass={best.posterior_mass:.2f})"
 
         return (f"Selected model '{best.model_id}' ({best.family.upper()}) because it:\n"
                 f"- achieved the highest overall score ({scores[best.model_id]:.3f})\n"
-                f"- demonstrated strong cross-model agreement (stability={best.stability_score:.2f})\n"
-                f"- balanced statistical strength with conservative change-point detection\n"
+                f"- showed strong cross-model agreement (stability={best.stability_score:.2f})\n"
+                f"- demonstrated {signal_line}"
                )

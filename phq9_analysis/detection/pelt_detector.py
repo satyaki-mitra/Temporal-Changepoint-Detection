@@ -4,7 +4,6 @@ import pandas as pd
 import ruptures as rpt
 from typing import Dict
 from typing import List
-from typing import Tuple
 from typing import Optional
 from phq9_analysis.detection.penalty_tuning import tune_penalty_bic
 from phq9_analysis.detection.statistical_tests import PELTStatisticalValidator
@@ -48,10 +47,14 @@ class PELTDetector:
 
         Returns:
         --------
-                     { dict }                : Detection results including change points and tuning metadata
+                     { dict }                : Detection results including:
+                                               - change points
+                                               - tuning metadata and 
+                                               - validation results
         """
         tuning_results = None
 
+        # Penalty tuning (optional)
         if self.config.auto_tune_penalty:
             optimal_penalty, tuning_results = tune_penalty_bic(signal        = aggregated_signal,
                                                                cost_model    = self.config.cost_model,
@@ -65,53 +68,39 @@ class PELTDetector:
         else:
             penalty_used = self.config.penalty
 
-        # Initialize PELT algorithm
+        # Run PELT
         pelt_algorithm = rpt.Pelt(model    = self.config.cost_model,
                                   min_size = self.config.minimum_segment_size,
                                   jump     = self.config.jump,
                                  )
 
-        # Fit PELT on the aggregated signal
         pelt_algorithm.fit(aggregated_signal)
 
-        # Detect change points (ruptures includes terminal index)
+        # Ruptures includes terminal index — remove it
         change_points  = pelt_algorithm.predict(pen = penalty_used)
+        change_points  = sorted(set(cp for cp in change_points if (0 < cp < len(aggregated_signal))))
 
-        # Remove terminal endpoint
-        change_points  = [cp for cp in change_points if (cp < len(aggregated_signal))]
+        n_changepoints = len(change_points)
 
-        return {'method'         : 'pelt',
-                'variant'        : f"pelt_{self.config.cost_model}",
-                'change_points'  : change_points,
-                'penalty_used'   : float(penalty_used),
-                'tuning_results' : tuning_results,
+        # Validation (frequentist)
+        validator      = PELTStatisticalValidator(alpha                 = self.config.alpha,
+                                                  correction_method     = self.config.multiple_testing_correction,
+                                                  effect_size_threshold = self.config.effect_size_threshold,
+                                                 )
+
+        validation     = validator.validate_all_changepoints(signal        = aggregated_signal,
+                                                             change_points = change_points,
+                                                            )
+
+        # Canonical output
+        return {'method'          : 'pelt',
+                'variant'         : f"pelt_{self.config.cost_model}",
+                'change_points'   : change_points,
+                'n_changepoints'  : n_changepoints,
+                'penalty_used'    : float(penalty_used),
+                'tuning_results'  : tuning_results,
+                'validation'      : validation,
                }
-
-
-    def validate(self, aggregated_signal: np.ndarray, change_points: List[int]) -> Dict:
-        """
-        Validate detected change points using frequentist statistics
-
-        Arguments:
-        ----------
-            aggregated_signal { np.ndarray } : Aggregated statistic
-            
-            change_points     { list }       : Detected change points
-
-        Returns:
-        --------
-                      { dict }               : Validation results
-        """
-        pelt_validator          = PELTStatisticalValidator(alpha                 = self.config.alpha,
-                                                           correction_method     = self.config.multiple_testing_correction,
-                                                           effect_size_threshold = self.config.effect_size_threshold,
-                                                          )
-
-        validated_change_points = pelt_validator.validate_all_changepoints(signal        = aggregated_signal,
-                                                                           change_points = change_points,
-                                                                          )
-
-        return validated_change_points
 
 
     def extract_segments(self, aggregated_index: pd.Index, change_points: List[int]) -> Dict:

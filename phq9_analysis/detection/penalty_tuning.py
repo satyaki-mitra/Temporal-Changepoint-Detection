@@ -21,7 +21,7 @@ class PenaltyTuner:
     """
     def __init__(self, cost_model: str = 'l1', min_size: int = 5, jump: int = 1):
         """
-        Initialize penalty tuner.
+        Initialize penalty tuner
 
         Arguments:
         ----------
@@ -39,23 +39,6 @@ class PenaltyTuner:
     def tune(self, signal: np.ndarray, penalty_range: Tuple[float, float] = (0.1, 10.0), n_penalties: int = 50) -> Dict:
         """
         Tune PELT penalty parameter using BIC
-
-        Arguments:
-        ----------
-            signal         { np.ndarray } : 1D signal (e.g., daily CV values)
-
-            penalty_range     { tuple }   : (min_penalty, max_penalty)
-
-            n_penalties        { int }    : Number of penalty values to test
-
-        Returns:
-        --------
-                     { dict }             : Tuning results dictionary containing:
-                                            - optimal_penalty
-                                            - penalties_tested
-                                            - n_changepoints
-                                            - bic_scores
-                                            - optimal_n_changepoints
         """
         if (signal.ndim != 1):
             raise ValueError("signal must be a 1D array")
@@ -63,39 +46,52 @@ class PenaltyTuner:
         if (len(signal) < self.min_size * 2):
             raise ValueError(f"Signal too short for reliable penalty tuning (length={len(signal)}, min_size={self.min_size})")
 
-        penalties  = np.logspace(start = np.log10(penalty_range[0]),
-                                 stop  = np.log10(penalty_range[1]),
-                                 num   = n_penalties,
-                                )
+        penalties        = np.logspace(start = np.log10(penalty_range[0]),
+                                       stop  = np.log10(penalty_range[1]),
+                                       num   = n_penalties,
+                                      )
 
-        bic_scores = list()
-        n_cps_list = list()
+        bic_scores       = list()
+        n_cps_list       = list()
+        valid_penalties  = list()
+        failed_penalties = dict()
 
         for penalty in penalties:
-            algo = rpt.Pelt(model    = self.cost_model,
-                            min_size = self.min_size,
-                            jump     = self.jump,
-                           )
+            try:
+                algo          = rpt.Pelt(model    = self.cost_model,
+                                         min_size = self.min_size,
+                                         jump     = self.jump,
+                                        )
 
-            algo.fit(signal)
-            change_points = algo.predict(pen = penalty)
+                algo.fit(signal)
+                change_points = algo.predict(pen = penalty)
 
-            n_cps         = len(change_points) - 1
-            n_cps_list.append(n_cps)
+                n_cps         = len(change_points) - 1
 
-            bic           = self._calculate_bic(signal        = signal, 
-                                                change_points = change_points,
-                                               )
-            bic_scores.append(bic)
+                bic           = self._calculate_bic(signal        = signal,
+                                                    change_points = change_points,
+                                                   )
 
-        optimal_idx       = int(np.argmin(bic_scores))
-        optimal_penalty   = float(penalties[optimal_idx])
+                valid_penalties.append(float(penalty))
+                n_cps_list.append(int(n_cps))
+                bic_scores.append(float(bic))
+
+            except Exception as exc:
+                failed_penalties[float(penalty)] = str(exc)
+                continue
+
+        if not valid_penalties:
+            raise RuntimeError("Penalty tuning failed: all penalty values caused PELT failure")
+
+        optimal_idx     = int(np.argmin(bic_scores))
+        optimal_penalty = float(valid_penalties[optimal_idx])
 
         return {'optimal_penalty'        : optimal_penalty,
-                'penalties_tested'       : penalties.tolist(),
+                'penalties_tested'       : valid_penalties,
                 'n_changepoints'         : n_cps_list,
                 'bic_scores'             : bic_scores,
                 'optimal_n_changepoints' : n_cps_list[optimal_idx],
+                'failed_penalties'       : failed_penalties,
                 'cost_model'             : self.cost_model,
                 'min_segment_size'       : self.min_size,
                 'jump'                   : self.jump,
@@ -103,29 +99,10 @@ class PenaltyTuner:
                 'signal_length'          : int(len(signal)),
                }
 
-    
+
     def _calculate_bic(self, signal: np.ndarray, change_points: List[int]) -> float:
         """
         Calculate Bayesian Information Criterion
-
-        Formula:
-        --------
-        BIC = n * log(σ²) + K * log(n)
-
-        Where:
-        - n = number of observations
-        - σ² = residual variance across segments
-        - K = number of change points
-
-        Arguments:
-        ----------
-            signal        { np.ndarray } : Original signal
-
-            change_points    { list }    : Change point indices (including end)
-
-        Returns:
-        --------
-                    { float }            : BIC score (lower is better)
         """
         n              = len(signal)
         K              = max(len(change_points) - 1, 0)
@@ -154,36 +131,42 @@ class PenaltyTuner:
     def plot_tuning_curve(self, penalties: List[float], bic_scores: List[float], n_changepoints: List[int], optimal_penalty: float, save_path: Optional[str] = None):
         """
         Plot BIC and number of change points vs penalty
-
-        Arguments:
-        ----------
-            penalties       { list }  : Penalty values tested
-
-            bic_scores      { list }  : Corresponding BIC scores
-
-            n_changepoints  { list }  : Number of change points per penalty
-
-            optimal_penalty { float } : Selected optimal penalty
-
-            save_path       { str }   : Optional save path
         """
-        fig, (ax1, ax2) = plt.subplots(nrows   = 1, 
-                                       ncols   = 2, 
+        fig, (ax1, ax2) = plt.subplots(nrows   = 1,
+                                       ncols   = 2,
                                        figsize = (16, 6),
                                       )
 
-        # BIC curve
-        ax1.plot(penalties, bic_scores, marker = 'o', linewidth = 2)
-        ax1.axvline(optimal_penalty, color = 'red', linestyle = '--', linewidth = 2)
+        ax1.plot(penalties, 
+                 bic_scores, 
+                 marker    = 'o', 
+                 linewidth = 2,
+                )
+
+        ax1.axvline(optimal_penalty, 
+                    color     = 'red', 
+                    linestyle = '--', 
+                    linewidth = 2,
+                   )
+
         ax1.set_xscale('log')
         ax1.set_xlabel('Penalty')
         ax1.set_ylabel('BIC')
         ax1.set_title('BIC vs Penalty')
         ax1.grid(True, alpha = 0.3)
 
-        # Change points count
-        ax2.plot(penalties, n_changepoints, marker = 'o', linewidth = 2)
-        ax2.axvline(optimal_penalty, color = 'red', linestyle = '--', linewidth = 2)
+        ax2.plot(penalties, 
+                 n_changepoints, 
+                 marker    = 'o', 
+                 linewidth = 2,
+                )
+
+        ax2.axvline(optimal_penalty, 
+                    color     = 'red', 
+                    linestyle = '--', 
+                    linewidth = 2,
+                   )
+
         ax2.set_xscale('log')
         ax2.set_xlabel('Penalty')
         ax2.set_ylabel('Number of Change Points')
@@ -209,26 +192,6 @@ def tune_penalty_bic(signal: np.ndarray, cost_model: str = 'l1', min_size: int =
                      plot: bool = False, save_path: Optional[str] = None) -> Tuple[float, Dict]:
     """
     Convenience wrapper for BIC-based PELT penalty tuning
-
-    Arguments:
-    ----------
-        signal        { np.ndarray } : 1D signal array
-
-        cost_model        { str }    : PELT cost function
-
-        min_size          { int }    : Minimum segment size
-
-        jump              { int }    : PELT jump parameter
-
-        penalty_range    { tuple }   : Penalty search range
-
-        plot             { bool }    : Whether to plot tuning curve
-
-        save_path         { str }    : Optional plot save path
-
-    Returns:
-    --------
-                { tuple }            : (optimal_penalty, tuning_results_dict)
     """
     tuner   = PenaltyTuner(cost_model = cost_model,
                            min_size   = min_size,
