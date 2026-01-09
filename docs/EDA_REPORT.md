@@ -62,7 +62,7 @@ The data exhibits **intentional sparsity** designed to simulate real-world menta
 
 **Figure 1.1:** Score Distribution Across All Days
 
-![Score Distribution](results/eda/visualizations/scatter_plot.png)
+![Score Distribution](../results/eda/visualizations/scatter_plot.png)
 
 **Figure 1.1** displays all 4,600 individual PHQ-9 scores. The color gradient represents observation order within each day. Key observations:
 - Dense observations in early days (0-100) with scores concentrated in 15-20 range
@@ -111,7 +111,7 @@ The data exhibits **intentional sparsity** designed to simulate real-world menta
 
 **Figure 3.1:** Daily Average PHQ-9 Scores Over Time
 
-![Daily Averages](results/eda/visualizations/daily_averages.png)
+![Daily Averages](../results/eda/visualizations/daily_averages.png)
 
 **Figure 3.1** reveals a strong **linear downward trend** in population-level depression severity:
 
@@ -150,7 +150,7 @@ The data exhibits **intentional sparsity** designed to simulate real-world menta
 
 **Figure 4.1:** Elbow and Silhouette Analysis
 
-![Cluster Optimization](results/eda/clustering/cluster_optimization.png)
+![Cluster Optimization](../results/eda/clustering/cluster_optimization.png)
 
 **Method Comparison:**
 
@@ -182,7 +182,7 @@ The data exhibits **intentional sparsity** designed to simulate real-world menta
 
 **Figure 4.2:** Clustering Results
 
-![Cluster Results](results/eda/visualizations/cluster_results.png)
+![Cluster Results](../results/eda/visualizations/cluster_results.png)
 
 **Top Panel (Scatter View):**
 - Teal points (Cluster 0): Higher severity scores, concentrated in days 0-110
