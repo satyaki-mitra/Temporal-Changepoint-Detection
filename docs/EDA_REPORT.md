@@ -1,3 +1,5 @@
+<div align="center">
+
 # Exploratory Data Analysis Report
 ## PHQ-9 Temporal Change-Point Detection Study
 
@@ -7,6 +9,7 @@
 **Dataset:** Synthetic PHQ-9 Longitudinal Data  
 **Analyst:** Satyaki Mitra
 
+</div>
 ---
 
 ## Executive Summary
