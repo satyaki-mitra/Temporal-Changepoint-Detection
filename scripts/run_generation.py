@@ -20,7 +20,7 @@ from config.generation_config import validate_against_literature
 
 def parse_arguments():
     """
-    Parse command-line arguments for PHQ-9 synthetic data generation.
+    Parse command-line arguments for PHQ-9 synthetic data generation
     """
     parser = argparse.ArgumentParser(description     = 'Generate synthetic PHQ-9 data with temporal dependencies and clinical realism',
                                      formatter_class = argparse.ArgumentDefaultsHelpFormatter,

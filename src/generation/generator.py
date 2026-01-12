@@ -159,8 +159,8 @@ class PHQ9DataGenerator:
         """
         Generate patient-specific survey days
 
-        Guarantees:
-        -----------
+        Features:
+        ---------
         - min_surveys_attempted ≤ surveys ≤ max_surveys_attempted
         - Surveys occur before dropout (if applicable)
         - Irregular spacing (clinically realistic)

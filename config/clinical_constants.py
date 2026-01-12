@@ -13,30 +13,30 @@ class ClinicalConstants:
     PHQ9_MAX_SCORE                        : float = 27.0
 
     # CLINICAL TRIAL PARAMETERS (STAR*D Protocol)
-    STARD_DROPOUT_RATE                    : float = 0.21        # Level 1 actual dropout
-    STARD_RESPONSE_RATE                   : float = 0.47        # ≥50% symptom reduction
-    STARD_REMISSION_RATE                  : float = 0.28        # PHQ-9 ≤5
-    STARD_PRIMARY_ENDPOINT_WEEKS          : int   = 12          # Standard trial duration
-    STARD_PRIMARY_ENDPOINT_DAYS           : int   = 84          # 12 weeks in days
+    STARD_DROPOUT_RATE                    : float = 0.21   # Level 1 actual dropout
+    STARD_RESPONSE_RATE                   : float = 0.47   # ≥50% symptom reduction
+    STARD_REMISSION_RATE                  : float = 0.28   # PHQ-9 ≤5
+    STARD_PRIMARY_ENDPOINT_WEEKS          : int   = 12     # Standard trial duration
+    STARD_PRIMARY_ENDPOINT_DAYS           : int   = 84     # 12 weeks in days
 
     # TEMPORAL AUTOCORRELATION PARAMETERS
-    PHQ9_TEST_RETEST_RELIABILITY          : float = 0.84        # Kroenke et al. (2001) - 2-day interval
-    EXPECTED_AUTOCORR_SPARSE_LOWER        : float = 0.30        # Adjusted for sparse sampling
-    EXPECTED_AUTOCORR_SPARSE_UPPER        : float = 0.70        # More realistic for 14-30 day gaps
-    MAX_AUTOCORR_GAP_DAYS                 : int   = 14          # Maximum gap for correlation pairs
-    AUTOCORR_WEIGHT_HALFLIFE              : float = 10.0        # Exponential decay half-life (days)
-    MAX_AUTOCORR_WINDOW_DAYS              : int   = 21          # Maximum temporal window
+    PHQ9_TEST_RETEST_RELIABILITY          : float = 0.84   # 2-day interval
+    EXPECTED_AUTOCORR_SPARSE_LOWER        : float = 0.30   # Adjusted for sparse sampling
+    EXPECTED_AUTOCORR_SPARSE_UPPER        : float = 0.70   # More realistic for 14-30 day gaps
+    MAX_AUTOCORR_GAP_DAYS                 : int   = 14     # Maximum gap for correlation pairs
+    AUTOCORR_WEIGHT_HALFLIFE              : float = 10.0   # Exponential decay half-life (days)
+    MAX_AUTOCORR_WINDOW_DAYS              : int   = 21     # Maximum temporal window
 
     # BASELINE SEVERITY PARAMETERS
-    TYPICAL_RCT_BASELINE_MEAN             : float = 16.0        # Moderate-severe depression trials
-    TYPICAL_RCT_BASELINE_STD              : float = 3.0         # Population heterogeneity
-    BASELINE_VALIDATION_LOWER             : float = 13.0        # Relaxed for real-world variation
-    BASELINE_VALIDATION_UPPER             : float = 19.0        # Upper bound for moderate-severe
+    TYPICAL_RCT_BASELINE_MEAN             : float = 16.0   # Moderate-severe depression trials
+    TYPICAL_RCT_BASELINE_STD              : float = 3.0    # Population heterogeneity
+    BASELINE_VALIDATION_LOWER             : float = 13.0   # Relaxed for real-world variation
+    BASELINE_VALIDATION_UPPER             : float = 19.0   # Upper bound for moderate-severe
 
     # TREATMENT RESPONSE PARAMETERS
-    TYPICAL_RECOVERY_RATE_MEAN            : float = -0.06       # Points per day (negative = improvement)
-    TYPICAL_RECOVERY_RATE_STD             : float = 0.03        # Treatment response heterogeneity
-    MIN_CLINICALLY_MEANINGFUL_IMPROVEMENT : float = 3.0         # Conservative MCID estimate
+    TYPICAL_RECOVERY_RATE_MEAN            : float = -0.06  # Points per day (negative = improvement)
+    TYPICAL_RECOVERY_RATE_STD             : float = 0.03   # Treatment response heterogeneity
+    MIN_CLINICALLY_MEANINGFUL_IMPROVEMENT : float = 3.0    # Conservative MCID estimate
 
     
 
@@ -46,25 +46,25 @@ class ClinicalConstants:
     LATE_RESPONDER_PLATEAU_WEEKS          : int   = 16
 
     # MEASUREMENT NOISE & VARIABILITY
-    PHQ9_MCID                             : float = 5.0   # Minimal clinically important difference
-    MEASUREMENT_NOISE_STD                 : float = 2.5   # Must be < MCID
-    MEASUREMENT_NOISE_MIN                 : float = 1.0   # Individual minimum
-    MEASUREMENT_NOISE_MAX                 : float = 4.0   # Individual maximum
+    PHQ9_MCID                             : float = 5.0     # Minimal clinically important difference
+    MEASUREMENT_NOISE_STD                 : float = 2.5     # Must be < MCID
+    MEASUREMENT_NOISE_MIN                 : float = 1.0     # Individual minimum
+    MEASUREMENT_NOISE_MAX                 : float = 4.0     # Individual maximum
 
-    # RELAPSE PARAMETERS
-    RELAPSE_PROBABILITY_DAILY             : float = 0.10   # Per observation day
-    RELAPSE_MAGNITUDE_MEAN                : float = 3.5    # Exponential distribution mean
-    RELAPSE_MAGNITUDE_GAMMA_SHAPE         : float = 2.0    # For gamma distribution
-    RELAPSE_MAGNITUDE_LOGNORMAL_SIGMA     : float = 0.5    # For lognormal distribution
+    # RELAPSE PARAMETERS 
+    RELAPSE_PROBABILITY_DAILY             : float = 0.10    # Per observation day
+    RELAPSE_MAGNITUDE_MEAN                : float = 3.5     # Exponential distribution mean
+    RELAPSE_MAGNITUDE_GAMMA_SHAPE         : float = 2.0     # For gamma distribution
+    RELAPSE_MAGNITUDE_LOGNORMAL_SIGMA     : float = 0.5     # For lognormal distribution
 
     # MISSINGNESS PARAMETERS
-    DROPOUT_RATE_LOWER                    : float = 0.15   # Lower bound (best-case scenario)
-    DROPOUT_RATE_UPPER                    : float = 0.30   # Upper bound (real-world studies)
-    DROPOUT_EXPONENTIAL_SCALE_FACTOR      : float = 0.3    # Scale relative to study duration
-    DROPOUT_MINIMUM_OFFSET_DAYS           : int   = 60     # Ensure some follow-up before dropout
+    DROPOUT_RATE_LOWER                    : float = 0.15    # Lower bound (best-case scenario)
+    DROPOUT_RATE_UPPER                    : float = 0.30    # Upper bound (real-world studies)
+    DROPOUT_EXPONENTIAL_SCALE_FACTOR      : float = 0.3     # Scale relative to study duration
+    DROPOUT_MINIMUM_OFFSET_DAYS           : int   = 60      # Ensure some follow-up before dropout
 
-    MCAR_MISSINGNESS_RATE                 : float = 0.08   # Random missed appointments
-    MCAR_RATE_UPPER_BOUND                 : float = 0.15   # Maximum reasonable MCAR
+    MCAR_MISSINGNESS_RATE                 : float = 0.08    # Random missed appointments
+    MCAR_RATE_UPPER_BOUND                 : float = 0.15    # Maximum reasonable MCAR
 
     # SURVEY SCHEDULING PARAMETERS
     MIN_SURVEYS_PER_PATIENT               : int   = 10      # Minimum for adequate trajectory

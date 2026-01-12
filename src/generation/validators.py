@@ -11,15 +11,13 @@ from config.clinical_constants import get_expected_structural_sparsity
 
 class DataValidator:
     """
-    Comprehensive validator for synthetic PHQ-9 data
-
-    This validator is designed specifically for:
+    Comprehensive validator for synthetic PHQ-9 data designed for:
     - Sparse and irregular patient observations
     - Patient-level longitudinal trajectories
     - Population-level aggregation (CV, change-point detection readiness)
     - Missingness decomposition (structural vs excess)
     - 12-week endpoint validation (STAR*D-aligned)
-    - Enhanced autocorrelation diagnostics
+    - Autocorrelation diagnostics
 
     It validates generated data against clinical literature benchmarks while remaining robust to missingness and non-aligned observation days
     """
@@ -85,13 +83,33 @@ class DataValidator:
                      }
 
 
-        self._validate_score_range(data, validation)
-        self._validate_autocorrelation(data, validation)
-        self._validate_baseline(data, validation)
-        self._validate_improvement_12week(data, validation)  
-        self._validate_response_rate_12week(data, validation)  
-        self._validate_missingness_decomposed(data, validation)  
-        self._validate_distributions(data, validation)
+        self._validate_score_range(data       = data, 
+                                   validation = validation,
+                                  )
+
+        self._validate_autocorrelation(data       = data, 
+                                       validation = validation,
+                                      )
+
+        self._validate_baseline(data       = data, 
+                                validation = validation,
+                               )
+
+        self._validate_improvement_12week(data       = data, 
+                                          validation = validation,
+                                         )
+
+        self._validate_response_rate_12week(data       = data, 
+                                            validation = validation,
+                                           )
+
+        self._validate_missingness_decomposed(data       = data, 
+                                              validation = validation,
+                                             )
+
+        self._validate_distributions(data       = data, 
+                                     validation = validation,
+                                    )
 
         validation['overall_valid'] = ((len(validation['errors']) == 0) and (len(validation['warnings']) <= 3))
 
@@ -100,7 +118,7 @@ class DataValidator:
 
     def _validate_score_range(self, data: pd.DataFrame, validation: Dict):
         """
-        Ensure all PHQ-9 scores lie within the valid range [0, 27]
+        Ensures all PHQ-9 scores lie within the valid range [0, 27]
         """
         scores                              = data.to_numpy().ravel()
         scores                              = scores[~np.isnan(scores)]
@@ -125,10 +143,8 @@ class DataValidator:
         """
         Validate temporal autocorrelation using patient-level gap-aware lag-1 correlations
         
-        NEW: Enhanced diagnostics for sparse data validation
-        
-        Notes:
-        ------
+        Features:
+        ---------
         - Operates only on observed sequences (ignores NaNs)
         - Requires at least MIN_OBSERVATIONS_FOR_AUTOCORR observations per patient
         - Uses exponential decay weighting for temporal gaps
@@ -226,22 +242,15 @@ class DataValidator:
         
         # Warnings
         if not in_range:
-            validation['warnings'].append(f"Gap-aware autocorrelation {mean_r:.3f} outside expected range {self.expected_autocorr_range}. "
-                                          f"Literature: Kroenke et al. (2001) test-retest r={clinical_constants_instance.PHQ9_TEST_RETEST_RELIABILITY}. "
-                                          f"Note: Sparse sampling reduces observed correlation (median gap = {median_gap:.1f} days)"
-                                         )
+            validation['warnings'].append(f"Gap-aware autocorrelation {mean_r:.3f} outside expected range {self.expected_autocorr_range}.")
         
         if (median_gap > 21):
-            validation['warnings'].append(f"Median temporal gap between observations is {median_gap:.1f} days (>3 weeks). "
-                                          f"Large gaps reduce autocorrelation estimation reliability"
-                                         )
+            validation['warnings'].append(f"Median temporal gap between observations is {median_gap:.1f} days (>3 weeks). Large gaps reduce autocorrelation estimation reliability")
             
 
     def _validate_baseline(self, data: pd.DataFrame, validation: Dict):
         """
-        Validate baseline severity using the first observed score per patient
-
-        Baseline is NOT assumed to occur on the same calendar day for all patients
+        Validate baseline severity using the first observed score per patient: Baseline is not assumed to occur on the same calendar day for all patients
         """
         baselines                        = [series.dropna().iloc[0] for _, series in data.items() if series.notna().sum() >= 1]
 
@@ -284,8 +293,9 @@ class DataValidator:
             closest_12week_idx = np.argmin([abs(d - clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS) for d in days])
             
             # Only use if within ±2 weeks of target
-            if abs(days[closest_12week_idx] - clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS) <= 14:
+            if (abs(days[closest_12week_idx] - clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS) <= 14):
                 score_12week = scores.iloc[closest_12week_idx]
+
                 deltas_12week.append(baseline - score_12week)
             
             # Also track final observation for comparison
@@ -331,7 +341,7 @@ class DataValidator:
             days               = [int(idx.split('_')[1]) for idx in scores.index]
             closest_12week_idx = np.argmin([abs(d - clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS) for d in days])
             
-            if abs(days[closest_12week_idx] - clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS) <= 14:
+            if (abs(days[closest_12week_idx] - clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS) <= 14):
                 score_12week     = scores.iloc[closest_12week_idx]
                 reduction_12week = (baseline - score_12week) / baseline
                 responders_12week.append(reduction_12week >= 0.50)
@@ -367,6 +377,7 @@ class DataValidator:
     def _validate_missingness_decomposed(self, data: pd.DataFrame, validation: Dict):
         """
         Validate missingness patterns with decomposition into:
+
         1. Structural sparsity (by design: infrequent assessments)
         2. Excess missingness (dropout + MCAR beyond structural)
         3. Distinguishes intentional sparsity from problematic missingness
@@ -428,7 +439,7 @@ class DataValidator:
         """
         Validate distributional characteristics of PHQ-9 scores
 
-        - PHQ-9 is bounded and ordinal → normality is NOT expected
+        - PHQ-9 is bounded and ordinal -> normality is not expected
         - Shapiro-Wilk used only as a diagnostic indicator
         """
         scores                                = data.to_numpy().ravel()
@@ -463,7 +474,7 @@ def validate_against_literature(data: pd.DataFrame) -> Dict:
 
 def print_validation_report(validation: Dict):
     """
-    Print a formatted, human-readable validation report
+    Print a formatted validation report
     """
     print("=" * 80)
     print("DATA VALIDATION REPORT")

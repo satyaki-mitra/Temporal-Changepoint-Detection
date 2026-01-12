@@ -12,9 +12,7 @@ from config.clinical_constants import clinical_constants_instance
 
 class DataGenerationConfig(BaseModel):
     """
-    Validated configuration for synthetic PHQ-9 data generation
-    
-    All parameters have clinical justification and literature-based constraints
+    Validated configuration for synthetic PHQ-9 data generation: all parameters have clinical justification and literature-based constraints
     """
     # SAMPLE SIZE PARAMETERS
     total_patients            : int                                          = Field(default     = 1000,
@@ -297,9 +295,7 @@ class DataGenerationConfig(BaseModel):
 # Convenience functions
 def validate_against_literature(config: DataGenerationConfig) -> dict:
     """
-    Validate configuration parameters against clinical literature
-    
-    Returns dict with validation results and literature references
+    Validate configuration parameters against clinical literature and returns a python dict with validation results and literature references
     
     Arguments:
     ----------
@@ -311,13 +307,6 @@ def validate_against_literature(config: DataGenerationConfig) -> dict:
                                           - valid      : bool (overall validation status)
                                           - warnings   : list of warning messages
                                           - references : dict of literature citations
-                                    
-    References:
-    -----------
-    1. Kroenke et al. (2001): The PHQ-9: validity of a brief depression severity measure. J Gen Intern Med.
-    2. Rush et al. (2006): Acute and longer-term outcomes in depressed outpatients requiring one or several treatment steps: STAR*D.
-    3. Löwe et al. (2004): Monitoring depression treatment outcomes with the PHQ-9. Med Care.
-    4. Fournier et al. (2010): Antidepressant drug effects and depression severity: a patient-level meta-analysis. JAMA.
     """
     validation = {'valid'      : True,
                   'warnings'   : [],

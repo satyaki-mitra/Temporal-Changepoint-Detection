@@ -11,8 +11,7 @@ from config.clinical_constants import RESPONSE_PATTERN_PROBABILITIES
 @dataclass
 class PatientTrajectory:
     """
-    Store patient-specific trajectory parameters by encapsulating all individual characteristics
-    that determine a patient's depression symptom trajectory over time
+    Store patient-specific trajectory parameters by encapsulating all individual characteristics that determine a patient's depression symptom trajectory over time
 
     Attributes:
     -----------
@@ -40,12 +39,12 @@ class PatientTrajectory:
 
     Clinical Notes:
     ---------------
-    - baseline       : Captures initial severity heterogeneity
-    - recovery_rate  : Models treatment response heterogeneity
-    - noise_std      : Reflects individual symptom stability
-    - ar_coefficient : Day-to-day symptom persistence
-    - response_pattern : Captures heterogeneous response timing (NEW)
-    - plateau logic  : Models symptom stabilization after response (NEW)
+    - baseline         : Captures initial severity heterogeneity
+    - recovery_rate    : Models treatment response heterogeneity
+    - noise_std        : Reflects individual symptom stability
+    - ar_coefficient   : Day-to-day symptom persistence
+    - response_pattern : Captures heterogeneous response timing
+    - plateau logic    : Models symptom stabilization after response
     """
     baseline            : float
     recovery_rate       : float
@@ -121,19 +120,19 @@ class PatientTrajectory:
 
     def check_and_enter_plateau(self, day: int):
         """
-        Check if patient should enter plateau phase based on response pattern
-        
-        Plateau timing depends on response pattern:
-        - Early responders: Plateau at 6 weeks
-        - Gradual responders: Plateau at 10 weeks
-        - Late responders: Plateau at 16 weeks
-        - Non-responders: No plateau (continue slow trajectory)
+        Check if patient should enter plateau phase based on response pattern. Plateau timing generally depends on response pattern:
+        - Early responders   : Plateau at 6 weeks
+        - Gradual responders : Plateau at 10 weeks
+        - Late responders    : Plateau at 16 weeks
+        - Non-responders     : No plateau (continue slow trajectory)
         
         Arguments:
+        ----------
             day { int } : Current day
         """
-        if self.in_plateau_phase or (self.plateau_start_day is not None):
-            return  # Already in plateau
+        if (self.in_plateau_phase or (self.plateau_start_day is not None)):
+            # Already in plateau
+            return  
 
         weeks_since_start = (day - self.treatment_start_day) / 7.0
 
@@ -159,9 +158,7 @@ class PatientTrajectory:
 
     def get_effective_noise(self, day: int, enable_plateau: bool = True) -> float:
         """
-        Get effective noise standard deviation, reduced during plateau phase
-        
-        During plateau, symptom variability decreases (stabilization)
+        Get effective noise standard deviation, reduced during plateau phase: during plateau, symptom variability decreases (stabilization)
         
         Arguments:
         ----------
@@ -176,11 +173,11 @@ class PatientTrajectory:
         if not enable_plateau:
             return self.noise_std
 
-        if self.in_plateau_phase and (self.plateau_start_day is not None):
+        if (self.in_plateau_phase and (self.plateau_start_day is not None)):
             # Smooth transition into plateau over 2 weeks
             weeks_in_plateau = (day - self.plateau_start_day) / 7.0
 
-            if weeks_in_plateau >= clinical_constants_instance.PLATEAU_TRANSITION_WEEKS:
+            if (weeks_in_plateau >= clinical_constants_instance.PLATEAU_TRANSITION_WEEKS):
                 # Full plateau: reduced noise
                 return self.noise_std * clinical_constants_instance.PLATEAU_NOISE_REDUCTION_FACTOR
             
@@ -235,7 +232,7 @@ class AR1Model:
     """
     First-order autoregressive model for PHQ-9 score generation: Y_t = α^Δt * Y_{t-Δt} + (1 - α^Δt) * μ_t + ε_t + relapse_t
 
-    This formulation correctly handles irregular observation gaps, incorporates response pattern heterogeneity and plateau logic
+    This formulation handles irregular observation gaps, incorporates response pattern heterogeneity and plateau logic
     """
     def __init__(self, random_seed: Optional[int] = None):
         """
@@ -252,14 +249,9 @@ class AR1Model:
     def generate_score(self, trajectory: PatientTrajectory, day: int, relapse_probability: float = 0.10, relapse_magnitude_mean: float = 3.5, 
                        relapse_distribution: str = "exponential", enable_plateau: bool = True) -> float:
         """
-        Generate PHQ-9 score for a specific day using a gap-aware AR(1) process
-        
-        IMPORTANT:
-        ----------
-        This method is stateful and updates trajectory.last_score and trajectory.last_day automatically via trajectory.update_last_observation()
-        
-        FEATURES:
-        -------------
+        Generate PHQ-9 score for a specific day using a gap-aware AR(1) process:
+
+        - This method is stateful and updates trajectory.last_score and trajectory.last_day automatically via trajectory.update_last_observation()
         - Checks and enters plateau phase automatically
         - Reduces noise during plateau (symptom stabilization)
         - Soft boundary reflection to prevent artificial concentration at 0/27
@@ -385,13 +377,12 @@ def assign_response_pattern(random_state: Optional[np.random.RandomState] = None
 
 def adjust_recovery_rate_for_pattern(base_rate: float, pattern: str) -> float:
     """
-    Adjust recovery rate based on response pattern
-    
-    Response patterns have different trajectories:
-    - Early responders: Faster initial improvement
-    - Gradual responders: Steady improvement (baseline)
-    - Late responders: Slower initial improvement
-    - Non-responders: Minimal improvement
+    Adjust recovery rate based on response pattern: response patterns have different trajectories:
+
+    - Early responders   : Faster initial improvement
+    - Gradual responders : Steady improvement (baseline)
+    - Late responders    : Slower initial improvement
+    - Non-responders     : Minimal improvement
     
     Arguments:
     ----------
