@@ -2,7 +2,7 @@
 
 ---
 
-## 📋 Table of Contents
+## Table of Contents
 
 1. [Purpose](#1-purpose)
 2. [What Is PHQ-9?](#2-what-is-phq-9)
