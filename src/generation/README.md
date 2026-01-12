@@ -457,8 +457,10 @@ RESPONSE_PATTERN_PROBABILITIES = {
 **Location**: `config/generation_config.py`
 
 **Key Parameters**:
+
 ```python
-total_patients = 1000
+
+total_patients            = 1000
 total_days                = 365
 maximum_surveys_attempted = 20
 min_surveys_attempted     = 10
@@ -502,10 +504,12 @@ done
 ```
 
 **Output**:
-- **Data**       : `data/raw/synthetic_phq9_data_{distribution}.csv`
-- **Metadata**   : `data/raw/synthetic_phq9_data_{distribution}.metadata.json`
-- **Validation** : `results/generation/validation_reports/validation_report_{timestamp}.json`
-- **Logs**       : `logs/generation_{timestamp}.log`
+| Purpose | Filename | 
+|---------|----------|
+|**Data** | `data/raw/synthetic_phq9_data_{distribution}.csv` |
+| **Metadata** | `data/raw/synthetic_phq9_data_{distribution}.metadata.json` |
+| **Validation** | `results/generation/validation_reports/validation_report_{timestamp}.json` |
+| **Logs** | `logs/generation_{timestamp}.log` |
 
 
 ### 8.3 Validation Reports
@@ -736,25 +740,25 @@ chmod +x scripts/generate_all_distributions.sh
 phq9_analysis/
 ├── config/
 │   ├── generation_config.py          # Pydantic configuration with validation
-│   └── clinical_constants.py         # Centralized constants & references (NEW)
+│   └── clinical_constants.py         # Centralized constants & references
 ├── src/
 │   └── generation/
 │       ├── __init__.py
-│       ├── generator.py              # Main orchestrator (UPDATED: metadata)
-│       ├── trajectory_models.py      # AR(1), response patterns, plateau (UPDATED)
-│       ├── validators.py             # Clinical validation (UPDATED: 12-week, missingness)
+│       ├── generator.py              # Main orchestrator 
+│       ├── trajectory_models.py      # AR(1), response patterns, plateau
+│       ├── validators.py             # Clinical validation 
 │       └── README.md                 # This file
 ├── scripts/
-│   ├── run_generation.py             # CLI entry point (UPDATED: new flags)
+│   ├── run_generation.py             # CLI entry point
 │   └── generate_all_distributions.sh # Batch generation script
 ├── data/
 │   └── raw/
 │       ├── synthetic_phq9_data_exponential.csv
-│       ├── synthetic_phq9_data_exponential.metadata.json (NEW)
+│       ├── synthetic_phq9_data_exponential.metadata.json 
 │       ├── synthetic_phq9_data_gamma.csv
-│       ├── synthetic_phq9_data_gamma.metadata.json (NEW)
+│       ├── synthetic_phq9_data_gamma.metadata.json 
 │       ├── synthetic_phq9_data_lognormal.csv
-│       └── synthetic_phq9_data_lognormal.metadata.json (NEW)
+│       └── synthetic_phq9_data_lognormal.metadata.json
 └── results/
     └── generation/
         └── validation_reports/
@@ -816,33 +820,15 @@ Literature-based validation:
 
 ## 12. References
 
-References
-
-### Primary Literature
-
-1. **Kroenke, K., Spitzer, R. L., & Williams, J. B. (2001)**. The PHQ-9: validity of a brief depression severity measure. *Journal of General Internal Medicine*, 16(9), 606-613.
-   - **Used for**: Test-retest reliability (r=0.84), score interpretation
-
-2. **Rush, A. J., et al. (2006)**. Acute and longer-term outcomes in depressed outpatients requiring one or several treatment steps: a STAR*D report. *American Journal of Psychiatry*, 163(11), 1905-1917.
-   - **Used for**: Dropout rate (21%), response rate (47%), 12-week primary endpoint
-
-3. **Löwe, B., et al. (2004)**. Monitoring depression treatment outcomes with the patient health questionnaire-9. *Medical Care*, 1194-1201.
-   - **Used for**: Minimal clinically important difference (MCID ~5 points)
-
-4. **Fournier, J. C., et al. (2010)**. Antidepressant drug effects and depression severity: a patient-level meta-analysis. *JAMA*, 303(1), 47-53.
-   - **Used for**: Meta-analytic benchmarks, dropout comparison
-
-5. **Fernandez, E., et al. (2015)**. Dropout rates in psychotherapy: A systematic review. *Clinical Psychology Review*.
-   - **Used for**: Real-world dropout rates (18-30%)
-
-
-### Additional Reading
-
-- **Truong, C., Oudre, L., & Vayatis, N. (2020)**. Selective review of offline change point detection methods. *Signal Processing*.
-  - Background on PELT algorithm (used in downstream detection)
-
-- **Hamilton, J. D. (1994)**. *Time Series Analysis*. Princeton University Press.
-  - AR(1) process foundations
+| Source | User For |
+|--------|----------| 
+|**Kroenke, K., Spitzer, R. L., & Williams, J. B. (2001)**. The PHQ-9: validity of a brief depression severity measure. *Journal of General Internal Medicine*, 16(9), 606-613. | Test-retest reliability (r=0.84), score interpretation |
+| **Rush, A. J., et al. (2006)**. Acute and longer-term outcomes in depressed outpatients requiring one or several treatment steps: a STAR*D report. *American Journal of Psychiatry*, 163(11), 1905-1917 | Dropout rate (21%), response rate (47%), 12-week primary endpoint |
+| **Löwe, B., et al. (2004)**. Monitoring depression treatment outcomes with the patient health questionnaire-9. *Medical Care*, 1194-1201 | Minimal clinically important difference (MCID ~5 points) |
+| **Fournier, J. C., et al. (2010)**. Antidepressant drug effects and depression severity: a patient-level meta-analysis. *JAMA*, 303(1), 47-53. | Meta-analytic benchmarks, dropout comparison |
+| **Fernandez, E., et al. (2015)**. Dropout rates in psychotherapy: A systematic review. *Clinical Psychology Review*. | Real-world dropout rates (18-30%) | 
+| **Truong, C., Oudre, L., & Vayatis, N. (2020)**. Selective review of offline change point detection methods. *Signal Processing*. | Background on PELT algorithm (used in downstream detection) |
+| **Hamilton, J. D. (1994)**. *Time Series Analysis*. Princeton University Press | AR(1) process foundations |
 
 
 ---
