@@ -11,11 +11,11 @@
 5. [Statistical Properties](#5-statistical-properties)
 6. [Clinical Realism](#6-clinical-realism)
 7. [Mathematical Model](#7-mathematical-model)
-8. [Generation Pipeline](#6-generation-pipeline)
-9. [Validation Framework](#10-validation-framework)
-10. [Configuration & Usage](#11-configuration--usage)
-11. [Module Structure](#12-module-structure)
-12. [References](#13-references)
+8. [Generation Pipeline](#8-generation-pipeline)
+9. [Validation Framework](#9-validation-framework)
+10. [Configuration & Usage](#10-configuration--usage)
+11. [Module Structure](#11-module-structure)
+12. [References](#12-references)
 
 ---
 
