@@ -32,6 +32,7 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     description = "List of detectors to run (order preserved)",
                                                                                    )
 
+    
     # MODEL SELECTION (OPTIONAL POST-DETECTION)
     selection_enabled            : bool                                     = Field(default     = False,
                                                                                     description = "Whether to run model selection after detection",
@@ -65,7 +66,7 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     description = "Automatically tune PELT penalty via BIC",
                                                                                    )
     
-    cost_model                   : Literal['l1', 'l2', 'rbf', 'ar']         = Field(default     = 'l1',
+    pelt_cost_models             : List[Literal['l1', 'l2', 'rbf', 'ar']]   = Field(default     = ['l1', 'l2', 'rbf', 'ar'],
                                                                                     description = "PELT cost function",
                                                                                    )
     
@@ -90,6 +91,12 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     ge          = 50,
                                                                                     le          = 2000,
                                                                                     description = "Maximum run length tracked",
+                                                                                   )
+
+    hazard_lambda                : float                                    = Field(default     = 30.0,
+                                                                                    ge          = 2.0,
+                                                                                    le          = 500.0,
+                                                                                    description = "Expected run length (λ) for BOCPD. Auto-tuned if auto_tune_hazard=True"
                                                                                    )
 
     cp_posterior_threshold       : float                                    = Field(default     = 0.6,
@@ -241,7 +248,7 @@ class ChangePointDetectionConfig(BaseModel):
                    }
 
         if 'pelt' in self.detectors:
-            summary['PELT'] = {'Cost model'        : self.cost_model,
+            summary['PELT'] = {'Cost model'        : self.pelt_cost_models,
                                'Penalty'           : self.penalty,
                                'Auto-tune penalty' : self.auto_tune_penalty,
                                'Penalty range'     : self.penalty_range,
