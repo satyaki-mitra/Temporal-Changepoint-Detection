@@ -7,12 +7,12 @@ from datetime import datetime
 # Ensure project root on path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from phq9_analysis.utils.logging_util import setup_logger
+from src.utils.logging_util import setup_logger
+from src.utils.logging_util import log_section_header
+from src.detection.model_selector import ModelSelector
 from config.model_selection_config import ModelSelectorConfig
 from config.detection_config import ChangePointDetectionConfig
-from phq9_analysis.utils.logging_util import log_section_header
-from phq9_analysis.detection.model_selector import ModelSelector
-from phq9_analysis.detection.detector import ChangePointDetectionOrchestrator
+from src.detection.detector import ChangePointDetectionOrchestrator
 
 
 # CLI Argument Parsing
@@ -71,54 +71,59 @@ def parse_arguments():
 
 # Main Entry Point
 def main():
-    args   = parse_arguments()
+    args        = parse_arguments()
 
-    # ------------------------------------------------------------------
     # Build detection configuration
-    # ------------------------------------------------------------------
-    config = ChangePointDetectionConfig()
+    try:
+        config_dict = ChangePointDetectionConfig().model_dump()
+    
+    except AttributeError:
+        config_dict = ChangePointDetectionConfig().dict()
 
     # Execution control
     if args.execution_mode:
-        config.execution_mode = args.execution_mode
+        config_dict['execution_mode'] = args.execution_mode
 
     if args.detectors:
-        config.detectors = args.detectors
+        config_dict['detectors'] = args.detectors
 
     # Data
     if args.data:
-        config.data_path = args.data
+        config_dict['data_path'] = args.data
 
     # PELT overrides
     if args.penalty is not None:
-        config.penalty = args.penalty
+        config_dict['penalty'] = args.penalty
 
     if args.auto_tune_penalty:
-        config.auto_tune_penalty = True
+        config_dict['auto_tune_penalty'] = True
 
     if args.cost_model:
-        config.cost_model = args.cost_model
+        config_dict['pelt_cost_models'] = [args.cost_model]
 
     if args.min_size:
-        config.minimum_segment_size = args.min_size
+        config_dict['minimum_segment_size'] = args.min_size
 
-    # BOCPD overrides (tuning only)
+    # BOCPD overrides
     if args.hazard_tuning_method:
-        config.hazard_tuning_method = args.hazard_tuning_method
+        config_dict['hazard_tuning_method'] = args.hazard_tuning_method
 
     if args.posterior_threshold is not None:
-        config.cp_posterior_threshold = args.posterior_threshold
+        config_dict['cp_posterior_threshold'] = args.posterior_threshold
 
     # Statistical testing
     if args.alpha is not None:
-        config.alpha = args.alpha
+        config_dict['alpha'] = args.alpha
 
     if args.correction:
-        config.multiple_testing_correction = args.correction
+        config_dict['multiple_testing_correction'] = args.correction
 
     # Output
     if args.output_dir:
-        config.results_base_directory = args.output_dir
+        config_dict['results_base_directory'] = args.output_dir
+
+    # Reconstruct with validation
+    config = ChangePointDetectionConfig(**config_dict)
 
     # Logging
     logger = setup_logger(module_name = 'detection',

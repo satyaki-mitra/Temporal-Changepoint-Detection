@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import Field
 from pydantic import validator
 from pydantic import BaseModel
+from config.eda_constants import eda_constants_instance
 
 
 class EDAConfig(BaseModel):
@@ -22,11 +23,12 @@ class EDAConfig(BaseModel):
                                                                                                                    )
     
     # VISUALIZATION PARAMETERS
-    figure_size                  : Tuple[int, int]                                                          = Field(default     = (15, 12),
+    figure_size                  : Tuple[int, int]                                                          = Field(default     = (eda_constants_instance.DEFAULT_FIGURE_WIDTH, 
+                                                                                                                                   eda_constants_instance.DEFAULT_FIGURE_HEIGHT),
                                                                                                                     description = "Default figure size (width, height) in inches",
                                                                                                                    )
     
-    dpi                          : int                                                                      = Field(default     = 300,
+    dpi                          : int                                                                      = Field(default     = eda_constants_instance.DEFAULT_DPI,
                                                                                                                     ge          = 100,
                                                                                                                     le          = 600,
                                                                                                                     description = "DPI for saved figures",
@@ -41,8 +43,8 @@ class EDAConfig(BaseModel):
                                                                                                                    )
     
     # CLUSTERING PARAMETERS
-    max_clusters_to_test         : int                                                                      = Field(default     = 20,
-                                                                                                                    ge          = 5,
+    max_clusters_to_test         : int                                                                      = Field(default     = eda_constants_instance.MAX_CLUSTERS_DEFAULT,
+                                                                                                                    ge          = eda_constants_instance.MIN_CLUSTERS,
                                                                                                                     le          = 30,
                                                                                                                     description = "Maximum number of clusters for elbow/silhouette analysis",
                                                                                                                    )
@@ -60,14 +62,14 @@ class EDAConfig(BaseModel):
                                                                                                                     description = "Method for handling missing values in clustering",
                                                                                                                    )
     
-    min_observations_per_patient : int                                                                      = Field(default     = 3,
+    min_observations_per_patient : int                                                                      = Field(default     = eda_constants_instance.MIN_OBSERVATIONS_FOR_TRAJECTORY,
                                                                                                                     ge          = 2,
                                                                                                                     le          = 10,
                                                                                                                     description = "Minimum observations required to include patient in analysis",
                                                                                                                    )
     
     
-    # ADVANCED CLUSTERING OPTIONS
+    # CLUSTERING OPTIONS
     use_temporal_clustering      : bool                                                                     = Field(default     = False,
                                                                                                                     description = "Use temporal constraints in clustering (penalize distant days)",
                                                                                                                    )
@@ -78,12 +80,12 @@ class EDAConfig(BaseModel):
                                                                                                                     description = "Weight for temporal proximity in clustering (0=ignore time, 1=only time)",
                                                                                                                    )
     
-    standardize_features         : bool                                                                     = Field(default     = True,
+    standardize_features         : bool                                                                     = Field(default     = False,
                                                                                                                     description = "Standardize features before clustering (usually not needed for PHQ-9)",
                                                                                                                    )
     
     # STATISTICAL ANALYSIS PARAMETERS
-    confidence_level             : float                                                                    = Field(default     = 0.95,
+    confidence_level             : float                                                                    = Field(default     = eda_constants_instance.DEFAULT_CONFIDENCE_LEVEL,
                                                                                                                     ge          = 0.90,
                                                                                                                     le          = 0.99,
                                                                                                                     description = "Confidence level for statistical tests",
@@ -93,10 +95,32 @@ class EDAConfig(BaseModel):
                                                                                                                     description = "Flag potential outliers in the data",
                                                                                                                    )
     
-    outlier_threshold            : float                                                                    = Field(default     = 3.0,
+    outlier_threshold            : float                                                                    = Field(default     = eda_constants_instance.OUTLIER_Z_SCORE_THRESHOLD,
                                                                                                                     ge          = 2.0,
                                                                                                                     le          = 5.0,
                                                                                                                     description = "Z-score threshold for outlier detection",
+                                                                                                                   )
+    
+    # METADATA INTEGRATION
+    load_metadata                : bool                                                                     = Field(default     = True,
+                                                                                                                    description = "Automatically load metadata sidecar if available",
+                                                                                                                   )
+    
+    validate_against_metadata    : bool                                                                     = Field(default     = True,
+                                                                                                                    description = "Validate EDA results against generation metadata",
+                                                                                                                   )
+    
+    # RESPONSE PATTERN ANALYSIS
+    analyze_response_patterns    : bool                                                                     = Field(default     = True,
+                                                                                                                    description = "Perform response pattern classification and analysis",
+                                                                                                                   )
+    
+    detect_plateau_phases        : bool                                                                     = Field(default     = True,
+                                                                                                                    description = "Detect and analyze plateau phases in trajectories",
+                                                                                                                   )
+    
+    detect_relapses              : bool                                                                     = Field(default     = True,
+                                                                                                                    description = "Detect and analyze relapse events",
                                                                                                                    )
     
     # OUTPUT CONTROL
@@ -108,6 +132,7 @@ class EDAConfig(BaseModel):
                                                                                                                     description = "Generate comprehensive HTML/PDF report",
                                                                                                                    )
     
+
     # VALIDATORS
     @validator('figure_size')
     def validate_figure_size(cls, v):
@@ -136,7 +161,6 @@ class EDAConfig(BaseModel):
             raise ValueError("temporal_weight cannot be 0.0 when use_temporal_clustering=True")
 
         if (not use_temporal and (v > 0.0)):
-            
             warnings.warn(f"temporal_weight={v} will be ignored since use_temporal_clustering=False")
 
         return v
@@ -148,7 +172,7 @@ class EDAConfig(BaseModel):
         Warn if testing too many clusters
         """
         if (v > 15):
-            warnings.warn(f"Testing {v} clusters may be computationally expensive. Consider reducing to 10-15 for faster analysis.")
+            warnings.warn(f"Testing {v} clusters may be computationally expensive. Consider reducing to {eda_constants_instance.OPTIMAL_CLUSTER_RANGE_MAX}-15 for faster analysis.")
 
         return v
     
@@ -172,6 +196,13 @@ class EDAConfig(BaseModel):
         return self.results_base_directory / "visualizations"
     
 
+    def get_metadata_path(self) -> Path:
+        """
+        Get expected metadata file path (sidecar to data file)
+        """
+        return self.data_file_path.with_suffix('.metadata.json')
+    
+
     def create_output_directories(self):
         """
         Create all output directories
@@ -185,8 +216,8 @@ class EDAConfig(BaseModel):
         """
         Get human-readable configuration summary
         """
-        return {
-                'Data'          : {'Input file'               : str(self.data_file_path),
+        return {'Data'          : {'Input file'               : str(self.data_file_path),
+                                   'Load metadata'            : self.load_metadata,
                                    'Min observations/patient' : self.min_observations_per_patient,
                                   },
                 'Clustering'    : {'Algorithm'           : self.clustering_algorithm,
@@ -194,11 +225,16 @@ class EDAConfig(BaseModel):
                                    'Imputation method'   : self.imputation_method,
                                    'Temporal clustering' : self.use_temporal_clustering,
                                   },
+                'Analysis'      : {'Response patterns' : self.analyze_response_patterns,
+                                   'Plateau detection' : self.detect_plateau_phases,
+                                   'Relapse detection' : self.detect_relapses,
+                                  },
                 'Visualization' : {'Figure size' : f"{self.figure_size[0]}x{self.figure_size[1]}",
                                    'DPI'         : self.dpi,
                                    'Style'       : self.plot_style,
                                   },
-                'Output'        : {'Results directory'  : str(self.results_base_directory),
-                                   'Save intermediates' : self.save_intermediate_results,
+                'Output'        : {'Results directory'    : str(self.results_base_directory),
+                                   'Save intermediates'   : self.save_intermediate_results,
+                                   'Validate vs metadata' : self.validate_against_metadata,
                                   }
                }
