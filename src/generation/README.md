@@ -23,12 +23,12 @@
 
 This module tries to generate **clinically realistic synthetic PHQ-9 data** for longitudinal mental health research. The data mirrors real-world depression monitoring studies with:
 
-- ✅ Sparse, irregular patient observations
-- ✅ Temporal dependencies via gap-aware AR(1) processes
-- ✅ Realistic missingness mechanisms (MCAR + informative dropout)
-- ✅ Response pattern heterogeneity (early/gradual/late/non-responders)
-- ✅ Plateau logic for symptom stabilization
-- ✅ Configurable relapse distributions (exponential, gamma, lognormal)
+- Sparse, irregular patient observations
+- Temporal dependencies via gap-aware AR(1) processes
+- Realistic missingness mechanisms (MCAR + informative dropout)
+- Response pattern heterogeneity (early/gradual/late/non-responders)
+- Plateau logic for symptom stabilization
+- Configurable relapse distributions (exponential, gamma, lognormal)
 
 **Use Case**: Population-level temporal change-point detection on aggregated depression severity metrics.
 
@@ -112,9 +112,9 @@ For Patient B with Δt=49 and α=0.7:
 ```
 
 This ensures:
-- ✅ Nearby observations (Δt ≤ 7 days) maintain correlation
-- ✅ Distant observations (Δt > 14 days) are nearly independent
-- ✅ Matches real PHQ-9 dynamics in sparse data
+- Nearby observations (Δt ≤ 7 days) maintain correlation
+- Distant observations (Δt > 14 days) are nearly independent
+- Matches real PHQ-9 dynamics in sparse data
 
 
 ### 4.2 Why Response Pattern Heterogeneity?
@@ -194,9 +194,9 @@ elif (raw_baseline > 27):
 ```
 
 **Benefits**:
-- ✅ Natural distribution near boundaries
-- ✅ Preserves population mean
-- ✅ No artificial concentration at 0/27
+- Natural distribution near boundaries
+- Preserves population mean
+- No artificial concentration at 0/27
 
 
 ---
@@ -385,16 +385,16 @@ data/raw/
 **Purpose**: All magic numbers in one place with literature references.
 
 **Examples**:
+
 ```python
-STARD_DROPOUT_RATE = 0.21                    # Rush et al. (2006)
-STARD_PRIMARY_ENDPOINT_DAYS = 84             # 12 weeks
-PHQ9_MCID = 5.0                              # Löwe et al. (2004)
-RESPONSE_PATTERN_PROBABILITIES = {
-    'early_responder': 0.30,
-    'gradual_responder': 0.35,
-    'late_responder': 0.15,
-    'non_responder': 0.20
-}
+STARD_DROPOUT_RATE             = 0.21                    
+STARD_PRIMARY_ENDPOINT_DAYS    = 84            
+PHQ9_MCID                      = 5.0                             
+RESPONSE_PATTERN_PROBABILITIES = {'early_responder'   : 0.30,
+                                  'gradual_responder' : 0.35,
+                                  'late_responder'    : 0.15,
+                                  'non_responder'     : 0.20
+                                 }
 ```
 
 **Benefits**:
