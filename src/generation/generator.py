@@ -334,10 +334,10 @@ class PHQ9DataGenerator:
         validation['generation_metadata'] = self.generation_metadata  
 
         if validation['overall_valid']:
-            self.logger.info("✅ Validation PASSED")
+            self.logger.info("Validation PASSED")
         
         else:
-            self.logger.warning("⚠️  Validation completed with warnings/errors")
+            self.logger.warning("Validation completed with warnings/errors")
 
         for w in validation['warnings']:
             self.logger.warning(w)

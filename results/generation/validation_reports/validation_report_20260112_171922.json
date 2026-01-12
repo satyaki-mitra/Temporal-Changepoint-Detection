@@ -2,15 +2,15 @@
     "overall_valid": true,
     "checks": {
         "score_range": {
-            "min": 0.0003371970371578298,
-            "max": 26.97596670484797,
+            "min": 0.003956020887333265,
+            "max": 26.980176370673874,
             "valid": true
         },
         "autocorrelation": {
-            "mean_gap_aware": 0.30955512624210907,
-            "std": 0.4310652283702236,
-            "min": -0.9854186936200605,
-            "max": 0.993003487340997,
+            "mean_gap_aware": 0.30805341252550383,
+            "std": 0.4313425068652887,
+            "min": -0.9822683168785709,
+            "max": 0.9984050559139634,
             "n_patients": 943,
             "in_expected_range": true,
             "median_temporal_gap": 13.0,
@@ -19,30 +19,30 @@
             "expected_range": "[0.30, 0.70]"
         },
         "baseline": {
-            "mean": 15.137906783681053,
-            "std": 3.9607464036832254,
-            "min": 0.3367428057550441,
-            "max": 26.964939563030438,
+            "mean": 15.268596711774444,
+            "std": 4.386410998932897,
+            "min": 0.3727868277503923,
+            "max": 26.980176370673874,
             "n_patients": 1000,
             "in_expected_range": true,
             "expected_range": "[13.0, 19.0]"
         },
         "improvement": {
-            "mean_improvement_12week": 2.6724966365558074,
-            "mean_improvement_final": 4.0256011867375205,
-            "std_12week": 4.113951678859419,
+            "mean_improvement_12week": 2.7773005163229776,
+            "mean_improvement_final": 4.162268284283129,
+            "std_12week": 4.475528914754292,
             "n_patients_12week": 726,
             "n_patients_final": 1000,
             "shows_improvement": false,
             "endpoint": "12 weeks (84 days)"
         },
         "response_rate": {
-            "rate_12week": 0.10743801652892562,
-            "rate_final": 0.178,
+            "rate_12week": 0.09228650137741047,
+            "rate_final": 0.174,
             "n_evaluable_12week": 726,
             "n_evaluable_final": 1000,
-            "n_responders_12week": 78,
-            "n_responders_final": 178,
+            "n_responders_12week": 67,
+            "n_responders_final": 174,
             "in_expected_range": false,
             "expected_range": "[40%, 70%]",
             "endpoint": "12 weeks"
@@ -59,25 +59,25 @@
             "interpretation": "Within expected range for sparse longitudinal studies"
         },
         "distributions": {
-            "mean": 12.260456388647984,
-            "std": 4.699571998215027,
-            "skewness": -0.0402656204989752,
-            "kurtosis": 0.016958137494048398,
+            "mean": 12.274794715794796,
+            "std": 4.706007110584432,
+            "skewness": 0.0026342728490474213,
+            "kurtosis": -0.011365338332283592,
             "normality_p_value": null
         }
     },
     "warnings": [
-        "Mean 12-week improvement 2.67 < expected minimum 3.0 points. Final improvement: 4.03",
-        "12-week response rate 10.7% outside expected range (0.4, 0.7). STAR*D Level-1 \u2248 47%. Final response rate: 17.8%"
+        "Mean 12-week improvement 2.78 < expected minimum 3.0 points. Final improvement: 4.16",
+        "12-week response rate 9.2% outside expected range (0.4, 0.7). STAR*D Level-1 \u2248 47%. Final response rate: 17.4%"
     ],
     "errors": [],
     "relapse_statistics": {
         "n_patients": 1000,
-        "total_relapses": 1502,
-        "patients_with_relapses": 784,
-        "patient_relapse_rate": 0.784,
-        "mean_relapses_per_patient": 1.502,
-        "max_relapses_single_patient": 7
+        "total_relapses": 1503,
+        "patients_with_relapses": 782,
+        "patient_relapse_rate": 0.782,
+        "mean_relapses_per_patient": 1.503,
+        "max_relapses_single_patient": 8
     },
     "dropout_statistics": {
         "n_patients": 1000,
@@ -87,9 +87,9 @@
         "median_dropout_day": 138.0
     },
     "generation_metadata": {
-        "generation_timestamp": "2026-01-12T17:19:32.330036",
+        "generation_timestamp": "2026-01-12T17:19:21.946703",
         "random_seed": 2023,
-        "config_hash": "e1e42c2a9ce9c57e",
+        "config_hash": "ce7f0ade12469b0a",
         "study_design": {
             "n_patients": 1000,
             "total_days": 365,
@@ -105,7 +105,7 @@
             "noise_std": 2.5
         },
         "relapse_config": {
-            "distribution": "lognormal",
+            "distribution": "gamma",
             "probability": 0.1,
             "magnitude_mean": 3.5
         },

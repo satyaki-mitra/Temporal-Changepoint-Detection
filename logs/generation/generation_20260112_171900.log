@@ -1,0 +1,43 @@
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - logging_util.py:113 - Logging to file: logs/generation/generation_20260112_171900.log
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:70 - Initialized PHQ9DataGenerator | Patients=1000, Study Days=365, AR(1)=0.70, Relapse Dist=exponential, Response Patterns=Enabled
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:153 - Starting data generation pipeline...
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - logging_util.py:150 -                             STARTING DATA GENERATION                            
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:86 - Step 1/5: Initializing patient trajectories
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:131 - Response pattern distribution:
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:134 -   early_responder: 279 (27.9%)
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:134 -   gradual_responder: 371 (37.1%)
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:134 -   late_responder: 165 (16.5%)
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:134 -   non_responder: 185 (18.5%)
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:136 - Initialized trajectories for 1000 patients
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:89 - Step 2/5: Generating missingness patterns
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:155 - Generated dropout patterns | Dropouts=198/1000 (19.8%)
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:92 - Step 3/5: Generating patient survey schedules
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:95 - Step 4/5: Consolidating observation days
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:215 - Total unique observation days: 365 (Range: 1–365)
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:98 - Step 5/5: Generating PHQ-9 scores
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:102 - Generation complete | Shape=(365, 1000) | Missingness=95.88%
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - logging_util.py:150 -                            VALIDATING GENERATED DATA                            
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:337 - Validation PASSED
+2026-01-12 17:19:00 - phq9_analysis.generation - [93mWARNING[0m - generator.py:343 - Mean 12-week improvement 2.78 < expected minimum 3.0 points. Final improvement: 4.05
+2026-01-12 17:19:00 - phq9_analysis.generation - [93mWARNING[0m - generator.py:343 - 12-week response rate 10.1% outside expected range (0.4, 0.7). STAR*D Level-1 ≈ 47%. Final response rate: 18.4%
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:426 - 
+Data saved to data/raw/synthetic_phq9_data_exponential.csv
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:437 - 
+Metadata saved to data/raw/synthetic_phq9_data_exponential.metadata.json
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:465 - 
+Validation report saved to results/generation/validation_reports/validation_report_20260112_171900.json
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - generator.py:466 - 
+Latest report: results/generation/validation_reports/validation_report.json
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:157 - ================================================================================
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:158 - GENERATION COMPLETE
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:159 - ================================================================================
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:160 - Dataset shape : (365, 1000)
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:161 - Data output   : data/raw/synthetic_phq9_data_exponential.csv
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:162 - Metadata      : data/raw/synthetic_phq9_data_exponential.metadata.json
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:163 - Validation    : results/generation/validation_reports/validation_report.json
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:172 - Data generation completed successfully
+2026-01-12 17:19:00 - phq9_analysis.generation - [92mINFO[0m - run_generation.py:180 - End time: 2026-01-12 17:19:00
