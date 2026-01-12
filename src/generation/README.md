@@ -832,14 +832,4 @@ Literature-based validation:
 
 
 ---
-
 > *This generation module produces a realistic foundation for population-level temporal analysis and change-point detection research, not synthetic perfection*
-
-- `Clinically grounded PHQ-9 trajectories (STAR*D-aligned)`
-- `Sparse, irregular longitudinal data (realistic clinic scheduling)`
-- `Statistically defensible temporal dependencies (gap-aware AR(1))`
-- `Literature-validated parameters (all constants referenced)`
-- `Reproducible (seeded randomness + metadata tracking)`
-- `Configurable relapse mechanisms (3 distributions)`
-- `Heterogeneous response patterns (4 types)`
-- `Realistic symptom stabilization (plateau logic)`
