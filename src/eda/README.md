@@ -41,41 +41,53 @@ It is designed to validate, characterize, and compare PHQ-9 time-series before a
 
 ```mermaid
 %%{init: {
-  "flowchart": {"nodeSpacing": 50, "rankSpacing": 60},
+  "flowchart": {"nodeSpacing": 55, "rankSpacing": 70},
   "themeVariables": {"fontSize": "13px"}
 }}%%
 flowchart LR
 
 subgraph Analyzer["PHQ9DataAnalyzer (orchestration)"]
-  V[Validation]
-  S[Statistics]
+  V[Data Validation]
+  S[Summary Statistics]
   C[Clustering]
-  R[Response Analysis]
+  R[Response Pattern Analysis]
   L[Relapse Detection]
   Z[Visualization]
+  D[Distribution Comparison]
 end
 
-V --> V1["EDADataValidator\nvalidators.py"]
-V --> V2["MetadataLoader\nmetadata_loader.py"]
+%% Validation
+V --> V1["EDADataValidator<br/>(validators.py)"]
+V --> V2["MetadataLoader<br/>(metadata_loader.py)"]
 
-S --> S1["get_summary_statistics()\nanalyzer.py"]
+%% Statistics
+S --> S1["get_summary_statistics()<br/>(analyzer.py)"]
 
-C --> C1["ClusteringEngine.fit_kmeans()\nclustering.py"]
-C --> C2["TemporalClustering.fit()\nclustering.py"]
-C --> C3["OptimalClusterSelector\nclustering.py"]
+%% Clustering
+C --> C1["ClusteringEngine.fit_kmeans()<br/>(clustering.py)"]
+C --> C2["TemporalClustering.fit()<br/>(clustering.py)"]
+C --> C3["OptimalClusterSelector<br/>(clustering.py)"]
 
-R --> R1["ResponsePatternAnalyzer\nresponse_patterns.py"]
-R --> R2["Plateau Detection\nresponse_patterns.py"]
+%% Response patterns
+R --> R1["ResponsePatternAnalyzer<br/>(response_patterns.py)"]
+R --> R2["Plateau Detection (internal)<br/>(response_patterns.py)"]
 
-L --> L1["RelapseDetector.detect_relapses()\nresponse_patterns.py"]
+%% Relapse
+L --> L1["RelapseDetector.detect_relapses()<br/>(response_patterns.py)"]
 
-Z --> Z1["VisualizationGenerator\nvisualizations.py"]
+%% Visualization
+Z --> Z1["VisualizationGenerator<br/>(visualizations.py)"]
 
-E["EDA Constants\nconfig/eda_constants.py"]
+%% Distribution comparison
+D --> D1["DistributionComparator.compare_datasets()<br/>(distribution_comparator.py)"]
+
+%% Shared constants
+E["EDA Constants<br/>(config/eda_constants.py)"]
 V1 --> E
 C1 --> E
 R1 --> E
 L1 --> E
+D1 --> E
 ```
 
 ---
