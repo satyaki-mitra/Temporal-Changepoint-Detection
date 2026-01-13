@@ -373,10 +373,10 @@ config = EDAConfig(load_metadata             = True,
 
 ## 🔗 Pipeline Integration (Recommended)
 
-- 1. Generate datasets with different relapse distributions
-- 2. Run EDA comparison
-- 3. Select best dataset
-- 4. Feed selected dataset into change-point detection
+1. Generate datasets with different relapse distributions
+2. Run EDA comparison
+3. Select best dataset
+4. Feed selected dataset into change-point detection
 
 ---
 
