@@ -41,8 +41,8 @@ It is designed to validate, characterize, and compare PHQ-9 time-series before a
 
 ```mermaid
 %%{init: {
-  "flowchart": {"nodeSpacing": 55, "rankSpacing": 70},
-  "themeVariables": {"fontSize": "13px"}
+  "flowchart": {"nodeSpacing": 50, "rankSpacing": 50},
+  "themeVariables": {"fontSize": "12px"}
 }}%%
 flowchart LR
 
