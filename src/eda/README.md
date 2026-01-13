@@ -41,66 +41,42 @@ It is designed to validate, characterize, and compare PHQ-9 time-series before a
 
 ```mermaid
 %%{init: {
-  "flowchart": {
-    "nodeSpacing": 80,
-    "rankSpacing": 90
-  },
-  "themeVariables": {
-    "fontSize": "18px",
-    "nodePadding": 18
-  }
+  "flowchart": {"nodeSpacing": 70, "rankSpacing": 80},
+  "themeVariables": {"fontSize": "16px"}
 }}%%
 flowchart LR
 
-A["PHQ9DataAnalyzer\nsrc/eda/analyzer.py"]
+subgraph Analyzer["PHQ9DataAnalyzer (orchestration)"]
+  V[Validation]
+  S[Statistics]
+  C[Clustering]
+  R[Response Analysis]
+  L[Relapse Detection]
+  Z[Visualization]
+end
 
-%% Data Validation
-A --> B["Data Validation"]
-B --> B1["EDADataValidator.validate_all()\nsrc/eda/validators.py"]
-B --> B2["MetadataLoader.load()\nsrc/eda/metadata_loader.py"]
+V --> V1["EDADataValidator\nvalidators.py"]
+V --> V2["MetadataLoader\nmetadata_loader.py"]
 
-%% Summary Statistics
-A --> C["Summary Statistics"]
-C --> C1["get_summary_statistics()\nsrc/eda/analyzer.py"]
-C --> K["EDA Constants\nconfig/eda_constants.py"]
+S --> S1["get_summary_statistics()\nanalyzer.py"]
 
-%% Clustering
-A --> D["Clustering"]
-D --> D1["ClusteringEngine.fit_kmeans()\nsrc/eda/clustering.py"]
-D --> D2["TemporalClustering.fit()\nsrc/eda/clustering.py"]
-D --> K
+C --> C1["ClusteringEngine.fit_kmeans()\nclustering.py"]
+C --> C2["TemporalClustering.fit()\nclustering.py"]
+C --> C3["OptimalClusterSelector\nclustering.py"]
 
-%% Cluster Evaluation
-A --> E["Cluster Evaluation"]
-E --> E1["OptimalClusterSelector.elbow_method()\nsrc/eda/clustering.py"]
-E --> E2["OptimalClusterSelector.silhouette_method()\nsrc/eda/clustering.py"]
-E --> K
+R --> R1["ResponsePatternAnalyzer\nresponse_patterns.py"]
+R --> R2["Plateau Detection\nresponse_patterns.py"]
 
-%% Response Patterns
-A --> F["Response Pattern Analysis"]
-F --> F1["ResponsePatternAnalyzer.analyze_all_patients()\nsrc/eda/response_patterns.py"]
-F --> K
+L --> L1["RelapseDetector.detect_relapses()\nresponse_patterns.py"]
 
-%% Plateau Detection
-F --> G["Plateau Detection"]
-G --> G1["_detect_plateau()\nsrc/eda/response_patterns.py"]
+Z --> Z1["VisualizationGenerator\nvisualizations.py"]
 
-%% Relapse Detection
-A --> H["Relapse Detection"]
-H --> H1["RelapseDetector.detect_relapses()\nsrc/eda/response_patterns.py"]
-H --> K
-
-%% Visualization
-A --> I["Visualization"]
-I --> I1["VisualizationGenerator\nsrc/eda/visualizations.py"]
-I --> K
-
-%% Distribution Comparison
-A --> J["Distribution Comparison"]
-J --> J1["DistributionComparator.compare_datasets()\nsrc/eda/distribution_comparator.py"]
-J --> K
+E["EDA Constants\nconfig/eda_constants.py"]
+V1 --> E
+C1 --> E
+R1 --> E
+L1 --> E
 ```
-
 
 ---
 
