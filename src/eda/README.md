@@ -43,52 +43,52 @@ It is designed to validate, characterize, and compare PHQ-9 time-series before a
 flowchart TB
 
 %% Core Orchestrator
-A[PHQ9DataAnalyzer<br/>src/eda/analyzer.py]
+A["PHQ9DataAnalyzer\nsrc/eda/analyzer.py"]
 
 %% Data Validation
-A --> B[Data Validation<br/>Metadata-aware checks]
-B --> B1[src/eda/validators.py<br/>EDADataValidator.validate_all()]
-B --> B2[src/eda/metadata_loader.py<br/>MetadataLoader.load()]
+A --> B["Data Validation\nMetadata-aware checks"]
+B --> B1["EDADataValidator.validate_all()\nsrc/eda/validators.py"]
+B --> B2["MetadataLoader.load()\nsrc/eda/metadata_loader.py"]
 
 %% Summary Statistics
-A --> C[Summary Statistics<br/>Descriptive statistics]
-C --> C1[src/eda/analyzer.py<br/>get_summary_statistics()]
-C --> K[config/eda_constants.py]
+A --> C["Summary Statistics\nDescriptive statistics"]
+C --> C1["get_summary_statistics()\nsrc/eda/analyzer.py"]
+C --> K["EDA Constants\nconfig/eda_constants.py"]
 
 %% Clustering
-A --> D[Clustering<br/>KMeans / Temporal-aware]
-D --> D1[src/eda/clustering.py<br/>ClusteringEngine.fit_kmeans()]
-D --> D2[src/eda/clustering.py<br/>TemporalClustering.fit()]
+A --> D["Clustering\nKMeans / Temporal-aware"]
+D --> D1["ClusteringEngine.fit_kmeans()\nsrc/eda/clustering.py"]
+D --> D2["TemporalClustering.fit()\nsrc/eda/clustering.py"]
 D --> K
 
 %% Cluster Evaluation
-A --> E[Cluster Evaluation<br/>Silhouette & Inertia]
-E --> E1[src/eda/clustering.py<br/>OptimalClusterSelector.elbow_method()]
-E --> E2[src/eda/clustering.py<br/>OptimalClusterSelector.silhouette_method()]
+A --> E["Cluster Evaluation\nSilhouette and Inertia"]
+E --> E1["OptimalClusterSelector.elbow_method()\nsrc/eda/clustering.py"]
+E --> E2["OptimalClusterSelector.silhouette_method()\nsrc/eda/clustering.py"]
 E --> K
 
 %% Response Pattern Analysis
-A --> F[Response Pattern Analysis<br/>Trajectory slope & improvement]
-F --> F1[src/eda/response_patterns.py<br/>ResponsePatternAnalyzer.analyze_all_patients()]
+A --> F["Response Pattern Analysis\nTrajectory slope and improvement"]
+F --> F1["ResponsePatternAnalyzer.analyze_all_patients()\nsrc/eda/response_patterns.py"]
 F --> K
 
 %% Plateau Detection
-F --> G[Plateau Detection<br/>Variance + slope windows]
-G --> G1[src/eda/response_patterns.py<br/>_detect_plateau()]
+F --> G["Plateau Detection\nVariance and slope windows"]
+G --> G1["_detect_plateau()\nsrc/eda/response_patterns.py"]
 
 %% Relapse Detection
-A --> H[Relapse Detection<br/>Thresholded score increases]
-H --> H1[src/eda/response_patterns.py<br/>RelapseDetector.detect_relapses()]
+A --> H["Relapse Detection\nThresholded score increases"]
+H --> H1["RelapseDetector.detect_relapses()\nsrc/eda/response_patterns.py"]
 H --> K
 
 %% Visualization
-A --> I[Visualization<br/>Multi-view plotting]
-I --> I1[src/eda/visualizations.py<br/>VisualizationGenerator.*]
+A --> I["Visualization\nMulti-view plotting"]
+I --> I1["VisualizationGenerator\nsrc/eda/visualizations.py"]
 I --> K
 
 %% Distribution Comparison
-A --> J[Distribution Comparison<br/>Weighted composite scoring]
-J --> J1[src/eda/distribution_comparator.py<br/>DistributionComparator.compare_datasets()]
+A --> J["Distribution Comparison\nWeighted composite scoring"]
+J --> J1["DistributionComparator.compare_datasets()\nsrc/eda/distribution_comparator.py"]
 J --> K
 ```
 
