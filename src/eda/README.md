@@ -191,6 +191,35 @@ analyzer.load_data()
 - Response pattern distribution consistency
 - Plateau and relapse statistics (if present)
 
+
+### Execution View
+
+The following is runtime workflow when run_full_analysis() is called:
+
+```mermaid
+sequenceDiagram
+    participant U as User/Script
+    participant A as PHQ9DataAnalyzer
+    participant V as Validator
+    participant C as Clustering
+    participant R as Response Analysis
+    participant L as Relapse Detection
+    participant Z as Visualization
+    
+    U->>A: run_full_analysis()
+    A->>V: validate_data()
+    V-->>A: ✓
+    A->>C: fit_clustering()
+    C-->>A: cluster_labels
+    A->>R: analyze_response_patterns()
+    R-->>A: patterns_df
+    A->>L: detect_relapses()
+    L-->>A: relapse_results
+    A->>Z: generate_visualizations()
+    Z-->>A: ✓
+    A-->>U: Complete results
+```
+
 ---
 
 ## 📈 Response Pattern Analysis
