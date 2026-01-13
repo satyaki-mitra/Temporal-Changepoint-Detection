@@ -40,54 +40,63 @@ It is designed to validate, characterize, and compare PHQ-9 time-series before a
 ### EDA Methods → Implementation Mapping
 
 ```mermaid
-flowchart TB
+%%{init: {
+  "flowchart": {
+    "nodeSpacing": 80,
+    "rankSpacing": 90
+  },
+  "themeVariables": {
+    "fontSize": "18px",
+    "nodePadding": 18
+  }
+}}%%
+flowchart LR
 
-%% Core Orchestrator
 A["PHQ9DataAnalyzer\nsrc/eda/analyzer.py"]
 
 %% Data Validation
-A --> B["Data Validation\nMetadata-aware checks"]
+A --> B["Data Validation"]
 B --> B1["EDADataValidator.validate_all()\nsrc/eda/validators.py"]
 B --> B2["MetadataLoader.load()\nsrc/eda/metadata_loader.py"]
 
 %% Summary Statistics
-A --> C["Summary Statistics\nDescriptive statistics"]
+A --> C["Summary Statistics"]
 C --> C1["get_summary_statistics()\nsrc/eda/analyzer.py"]
 C --> K["EDA Constants\nconfig/eda_constants.py"]
 
 %% Clustering
-A --> D["Clustering\nKMeans / Temporal-aware"]
+A --> D["Clustering"]
 D --> D1["ClusteringEngine.fit_kmeans()\nsrc/eda/clustering.py"]
 D --> D2["TemporalClustering.fit()\nsrc/eda/clustering.py"]
 D --> K
 
 %% Cluster Evaluation
-A --> E["Cluster Evaluation\nSilhouette and Inertia"]
+A --> E["Cluster Evaluation"]
 E --> E1["OptimalClusterSelector.elbow_method()\nsrc/eda/clustering.py"]
 E --> E2["OptimalClusterSelector.silhouette_method()\nsrc/eda/clustering.py"]
 E --> K
 
-%% Response Pattern Analysis
-A --> F["Response Pattern Analysis\nTrajectory slope and improvement"]
+%% Response Patterns
+A --> F["Response Pattern Analysis"]
 F --> F1["ResponsePatternAnalyzer.analyze_all_patients()\nsrc/eda/response_patterns.py"]
 F --> K
 
 %% Plateau Detection
-F --> G["Plateau Detection\nVariance and slope windows"]
+F --> G["Plateau Detection"]
 G --> G1["_detect_plateau()\nsrc/eda/response_patterns.py"]
 
 %% Relapse Detection
-A --> H["Relapse Detection\nThresholded score increases"]
+A --> H["Relapse Detection"]
 H --> H1["RelapseDetector.detect_relapses()\nsrc/eda/response_patterns.py"]
 H --> K
 
 %% Visualization
-A --> I["Visualization\nMulti-view plotting"]
+A --> I["Visualization"]
 I --> I1["VisualizationGenerator\nsrc/eda/visualizations.py"]
 I --> K
 
 %% Distribution Comparison
-A --> J["Distribution Comparison\nWeighted composite scoring"]
+A --> J["Distribution Comparison"]
 J --> J1["DistributionComparator.compare_datasets()\nsrc/eda/distribution_comparator.py"]
 J --> K
 ```
