@@ -122,9 +122,10 @@ class EDADataValidator:
         """
         scores                           = data.values.flatten()
         scores                           = scores[~np.isnan(scores)]
-        z_scores                         = np.abs(stats.zscore(scores))
+        z_scores                         = np.abs(stats.zscore(scores, nan_policy = 'omit'))
+        z_scores                         = z_scores[~np.isnan(z_scores)]
         outliers                         = np.sum(z_scores > eda_constants_instance.OUTLIER_Z_SCORE_THRESHOLD)
-        outlier_rate                     = float(outliers / len(scores))
+        outlier_rate                     = float(outliers / len(z_scores)) if (len(z_scores) > 0) else 0.0
         
         validation['checks']['outliers'] = {'count' : int(outliers),
                                             'rate'  : outlier_rate,
@@ -207,7 +208,7 @@ def validate_clustering_results(labels: np.ndarray, data: pd.DataFrame, n_cluste
         
         validation['checks']['imbalance'] = imbalance
         
-        if (imbalance > (1.0 / eda_constants_instance.MAX_CLUSTER_SIZE_IMBALANCE)):
+        if ((min_size / max_size) < (1.0 - eda_constants_instance.MAX_CLUSTER_SIZE_IMBALANCE)):
             validation['warnings'].append(f"Cluster size imbalance: {imbalance:.1f}x")
     
     return validation

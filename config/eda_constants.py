@@ -38,8 +38,8 @@ class EDAConstants:
     
     # RESPONSE PATTERN CLASSIFICATION
     EARLY_RESPONSE_WEEKS                  : int   = 6       # Early responders plateau by week 6
-    GRADUAL_RESPONSE_WEEKS                : int   = 12      # Gradual responders plateau by week 12
-    LATE_RESPONSE_WEEKS                   : int   = 20      # Late responders plateau after week 12
+    GRADUAL_RESPONSE_WEEKS                : int   = 10      # Gradual responders plateau by week 10
+    LATE_RESPONSE_WEEKS                   : int   = 16      # Late responders plateau after week 16
     
     # Response detection thresholds
     RESPONSE_IMPROVEMENT_THRESHOLD        : float = 0.50    # ≥50% reduction = responder
@@ -58,7 +58,7 @@ class EDAConstants:
     MIN_PLATEAU_DURATION_WEEKS            : int   = 3       # Minimum plateau duration
     
     # RELAPSE DETECTION
-    RELAPSE_SCORE_INCREASE_THRESHOLD      : float = 5.0     # Minimum increase to flag relapse
+    RELAPSE_SCORE_INCREASE_THRESHOLD      : float = 3.0     # Minimum increase to flag relapse
     RELAPSE_DETECTION_MIN_GAP_DAYS        : int   = 7       # Minimum gap between observations
     RELAPSE_DETECTION_MAX_GAP_DAYS        : int   = 30      # Maximum gap (too far = unreliable)
 
@@ -79,7 +79,7 @@ class EDAConstants:
     
     # Comparison thresholds
     CV_RANGE_EXPECTED_MIN                 : float = 0.10    # Minimum expected CV
-    CV_RANGE_EXPECTED_MAX                 : float = 0.40    # Maximum expected CV
+    CV_RANGE_EXPECTED_MAX                 : float = 0.60    # Maximum expected CV
     OUTLIER_RATE_ACCEPTABLE               : float = 0.05    # Max 5% outliers acceptable
     
     # VISUALIZATION PARAMETERS

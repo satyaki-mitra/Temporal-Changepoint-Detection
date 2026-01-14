@@ -4,6 +4,7 @@ from typing import List
 from typing import Optional
 from dataclasses import field
 from dataclasses import dataclass
+from numpy.random import SeedSequence
 from config.clinical_constants import clinical_constants_instance
 from config.clinical_constants import RESPONSE_PATTERN_PROBABILITIES
 
@@ -50,13 +51,14 @@ class PatientTrajectory:
     recovery_rate       : float
     noise_std           : float
     ar_coefficient      : float
-    last_score          : Optional[float] = None
-    last_day            : Optional[int]   = None
-    relapse_history     : List[int]       = field(default_factory = list)
-    treatment_start_day : int             = 1
-    response_pattern    : str             = 'gradual_responder'
-    plateau_start_day   : Optional[int]   = None
-    in_plateau_phase    : bool            = False
+    rng                 : np.random.Generator
+    last_score          : Optional[float]     = None
+    last_day            : Optional[int]       = None
+    relapse_history     : List[int]           = field(default_factory = list)
+    treatment_start_day : int                 = 1
+    response_pattern    : str                 = 'gradual_responder'
+    plateau_start_day   : Optional[int]       = None
+    in_plateau_phase    : bool                = False
 
 
     def __post_init__(self):
@@ -67,7 +69,7 @@ class PatientTrajectory:
             raise ValueError(f"Baseline {self.baseline} outside valid PHQ-9 range [{clinical_constants_instance.PHQ9_MIN_SCORE}, {clinical_constants_instance.PHQ9_MAX_SCORE}]")
 
         if not (clinical_constants_instance.AR_COEFFICIENT_MIN <= self.ar_coefficient <= clinical_constants_instance.AR_COEFFICIENT_MAX):
-            raise ValueError(f"AR coefficient {self.ar_coefficient} outside realistic range [{clinical_constants_instance.AR_COEFFICIENT_MIN}, {clinical_constants_instance.AR_COEFFICIENT_MAX}]. Literature: Kroenke et al. (2001) test-retest r={PHQ9_TEST_RETEST_RELIABILITY}")
+            raise ValueError(f"AR coefficient {self.ar_coefficient} outside realistic range [{clinical_constants_instance.AR_COEFFICIENT_MIN}, {clinical_constants_instance.AR_COEFFICIENT_MAX}]. Literature: Kroenke et al. (2001) test-retest r={clinical_constants_instance.PHQ9_TEST_RETEST_RELIABILITY}")
 
         if (self.noise_std < 0):
             raise ValueError(f"noise_std must be non-negative, got {self.noise_std}")
@@ -234,16 +236,11 @@ class AR1Model:
 
     This formulation handles irregular observation gaps, incorporates response pattern heterogeneity and plateau logic
     """
-    def __init__(self, random_seed: Optional[int] = None):
+    def __init__(self):
         """
-        Initialize AR(1) model with optional random seed
-        
-        Arguments:
-        ----------
-            random_seed { int } : Optional random seed for reproducibility
+        Initialize AR(1) model        
         """
-        if random_seed is not None:
-            np.random.seed(random_seed)
+        pass
 
 
     def generate_score(self, trajectory: PatientTrajectory, day: int, relapse_probability: float = 0.10, relapse_magnitude_mean: float = 3.5, 
@@ -251,7 +248,7 @@ class AR1Model:
         """
         Generate PHQ-9 score for a specific day using a gap-aware AR(1) process:
 
-        - This method is stateful and updates trajectory.last_score and trajectory.last_day automatically via trajectory.update_last_observation()
+        - This method is trajectory-stateful (state stored in PatientTrajectory)
         - Checks and enters plateau phase automatically
         - Reduces noise during plateau (symptom stabilization)
         - Soft boundary reflection to prevent artificial concentration at 0/27
@@ -294,29 +291,33 @@ class AR1Model:
 
         # Measurement noise (reduced during plateau)
         effective_noise = trajectory.get_effective_noise(day, enable_plateau = enable_plateau)
-        score          += np.random.normal(0, effective_noise)
+        score          += trajectory.rng.normal(0, effective_noise)
 
         # Relapse event with configurable distribution
-        if (np.random.random() < relapse_probability):
+        if (trajectory.rng.random() < relapse_probability):
             if (relapse_distribution == 'exponential'):
-                magnitude = np.random.exponential(scale = relapse_magnitude_mean)
+                magnitude = trajectory.rng.exponential(scale = relapse_magnitude_mean)
             
             elif (relapse_distribution == 'gamma'):
-                magnitude = np.random.gamma(shape = clinical_constants_instance.RELAPSE_MAGNITUDE_GAMMA_SHAPE, 
-                                            scale = relapse_magnitude_mean / clinical_constants_instance.RELAPSE_MAGNITUDE_GAMMA_SHAPE,
-                                           )
+                magnitude = trajectory.rng.gamma(shape = clinical_constants_instance.RELAPSE_MAGNITUDE_GAMMA_SHAPE, 
+                                                 scale = relapse_magnitude_mean / clinical_constants_instance.RELAPSE_MAGNITUDE_GAMMA_SHAPE,
+                                                )
             
             elif (relapse_distribution == 'lognormal'):
                 sigma     = clinical_constants_instance.RELAPSE_MAGNITUDE_LOGNORMAL_SIGMA   
                 mu        = np.log(relapse_magnitude_mean) - (sigma**2 / 2)
-                magnitude = np.random.lognormal(mean  = mu, 
-                                                sigma = sigma,
-                                               )
+                magnitude = trajectory.rng.lognormal(mean  = mu, 
+                                                     sigma = sigma,
+                                                    )
             
             else:
-                magnitude = np.random.exponential(scale = relapse_magnitude_mean)
+                magnitude = trajectory.rng.exponential(scale = relapse_magnitude_mean)
             
-            score += magnitude
+            remaining_capacity = clinical_constants_instance.PHQ9_MAX_SCORE - score
+            scaled_magnitude   = magnitude * (remaining_capacity / clinical_constants_instance.PHQ9_MAX_SCORE)
+
+            score             += scaled_magnitude
+
             trajectory.add_relapse(day)
 
         # Soft boundary reflection before hard clipping
@@ -354,25 +355,22 @@ class AR1Model:
 
 
 # Convenience functions
-def assign_response_pattern(random_state: Optional[np.random.RandomState] = None) -> str:
+def assign_response_pattern(rng: np.random.Generator) -> str:
     """
     Assign response pattern based on clinical probabilities
     
     Arguments:
     ----------
-        random_state { np.random.RandomState } : Optional random state for reproducibility
+        rng { np.random.Generator } : Random Number Generator instance 
     
     Returns:
     --------
-                      { str }                  : Response pattern ('early_responder', 'gradual_responder', 'late_responder', 'non_responder')
+              { str }               : Response pattern ('early_responder', 'gradual_responder', 'late_responder', 'non_responder')
     """
-    if random_state is None:
-        random_state = np.random
-
     patterns = list(RESPONSE_PATTERN_PROBABILITIES.keys())
     probs    = list(RESPONSE_PATTERN_PROBABILITIES.values())
 
-    return random_state.choice(patterns, p=probs)
+    return rng.choice(patterns, p = probs)
 
 
 def adjust_recovery_rate_for_pattern(base_rate: float, pattern: str) -> float:
@@ -420,22 +418,24 @@ def initialize_patient_trajectories(n_patients: int, baseline_mean: float, basel
     """
     Initialize trajectories for all patients in the study: assigns heterogeneous response patterns (early/gradual/late/non-responders)
     """
-    if random_seed is not None:
-        np.random.seed(random_seed)
-
-    random_state = np.random.RandomState(random_seed)
     trajectories = dict()
 
+    # Initialize SeedSequence
+    ss           = SeedSequence(random_seed)
+    child_seeds  = ss.spawn(n_patients)
+
     for patient_id in range(1, n_patients + 1):
+        patient_rng  = np.random.default_rng(child_seeds[patient_id - 1])
+        
         # Sample baseline with reflection-based clipping (NEW)
-        raw_baseline = np.random.normal(baseline_mean, baseline_std)
+        raw_baseline = patient_rng.normal(baseline_mean, baseline_std)
         
         # Symmetric reflection at boundaries
         if (raw_baseline < clinical_constants_instance.PHQ9_MIN_SCORE):
-            baseline = PHQ9_MIN_SCORE + abs(raw_baseline - clinical_constants_instance.PHQ9_MIN_SCORE) * clinical_constants_instance.BOUNDARY_REFLECTION_FACTOR
+            baseline = clinical_constants_instance.PHQ9_MIN_SCORE + abs(raw_baseline - clinical_constants_instance.PHQ9_MIN_SCORE) * clinical_constants_instance.BOUNDARY_REFLECTION_FACTOR
 
         elif (raw_baseline > clinical_constants_instance.PHQ9_MAX_SCORE):
-            baseline = PHQ9_MAX_SCORE - (raw_baseline - clinical_constants_instance.PHQ9_MAX_SCORE) * clinical_constants_instance.BOUNDARY_REFLECTION_FACTOR
+            baseline = clinical_constants_instance.PHQ9_MAX_SCORE - (raw_baseline - clinical_constants_instance.PHQ9_MAX_SCORE) * clinical_constants_instance.BOUNDARY_REFLECTION_FACTOR
 
         else:
             # Within bounds: soft clipping to preserve mean
@@ -446,15 +446,15 @@ def initialize_patient_trajectories(n_patients: int, baseline_mean: float, basel
 
         # Assign response pattern
         if enable_response_patterns:
-            response_pattern = assign_response_pattern(random_state)
+            response_pattern = assign_response_pattern(patient_rng)
 
         else:
             response_pattern = 'gradual_responder'
 
         # Base recovery rate
-        base_recovery_rate = np.random.normal(loc   = recovery_rate_mean, 
-                                              scale = recovery_rate_std,
-                                             )
+        base_recovery_rate = patient_rng.normal(loc   = recovery_rate_mean, 
+                                                scale = recovery_rate_std,
+                                               )
 
         # Adjust for response pattern
         if enable_response_patterns:
@@ -464,13 +464,13 @@ def initialize_patient_trajectories(n_patients: int, baseline_mean: float, basel
             recovery_rate = base_recovery_rate
 
         # Individual noise (gamma distribution for positive skew)
-        individual_noise         = np.clip(a     = np.random.gamma(shape = 4, scale = noise_std / 4),
+        individual_noise         = np.clip(a     = patient_rng.gamma(shape = 4, scale = noise_std / 4),
                                            a_min = 1.0,
                                            a_max = 4.0,
                                           )
 
         # Individual AR coefficient
-        ar_coef                  = np.clip(a     = np.random.normal(ar_coefficient, clinical_constants_instance.AR_COEFFICIENT_INDIVIDUAL_STD),
+        ar_coef                  = np.clip(a     = patient_rng.normal(ar_coefficient, clinical_constants_instance.AR_COEFFICIENT_INDIVIDUAL_STD),
                                            a_min = clinical_constants_instance.AR_COEFFICIENT_MIN,
                                            a_max = clinical_constants_instance.AR_COEFFICIENT_MAX,
                                           )
@@ -480,6 +480,7 @@ def initialize_patient_trajectories(n_patients: int, baseline_mean: float, basel
                                                      noise_std        = individual_noise,
                                                      ar_coefficient   = ar_coef,
                                                      response_pattern = response_pattern,
+                                                     rng              = patient_rng,
                                                     )
 
     return trajectories

@@ -16,8 +16,6 @@ class PenaltyTuner:
     ----------
     - Killick et al. (2012): Optimal detection of changepoints
     - Truong et al. (2020): Selective review of offline change point methods
-
-    This class is intentionally algorithm-specific (PELT-only)
     """
     def __init__(self, cost_model: str = 'l1', min_size: int = 5, jump: int = 1):
         """
@@ -66,7 +64,7 @@ class PenaltyTuner:
                 algo.fit(signal)
                 change_points = algo.predict(pen = penalty)
 
-                n_cps         = len(change_points) - 1
+                n_cps         = max(len(change_points) - 1, 0)
 
                 bic           = self._calculate_bic(signal        = signal,
                                                     change_points = change_points,
@@ -103,28 +101,38 @@ class PenaltyTuner:
     def _calculate_bic(self, signal: np.ndarray, change_points: List[int]) -> float:
         """
         Calculate Bayesian Information Criterion
+
+        BIC = n * log(σ²) + p * log(n)
+        - where p = 2 * n_segments (each segment has mean + variance)
         """
         n              = len(signal)
-        K              = max(len(change_points) - 1, 0)
+    
+        # Ensure boundaries start at 0 and end at n exactly once
+        boundaries     = [0] + [cp for cp in change_points if ((cp != 0) and (cp != n))]
+        boundaries.append(n)
+
+        # p = 2 * n_segments (not just K)
+        n_segments     = len(boundaries) - 1
+
+        # Each segment: mean + variance
+        p              = 2 * n_segments 
 
         total_residual = 0.0
-        boundaries     = [0] + change_points
 
-        for i in range(len(boundaries) - 1):
-            start, end = boundaries[i], boundaries[i + 1]
-            segment    = signal[start:end]
-
+        for start, end in zip(boundaries[:-1], boundaries[1:]):
+            segment = signal[start:end]
+            
             if (len(segment) < 2):
                 continue
 
             mean            = np.mean(segment)
-            residuals       = segment - mean
-            total_residual += np.sum(residuals ** 2)
+            total_residual += np.sum((segment - mean) ** 2)
+        
+        # Calculate BIC Score
+        sigma_squared = max(total_residual / max(n, 1), 1e-10)
+        bic_score     = float(n * np.log(sigma_squared) + p * np.log(n))
 
-        sigma_squared = total_residual / max(n, 1)
-        sigma_squared = max(sigma_squared, 1e-10)
-
-        return float(n * np.log(sigma_squared) + K * np.log(n))
+        return bic_score
 
 
     # Visualization
@@ -147,13 +155,15 @@ class PenaltyTuner:
                     color     = 'red', 
                     linestyle = '--', 
                     linewidth = 2,
+                    label     = f'Optimal = {optimal_penalty:.2f}',
                    )
 
         ax1.set_xscale('log')
         ax1.set_xlabel('Penalty')
         ax1.set_ylabel('BIC')
-        ax1.set_title('BIC vs Penalty')
+        ax1.set_title('BIC vs Penalty (FIXED: p = 2 × n_segments)')
         ax1.grid(True, alpha = 0.3)
+        ax1.legend()
 
         ax2.plot(penalties, 
                  n_changepoints, 

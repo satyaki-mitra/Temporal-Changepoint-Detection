@@ -5,8 +5,9 @@ from typing import Tuple
 from typing import Literal
 from pydantic import Field
 from pydantic import BaseModel
-from pydantic import validator
+from pydantic import ValidationInfo
 from pydantic import model_validator
+from pydantic import field_validator
 from config.clinical_constants import clinical_constants_instance
 
 
@@ -84,7 +85,7 @@ class DataGenerationConfig(BaseModel):
     relapse_probability       : float                                        = Field(default     = clinical_constants_instance.RELAPSE_PROBABILITY_DAILY,
                                                                                      ge          = 0.05,
                                                                                      le          = 0.20,
-                                                                                     description = "Daily probability of symptom relapse (literature: ~10%)",
+                                                                                     description = "Probability of relapse per observed PHQ-9 measurement",
                                                                                     )
     
     relapse_magnitude_mean    : float                                        = Field(default     = clinical_constants_instance.RELAPSE_MAGNITUDE_MEAN,
@@ -161,9 +162,8 @@ class DataGenerationConfig(BaseModel):
         if (self.maximum_surveys_attempted > self.total_days):
             raise ValueError(f"maximum_surveys_attempted ({self.maximum_surveys_attempted}) exceeds total_days ({self.total_days}). Cannot schedule more surveys than days.")
         
-        # Warn if min surveys might conflict with dropout
-        expected_early_dropouts = int(self.total_patients * self.dropout_rate * 0.3)  
-        min_days_needed         = self.min_surveys_attempted * 7  # Assume weekly spacing
+        # Warn if min surveys might conflict with dropout: heuristic assuming weekly spacing
+        min_days_needed         = self.min_surveys_attempted * 7  
         
         if (min_days_needed > (self.total_days * 0.5)):
             warnings.warn(f"min_surveys_attempted ({self.min_surveys_attempted}) may be too high given dropout_rate ({self.dropout_rate:.1%}). Some patients may drop out before completing minimum surveys.")
@@ -171,7 +171,8 @@ class DataGenerationConfig(BaseModel):
         return self
 
 
-    @validator('ar_coefficient')
+    @field_validator('ar_coefficient')
+    @classmethod
     def validate_autocorrelation(cls, v):
         """
         Validate AR coefficient against literature
@@ -184,7 +185,8 @@ class DataGenerationConfig(BaseModel):
         return v
     
 
-    @validator('baseline_mean_score')
+    @field_validator('baseline_mean_score')
+    @classmethod
     def validate_baseline(cls, v):
         """
         Validate baseline severity against clinical trials
@@ -197,39 +199,37 @@ class DataGenerationConfig(BaseModel):
         return v
     
 
-    @validator('recovery_rate_mean')
-    def validate_recovery_rate(cls, v, values):
+    @field_validator('recovery_rate_mean')
+    @classmethod
+    def validate_recovery_rate(cls, v, info: ValidationInfo):
         """
         Validate recovery rate against 12-week STAR*D expectations
-        
-        UPDATED: Uses 12-week (84-day) endpoint for validation, not full study duration
         """
-        baseline          = values.get('baseline_mean_score', clinical_constants_instance.TYPICAL_RCT_BASELINE_MEAN)
-        
-        # Calculate expected score at 12-week endpoint (STAR*D primary outcome)
-        expected_12week   = baseline + (v * clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS)
-        
-        # Allow negative theoretical scores since clipping happens during generation
+        baseline        = info.data.get('baseline_mean_score', clinical_constants_instance.TYPICAL_RCT_BASELINE_MEAN)
+
+        expected_12week = baseline + (v * clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS)
+
         if (expected_12week < -5.0):
-            raise ValueError(f"Recovery rate {v:.3f} too aggressive - would result in 12-week score of {expected_12week:.1f}. Even with clipping, this suggests unrealistic improvement. "
+            raise ValueError(f"Recovery rate {v:.3f} too aggressive - would result in 12-week score of {expected_12week:.1f}. "
                              f"Consider recovery_rate_mean in range [-0.08, -0.04]."
                             )
-        
-        # Calculate expected response rate (≥50% reduction from baseline)
-        actual_12week_estimate  = max(0.0, expected_12week)
-        expected_reduction_pct  = (baseline - actual_12week_estimate) / baseline * 100
-        
-        # Validate against STAR*D response rate (47%) with tolerance
-        if not (clinical_constants_instance.EXPECTED_RESPONSE_RATE_LOWER * 100 <= expected_reduction_pct <= clinical_constants_instance.EXPECTED_RESPONSE_RATE_UPPER * 100):
-            warnings.warn(f"Expected 12-week symptom reduction {expected_reduction_pct:.1f}% outside typical range [{clinical_constants_instance.EXPECTED_RESPONSE_RATE_LOWER*100:.0f}-{clinical_constants_instance.EXPECTED_RESPONSE_RATE_UPPER*100:.0f}%] "
-                          f"for antidepressant trials. Theoretical 12-week score: {expected_12week:.1f} (clipped to {actual_12week_estimate:.1f}). "
-                          f"Reference: Rush et al. (2006) STAR*D - {clinical_constants_instance.STARD_RESPONSE_RATE:.0%} response rate at {clinical_constants_instance.STARD_PRIMARY_ENDPOINT_WEEKS} weeks"
-                         )
-        
-        return v
-    
 
-    @validator('noise_std')
+        actual_12week_estimate = max(0.0, expected_12week)
+        expected_reduction_pct = (baseline - actual_12week_estimate) / baseline * 100
+
+        if not (clinical_constants_instance.EXPECTED_RESPONSE_RATE_LOWER * 100 <= expected_reduction_pct <= clinical_constants_instance.EXPECTED_RESPONSE_RATE_UPPER * 100):
+            warnings.warn(f"Expected 12-week symptom reduction {expected_reduction_pct:.1f}% outside typical range "
+                          f"[{clinical_constants_instance.EXPECTED_RESPONSE_RATE_LOWER*100:.0f}-"
+                          f"{clinical_constants_instance.EXPECTED_RESPONSE_RATE_UPPER*100:.0f}%]. "
+                          f"Theoretical 12-week score: {expected_12week:.1f}. "
+                          f"Reference: Rush et al. (2006) STAR*D."
+                         )
+
+        return v
+        
+
+    @field_validator('noise_std')
+    @classmethod
     def validate_noise(cls, v):
         """
         Validate noise level against MCID
@@ -242,7 +242,8 @@ class DataGenerationConfig(BaseModel):
         return v
     
 
-    @validator('dropout_rate')
+    @field_validator('dropout_rate')
+    @classmethod
     def validate_dropout(cls, v):
         """
         Validate dropout rate against STAR*D and real-world studies
@@ -315,14 +316,14 @@ def validate_against_literature(config: DataGenerationConfig) -> dict:
     
     #  Baseline severity Check
     if not (clinical_constants_instance.BASELINE_VALIDATION_LOWER <= config.baseline_mean_score <= clinical_constants_instance.BASELINE_VALIDATION_UPPER):
-        validation['warnings'].append(f"⚠️  Baseline mean ({config.baseline_mean_score:.1f}) outside typical range [{clinical_constants_instance.BASELINE_VALIDATION_LOWER}-{clinical_constants_instance.BASELINE_VALIDATION_UPPER}] for moderate-severe depression trials.")
+        validation['warnings'].append(f"Baseline mean ({config.baseline_mean_score:.1f}) outside typical range [{clinical_constants_instance.BASELINE_VALIDATION_LOWER}-{clinical_constants_instance.BASELINE_VALIDATION_UPPER}] for moderate-severe depression trials.")
         validation['valid'] = False
     
     validation['references']['baseline'] = (f"Kroenke et al. (2001): PHQ-9 ≥15 indicates moderately severe depression. Typical RCT enrollment: PHQ-9 {clinical_constants_instance.TYPICAL_RCT_BASELINE_MEAN-1}-{clinical_constants_instance.TYPICAL_RCT_BASELINE_MEAN+1}")
     
     # Autocorrelation Check
     if not (clinical_constants_instance.AR_COEFFICIENT_MIN + 0.1 <= config.ar_coefficient <= clinical_constants_instance.AR_COEFFICIENT_MAX - 0.05):
-        validation['warnings'].append(f"⚠️  AR coefficient ({config.ar_coefficient:.2f}) outside optimal range [{clinical_constants_instance.AR_COEFFICIENT_MIN+0.1:.1f}-{clinical_constants_instance.AR_COEFFICIENT_MAX-0.05:.2f}] for depression symptom stability.")
+        validation['warnings'].append(f"AR coefficient ({config.ar_coefficient:.2f}) outside optimal range [{clinical_constants_instance.AR_COEFFICIENT_MIN+0.1:.1f}-{clinical_constants_instance.AR_COEFFICIENT_MAX-0.05:.2f}] for depression symptom stability.")
     
     validation['references']['autocorrelation'] = (f"Kroenke et al. (2001): PHQ-9 test-retest reliability r={clinical_constants_instance.PHQ9_TEST_RETEST_RELIABILITY} (2-day interval)")
     
@@ -331,19 +332,19 @@ def validate_against_literature(config: DataGenerationConfig) -> dict:
     reduction_pct         = ((config.baseline_mean_score - max(0, expected_12week_score)) / config.baseline_mean_score * 100)
     
     if not (clinical_constants_instance.EXPECTED_RESPONSE_RATE_LOWER * 100 <= reduction_pct <= clinical_constants_instance.EXPECTED_RESPONSE_RATE_UPPER * 100):
-        validation['warnings'].append(f"⚠️  Expected 12-week reduction ({reduction_pct:.1f}%) outside typical response rate [{clinical_constants_instance.EXPECTED_RESPONSE_RATE_LOWER*100:.0f}-{clinical_constants_instance.EXPECTED_RESPONSE_RATE_UPPER*100:.0f}%] for antidepressant trials.")
+        validation['warnings'].append(f"Expected 12-week reduction ({reduction_pct:.1f}%) outside typical response rate [{clinical_constants_instance.EXPECTED_RESPONSE_RATE_LOWER*100:.0f}-{clinical_constants_instance.EXPECTED_RESPONSE_RATE_UPPER*100:.0f}%] for antidepressant trials.")
     
     validation['references']['response_rate'] = (f"Rush et al. (2006): STAR*D Level 1 showed {clinical_constants_instance.STARD_RESPONSE_RATE:.0%} response rate (≥50% symptom reduction) after {clinical_constants_instance.STARD_PRIMARY_ENDPOINT_WEEKS} weeks")
     
     # Noise level (MCID) Check
     if ((config.noise_std < clinical_constants_instance.MEASUREMENT_NOISE_MIN + 0.5) or (config.noise_std > clinical_constants_instance.MEASUREMENT_NOISE_MAX - 0.5)):
-        validation['warnings'].append(f"⚠️  Noise std ({config.noise_std:.1f}) should be {clinical_constants_instance.MEASUREMENT_NOISE_MIN+0.5:.1f}-{clinical_constants_instance.MEASUREMENT_NOISE_MAX-0.5:.1f} points to reflect realistic day-to-day variation.")
+        validation['warnings'].append(f"Noise std ({config.noise_std:.1f}) should be {clinical_constants_instance.MEASUREMENT_NOISE_MIN+0.5:.1f}-{clinical_constants_instance.MEASUREMENT_NOISE_MAX-0.5:.1f} points to reflect realistic day-to-day variation.")
     
     validation['references']['mcid'] = (f"Löwe et al. (2004): Minimal clinically important difference approximately {clinical_constants_instance.PHQ9_MCID} points on PHQ-9. Daily noise should be smaller.")
     
     # Dropout rate Check
     if not (clinical_constants_instance.DROPOUT_RATE_LOWER <= config.dropout_rate <= clinical_constants_instance.DROPOUT_RATE_UPPER):
-        validation['warnings'].append(f"⚠️  Dropout rate ({config.dropout_rate:.2%}) outside typical range [{clinical_constants_instance.DROPOUT_RATE_LOWER:.0%}-{clinical_constants_instance.DROPOUT_RATE_UPPER:.0%}] for depression trials.")
+        validation['warnings'].append(f"Dropout rate ({config.dropout_rate:.2%}) outside typical range [{clinical_constants_instance.DROPOUT_RATE_LOWER:.0%}-{clinical_constants_instance.DROPOUT_RATE_UPPER:.0%}] for depression trials.")
     
     validation['references']['dropout'] = (f"Rush et al. (2006): STAR*D Level 1 dropout rate = {clinical_constants_instance.STARD_DROPOUT_RATE:.0%}. Real-world studies: 18-30% (Fernandez et al., 2015)")
     

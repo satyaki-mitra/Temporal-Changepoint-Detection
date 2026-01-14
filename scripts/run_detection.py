@@ -1,11 +1,15 @@
 # Dependencies
 import sys
+import json
+import shutil
 import argparse
 from pathlib import Path
 from datetime import datetime
 
+
 # Ensure project root on path
-sys.path.insert(0, str(Path(__file__).parent.parent))
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.utils.logging_util import setup_logger
 from src.utils.logging_util import log_section_header
@@ -17,197 +21,200 @@ from src.detection.detector import ChangePointDetectionOrchestrator
 
 # CLI Argument Parsing
 def parse_arguments():
-    """
-    Parse command-line arguments: 
-    
-    - CLI arguments override configuration defaults selectively
-    """
     parser = argparse.ArgumentParser(description     = "PHQ-9 Change Point Detection (PELT / BOCPD)",
                                      formatter_class = argparse.ArgumentDefaultsHelpFormatter,
                                     )
 
-    # Execution control
-    parser.add_argument('--execution-mode',
-                        choices = ['single', 'compare', 'ensemble'],
-                        default = None,
-                        help    = "Execution mode"
-                       )
-
-    parser.add_argument('--detectors',
-                        nargs   = '+',
-                        choices = ['pelt', 'bocpd'],
-                        default = None,
-                        help    = "Detectors to run (subset allowed)"
-                       )
+    # Execution
+    parser.add_argument("--execution-mode", choices = ["single", "compare", "ensemble"], default = None)
+    parser.add_argument("--detectors", nargs="+", choices = ["pelt", "bocpd"], default = None)
 
     # Data
-    parser.add_argument('--data',
-                        type    = Path,
-                        default = None,
-                        help    = "Path to PHQ-9 data CSV"
-                       )
+    parser.add_argument("--data", type = Path, default = None)
 
-    # PELT parameters
-    parser.add_argument('--penalty', type = float, default = None)
-    parser.add_argument('--auto-tune-penalty', action = 'store_true')
-    parser.add_argument('--cost-model', choices = ['l1', 'l2', 'rbf', 'ar'], default = None)
-    parser.add_argument('--min-size', type = int, default = None)
+    # PELT
+    parser.add_argument("--penalty", type = float, default = None)
+    parser.add_argument("--auto-tune-penalty", action = "store_true")
+    parser.add_argument("--cost-model", choices = ["l1", "l2", "rbf", "ar"], default = None)
+    parser.add_argument("--min-size", type = int, default = None)
 
-    # BOCPD parameters (tuning only)
-    parser.add_argument('--hazard-tuning-method', choices = ['heuristic', 'predictive_ll'], default = None, help = "BOCPD hazard tuning method")
-
-    parser.add_argument('--posterior-threshold', type = float, default = None)
+    # BOCPD
+    parser.add_argument("--hazard-tuning-method", choices = ["heuristic", "predictive_ll"], default = None)
+    parser.add_argument("--posterior-threshold", type = float, default = None)
 
     # Statistical testing
-    parser.add_argument('--alpha', type = float, default = None)
-    parser.add_argument('--correction', choices = ['bonferroni', 'fdr_bh', 'none'], default = None)
+    parser.add_argument("--alpha", type = float, default = None)
+    parser.add_argument("--correction", choices = ["bonferroni", "fdr_bh", "none"], default = None)
 
-    # Output & logging
-    parser.add_argument('--output-dir', type = Path, default = None)
-    parser.add_argument('--log-level', choices = ['DEBUG', 'INFO', 'WARNING', 'ERROR'], default = 'INFO')
+    # Output
+    parser.add_argument("--output-dir", type = Path, default = None)
+    parser.add_argument("--log-level", choices = ["DEBUG", "INFO", "WARNING", "ERROR"], default = "INFO")
 
     return parser.parse_args()
 
 
-# Main Entry Point
+# Helpers
+def dump_json(obj, path: Path):
+    path.parent.mkdir(parents = True, exist_ok = True)
+
+    with open(path, "w") as f:
+        json.dump(obj     = obj,
+                  fp      = f,
+                  indent  = 4,
+                  default = str,
+                 )
+
+
+def promote_best_model(best_model_id: str, all_results: dict, base_dir: Path, logger):
+    """
+    Promote best model artifacts into best_model/ directory
+    """
+    best_dir = base_dir / "best_model"
+    best_dir.mkdir(parents  = True, 
+                   exist_ok = True,
+                  )
+
+    result   = all_results[best_model_id]
+
+    logger.info(f"Promoting best model → {best_model_id}")
+
+    # Canonical result
+    dump_json(result, best_dir / "model_result.json")
+
+    # Copy plots related to best model
+    plots_dir = base_dir / "plots"
+
+    if plots_dir.exists():
+        for p in plots_dir.glob(f"*{best_model_id}*"):
+            shutil.copy(p, best_dir / p.name)
+
+    # Metadata
+    metadata = {"best_model_id"  : best_model_id,
+                "method"         : result.get("method"),
+                "n_changepoints" : result.get("n_changepoints"),
+                "timestamp"      : datetime.now().isoformat(),
+               }
+
+    dump_json(metadata, best_dir / "metadata.json")
+
+
+# Main
 def main():
-    args        = parse_arguments()
+    args     = parse_arguments()
 
-    # Build detection configuration
-    try:
-        config_dict = ChangePointDetectionConfig().model_dump()
-    
-    except AttributeError:
-        config_dict = ChangePointDetectionConfig().dict()
+    # Base config
+    base_cfg = ChangePointDetectionConfig().model_dump()
 
-    # Execution control
+    # Execution
     if args.execution_mode:
-        config_dict['execution_mode'] = args.execution_mode
+        base_cfg["execution_mode"] = args.execution_mode
 
     if args.detectors:
-        config_dict['detectors'] = args.detectors
+        base_cfg["detectors"] = args.detectors
 
     # Data
     if args.data:
-        config_dict['data_path'] = args.data
+        base_cfg["data_path"] = args.data
 
-    # PELT overrides
+    # PELT
     if args.penalty is not None:
-        config_dict['penalty'] = args.penalty
+        base_cfg["penalty"] = args.penalty
 
     if args.auto_tune_penalty:
-        config_dict['auto_tune_penalty'] = True
+        base_cfg["auto_tune_penalty"] = True
 
     if args.cost_model:
-        config_dict['pelt_cost_models'] = [args.cost_model]
+        base_cfg["pelt_cost_models"] = [args.cost_model]
 
     if args.min_size:
-        config_dict['minimum_segment_size'] = args.min_size
+        base_cfg["minimum_segment_size"] = args.min_size
 
-    # BOCPD overrides
+    # BOCPD
     if args.hazard_tuning_method:
-        config_dict['hazard_tuning_method'] = args.hazard_tuning_method
+        base_cfg["hazard_tuning_method"] = args.hazard_tuning_method
 
     if args.posterior_threshold is not None:
-        config_dict['cp_posterior_threshold'] = args.posterior_threshold
+        base_cfg["cp_posterior_threshold"] = args.posterior_threshold
 
     # Statistical testing
     if args.alpha is not None:
-        config_dict['alpha'] = args.alpha
+        base_cfg["alpha"] = args.alpha
 
     if args.correction:
-        config_dict['multiple_testing_correction'] = args.correction
+        base_cfg["multiple_testing_correction"] = args.correction
 
     # Output
     if args.output_dir:
-        config_dict['results_base_directory'] = args.output_dir
+        base_cfg["results_base_directory"] = args.output_dir
 
-    # Reconstruct with validation
-    config = ChangePointDetectionConfig(**config_dict)
+    # Ensemble implies selection
+    if (base_cfg["execution_mode"] == "ensemble"):
+        base_cfg["selection_enabled"] = True
+
+    config = ChangePointDetectionConfig(**base_cfg)
 
     # Logging
-    logger = setup_logger(module_name = 'detection',
+    logger = setup_logger(module_name = "detection",
                           log_level   = args.log_level,
-                          log_dir     = Path('logs'),
+                          log_dir     = Path("logs"),
                          )
 
     log_section_header(logger, "PHQ-9 CHANGE POINT DETECTION")
-    logger.info(f"Start time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    logger.info(f"Start time: {datetime.now().isoformat()}")
 
     logger.info("Configuration Summary:")
-    for section, values in config.get_summary().items():
-        logger.info(f"  {section}: {values}")
+    for k, v in config.get_summary().items():
+        logger.info(f"  {k}: {v}")
 
+    # Run detection
+    orchestrator = ChangePointDetectionOrchestrator(config = config,
+                                                    logger = logger,
+                                                   )
 
-    # Run Pipeline
-    try:
-        orchestrator = ChangePointDetectionOrchestrator(config = config,
-                                                        logger = logger,
-                                                       )
+    logger.info("Running detection pipeline...")
+    results      = orchestrator.run()
 
-        logger.info("Running detection pipeline...")
-        results      = orchestrator.run()
+    # Persist all model outputs (includes:
+    # - tuning results
+    # - statistical tests
+    # - validation summaries
+    # - segments
+    dump_json(obj  = results, 
+              path = config.results_base_directory / "all_model_results.json",
+             )
 
-        # Detection Summary
-        logger.info("\n" + "=" * 80)
-        logger.info("DETECTION SUMMARY")
-        logger.info("=" * 80)
+    # Model selection
+    if config.selection_enabled:
+        log_section_header(logger, "MODEL SELECTION")
 
-        for method, res in results.items():
-            logger.info(f"\nDetector: {method.upper()}")
+        selector_cfg = ModelSelectorConfig.parse_file(config.model_selection_config_path)
 
-            if (method == 'pelt'):
-                logger.info(f"  Change points detected : {res['n_changepoints']}")
-                logger.info(f"  Penalty used           : {res['penalty_used']:.3f}")
-                logger.info(f"  Significant CPs        : "
-                            f"{res['validation']['n_significant']} / {res['validation']['n_changepoints']}"
-                           )
+        selector     = ModelSelector(selector_cfg)
+        selection    = selector.select(results)
 
-            elif( method == 'bocpd'):
-                logger.info(f"  Change points detected : {res['validation']['n_changepoints']}")
-                logger.info(f"  Posterior threshold   : {res['validation']['posterior_threshold']}")
+        dump_json(obj  = selection, 
+                  path = config.results_base_directory / "model_selection.json",
+                 )
 
-                if res.get('hazard_tuning'):
-                    logger.info(f"  Hazard tuning method  : {res['hazard_tuning']['method']}")
-
-
-        # Optional Model Selection
-        if config.selection_enabled:
-            logger.info("\n" + "=" * 80)
-            logger.info("MODEL SELECTION")
-            logger.info("=" * 80)
-
-            selector_config = ModelSelectorConfig.parse_file(config.model_selection_config_path)
-
-            selector        = ModelSelector(config = selector_config)
-            selection       = selector.select(raw_results = results)
-
-            logger.info(f"Best model : {selection['best_model']}")
-            logger.info(f"Ranking    : {selection['ranking']}")
-
-            if selector_config.generate_explanations:
-                logger.info("\nExplanation:")
-                logger.info(selection['explanation'])
+        best_model   = selection.get("best_model")
         
-        else:
-            logger.info("\nModel selection skipped (selection_enabled = False)")
+        logger.info(f"Best model selected: {best_model}")
 
-        logger.info("\nResults directory:")
-        logger.info(f"  {config.results_base_directory}")
+        promote_best_model(best_model_id = best_model,
+                           all_results   = results,
+                           base_dir      = config.results_base_directory,
+                           logger        = logger,
+                          )
+    else:
+        logger.info("Model selection skipped (selection_enabled=False)")
 
-        logger.info("\nDetection completed successfully.")
-        
-        return 0
+    logger.info(f"Results saved at: {config.results_base_directory}")
+    logger.info("Detection completed successfully.")
+    logger.info(f"End time: {datetime.now().isoformat()}")
 
-    except Exception as exc:
-        logger.exception(f"Detection failed: {exc}")
-        
-        return 1
-
-    finally:
-        logger.info(f"End time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    return 0
 
 
-# Script Execution
+# Execution
 if __name__ == "__main__":
     sys.exit(main())

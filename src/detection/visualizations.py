@@ -7,6 +7,7 @@ from typing import List
 from pathlib import Path
 from typing import Optional
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 
 
 class DetectionVisualizer:
@@ -30,7 +31,7 @@ class DetectionVisualizer:
         plt.style.use(style)
 
 
-    def plot_aggregated_cv_with_all_models(self, aggregated_data: pd.Series, model_results: Dict[str, Dict], save_path: Optional[Path] = None,):
+    def plot_aggregated_cv_with_all_models(self, aggregated_data: pd.Series, model_results: Dict[str, Dict], save_path: Optional[Path] = None):
         """
         Plot aggregated CV with change points from all models overlaid
 
@@ -49,6 +50,7 @@ class DetectionVisualizer:
                 color     = "black",
                 linewidth = 2.5,
                 label     = "Aggregated CV",
+                zorder    = 1,
                )
 
         # Overlay CPs from each model
@@ -64,13 +66,14 @@ class DetectionVisualizer:
                            alpha     = 0.8,
                            linewidth = 2,
                            label     = model_id if (i == 0) else None,
+                           zorder    = 2,
                           )
 
-        ax.set_title("Aggregated CV with Change Points (All Models)")
-        ax.set_xlabel("Time Index")
-        ax.set_ylabel("Coefficient of Variation")
-        ax.grid(True, alpha = 0.3)
-        ax.legend(loc = "upper right", fontsize = 9)
+        ax.set_title("Aggregated CV with Change Points (All Models)", fontsize=16, pad=20)
+        ax.set_xlabel("Time Index", fontsize=13)
+        ax.set_ylabel("Coefficient of Variation", fontsize = 13)
+        ax.grid(True, alpha = 0.3, linestyle = ':')
+        ax.legend(loc = "upper right", fontsize = 10, framealpha = 0.9)
 
         plt.tight_layout()
 
@@ -97,12 +100,11 @@ class DetectionVisualizer:
                                  sharex  = True,
                                 )
 
-        axes      = np.atleast_2d(axes)
+        axes      = np.atleast_2d(axes).flatten()
         x         = np.arange(len(aggregated_data))
 
         for idx, (model_id, result) in enumerate(model_results.items()):
-            row, col = divmod(idx, n_cols)
-            ax       = axes[row, col]
+            ax        = axes[idx]
 
             ax.plot(x,
                     aggregated_data.values,
@@ -120,17 +122,25 @@ class DetectionVisualizer:
                            color     = color, 
                            linestyle = linestyle, 
                            alpha     = 0.9,
+                           linewidth = 2,
                           )
 
             n_cps = len(cps)
-            ax.set_title(f"{model_id}  |  CPs={n_cps}", fontsize = 10)
+            
+            # Show validation status
+            validation = result.get('validation', {})
+            is_valid   = validation.get('overall_significant', False)
+            status     = "✓" if is_valid else "✗"
 
-            ax.grid(True, alpha = 0.3)
+            ax.set_title(f"{model_id} {status} | CPs = {n_cps}", fontsize = 11, pad=10)
+
+            ax.grid(True, alpha = 0.3, linestyle = ':')
 
         # Hide unused axes
-        for i in range(n_models, n_rows * n_cols):
-            axes.flat[i].axis("off")
+        for i in range(n_models, len(axes)):
+            axes[i].axis("off")
 
+        fig.suptitle("Model Comparison Grid (✓ = statistically valid)", fontsize = 15, y = 0.995)
         plt.tight_layout()
 
         self._save_or_show(save_path = save_path)
@@ -144,42 +154,157 @@ class DetectionVisualizer:
         - Run-length posterior heatmap
         - Change-point posterior probability
         """
-        fig, axes = plt.subplots(nrows       = 2,
-                                 ncols       = 1,
-                                 figsize     = (16, 10),
-                                 gridspec_kw = {"height_ratios": [3, 1]},
-                                )
+        fig = plt.figure(figsize=(16, 10))
+        gs  = GridSpec(2, 1, height_ratios=[3, 1], hspace=0.3)
 
+        ax1 = fig.add_subplot(gs[0])
+        ax2 = fig.add_subplot(gs[1])
+
+        # Heatmap
         sns.heatmap(run_length_posterior.T,
                     cmap   = "viridis",
-                    ax     = axes[0],
-                    cbar   = True,
+                    ax     = ax1,
+                    cbar_kws = {'label': 'P(run length | data)'},
                    )
 
-        axes[0].set_title("BOCPD Run-Length Posterior")
-        axes[0].set_ylabel("Run Length")
+        ax1.set_title("BOCPD Run-Length Posterior", fontsize=14, pad=15)
+        ax1.set_ylabel("Run Length", fontsize=12)
+        ax1.set_xlabel("")
 
-        axes[1].plot(cp_posterior, color = "blue", linewidth = 2)
+        # CP posterior
+        ax2.plot(cp_posterior, color = "blue", linewidth = 2.5, label='P(change point)')
         
-        axes[1].axhline(posterior_threshold,
-                        color     = "red",
-                        linestyle = "--",
-                        linewidth = 2,
-                        label     = "Posterior Threshold",
-                       )
+        ax2.axhline(posterior_threshold,
+                    color     = "red",
+                    linestyle = "--",
+                    linewidth = 2,
+                    label     = f"Threshold = {posterior_threshold:.2f}",
+                   )
 
-        axes[1].set_title("BOCPD Change-Point Posterior")
-        axes[1].set_xlabel("Time Index")
-        axes[1].legend()
+        # Shade detected regions
+        detected = (cp_posterior >= posterior_threshold)
+        if detected.any():
+            ax2.fill_between(range(len(cp_posterior)),
+                             0, 1,
+                             where = detected,
+                             alpha = 0.2,
+                             color = 'red',
+                             label = 'Detected CPs',
+                            )
+
+        ax2.set_title("BOCPD Change-Point Posterior", fontsize = 14, pad = 15)
+        ax2.set_xlabel("Time Index", fontsize = 12)
+        ax2.set_ylabel("Posterior Probability", fontsize = 12)
+        ax2.set_ylim(-0.05, 1.05)
+        ax2.grid(True, alpha = 0.3, linestyle = ':')
+        ax2.legend(loc = 'upper right', fontsize = 10)
 
         plt.tight_layout()
 
         self._save_or_show(save_path = save_path)
 
 
+    # Diagnostic plots
+    def plot_segment_diagnostics(self, aggregated_data: pd.Series, change_points: List[int], model_id: str, save_path: Optional[Path] = None):
+        """
+        Plot segment-level diagnostics
+
+        Shows:
+        ------
+        - Segment means and variances
+        - Residuals within segments
+        - Segment lengths
+        """
+        fig        = plt.figure(figsize = (16, 12))
+        gs         = GridSpec(3, 1, height_ratios = [2, 1, 1], hspace = 0.3)
+
+        # Prepare segments
+        boundaries = [0] + list(change_points) + [len(aggregated_data)]
+        segments   = []
+
+        for start, end in zip(boundaries[:-1], boundaries[1:]):
+            seg_data = aggregated_data.iloc[start:end]
+            segments.append({'start': start,
+                             'end': end,
+                             'mean': seg_data.mean(),
+                             'std': seg_data.std(),
+                             'length': end - start,
+                           })
+
+        # Plot 1: Signal with segment means
+        ax1 = fig.add_subplot(gs[0])
+        x   = np.arange(len(aggregated_data))
+
+        ax1.plot(x, 
+                 aggregated_data.values, 
+                 'k-', 
+                 alpha     = 0.6, 
+                 linewidth = 1.5, 
+                 label     = 'Signal',
+                )
+
+        for i, seg in enumerate(segments):
+            seg_x = range(seg['start'], seg['end'])
+            ax1.plot(seg_x, 
+                     [seg['mean']] * len(seg_x), 
+                     linewidth = 3, 
+                     label     = f"Seg {i+1} (μ={seg['mean']:.3f})",
+                    )
+
+        for cp in change_points:
+            ax1.axvline(cp, color = 'red', linestyle = '--', alpha = 0.7)
+
+        ax1.set_title(f"Segment Means: {model_id}", fontsize = 14, pad = 15)
+        ax1.set_ylabel("CV Value", fontsize = 12)
+        ax1.grid(True, alpha = 0.3)
+        ax1.legend(loc = 'best', fontsize = 9)
+
+        # Plot 2: Residuals
+        ax2 = fig.add_subplot(gs[1])
+        
+        for seg in segments:
+            seg_data  = aggregated_data.iloc[seg['start']:seg['end']]
+            residuals = seg_data - seg['mean']
+            ax2.scatter(range(seg['start'], seg['end']), residuals, alpha = 0.6, s = 20)
+
+        ax2.axhline(0, color = 'black', linestyle = '-', linewidth = 1)
+        ax2.set_ylabel("Residuals", fontsize = 12)
+        ax2.set_title("Within-Segment Residuals", fontsize = 13)
+        ax2.grid(True, alpha = 0.3)
+
+        # Plot 3: Segment statistics
+        ax3         = fig.add_subplot(gs[2])
+        
+        seg_indices = range(len(segments))
+        seg_lengths = [s['length'] for s in segments]
+        seg_vars    = [s['std']**2 for s in segments]
+
+        ax3_twin    = ax3.twinx()
+
+        ax3.bar(seg_indices, 
+                seg_lengths, 
+                alpha = 0.6, 
+                label = 'Length', 
+                color = 'steelblue',
+               )
+
+        ax3_twin.plot(seg_indices, seg_vars, 'ro-', linewidth = 2, markersize = 8, label = 'Variance')
+
+        ax3.set_xlabel("Segment Index", fontsize = 12)
+        ax3.set_ylabel("Segment Length", fontsize = 12, color = 'steelblue')
+        ax3_twin.set_ylabel("Segment Variance", fontsize = 12, color = 'red')
+        ax3.set_title("Segment Statistics", fontsize = 13)
+        ax3.grid(True, alpha = 0.3)
+
+        plt.tight_layout()
+        self._save_or_show(save_path = save_path)
+
+
     # UTILITY FUNCTION
     def _save_or_show(self, save_path: Optional[Path]):
         if save_path:
+            save_path.parent.mkdir(parents = True, exist_ok = True)
+
             plt.savefig(fname       = save_path,
                         dpi         = self.dpi,
                         bbox_inches = "tight",

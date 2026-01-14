@@ -2,7 +2,6 @@
 import numpy as np
 import pandas as pd
 from typing import List
-from typing import Dict
 from typing import Tuple
 from typing import Literal
 from sklearn.cluster import KMeans
@@ -10,7 +9,6 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import silhouette_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.cluster import AgglomerativeClustering
-from sklearn.metrics import calinski_harabasz_score
 from config.eda_constants import eda_constants_instance
 from sklearn.metrics.pairwise import euclidean_distances
 
@@ -35,8 +33,6 @@ class ClusteringEngine:
         self.imputation_method = imputation_method
         self.standardize       = standardize
         self.random_seed       = random_seed
-         
-        np.random.seed(random_seed)
 
 
     def extract_day_features(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -123,6 +119,7 @@ class ClusteringEngine:
         
         # Fit KMeans
         kmeans     = KMeans(n_clusters   = n_clusters,
+                            init         = 'k-means++',
                             random_state = self.random_seed,
                             n_init       = 10,
                             max_iter     = 500,
@@ -132,8 +129,13 @@ class ClusteringEngine:
         
         # Calculate metrics
         inertia    = kmeans.inertia_
-        silhouette = silhouette_score(X, labels)
-        
+
+        if len(np.unique(labels)) < 2:
+            silhouette = -1.0
+
+        else:
+            silhouette = silhouette_score(X, labels)
+
         return labels, inertia, silhouette
 
     
@@ -159,13 +161,24 @@ class ClusteringEngine:
         X          = self.prepare_data(data = data)
         
         # Fit Agglomerative
-        agg        = AgglomerativeClustering(n_clusters = n_clusters,
-                                             linkage    = linkage,
-                                            )
+        if (linkage == 'ward'):
+            agg = AgglomerativeClustering(n_clusters = n_clusters,
+                                          linkage    = 'ward',
+                                         )
+        else:
+            agg = AgglomerativeClustering(n_clusters = n_clusters,
+                                          linkage    = linkage,
+                                          metric     = 'euclidean',
+                                         )
+
         labels     = agg.fit_predict(X)
         
         # Calculate silhouette
-        silhouette = silhouette_score(X, labels)
+        if (len(np.unique(labels)) < 2):
+            silhouette = -1.0
+
+        else:
+            silhouette = silhouette_score(X, labels)
         
         return labels, silhouette
 
@@ -352,10 +365,9 @@ class OptimalClusterSelector:
                         { tuple }         : (optimal_k, gap_values)
         """
         # Prepare real data
-        features = self.engine.extract_day_features(data=data)
-        X        = features.values
+        X    = self.engine.prepare_data(data = data)
 
-        gaps     = list()
+        gaps = list()
 
         for k in range(1, max_clusters + 1):
             # Cluster real data
@@ -370,7 +382,8 @@ class OptimalClusterSelector:
             ref_wks = list()
 
             for _ in range(n_refs):
-                X_ref = np.random.uniform(X.min(axis = 0), X.max(axis = 0), size = X.shape)
+                rng   = np.random.default_rng(self.engine.random_seed)
+                X_ref = rng.uniform(X.min(axis = 0), X.max(axis = 0), size = X.shape)
 
                 if (k == 1):
                     ref_wk = np.sum((X_ref - X_ref.mean(axis = 0)) ** 2)
@@ -436,7 +449,10 @@ class TemporalClustering:
                      { np.ndarray }            : Cluster labels for each day
         """
         # Prepare data
-        engine             = ClusteringEngine(imputation_method = imputation_method)
+        engine             = ClusteringEngine(imputation_method = imputation_method,
+                                              random_seed       = self.random_seed,
+                                             )
+
         X                  = engine.prepare_data(data = data)
         
         # Calculate score-based distances

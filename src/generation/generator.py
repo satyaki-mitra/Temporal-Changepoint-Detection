@@ -53,8 +53,11 @@ class PHQ9DataGenerator:
                                                  log_dir     = Path('logs')
                                                 )
 
+        # Global RNG for schedules & missingness
+        self.global_rng           = np.random.default_rng(self.config.random_seed)
+
         # Models & state
-        self.ar_model             = AR1Model(random_seed = config.random_seed)
+        self.ar_model             = AR1Model()
 
         # Storages
         self.patient_trajectories = dict()
@@ -64,8 +67,6 @@ class PHQ9DataGenerator:
 
         # Metadata for provenance
         self.generation_metadata  = dict()
-
-        np.random.seed(config.random_seed)
 
         self.logger.info(f"Initialized PHQ9DataGenerator | Patients={config.total_patients}, Study Days={config.total_days}, AR(1)={config.ar_coefficient:.2f}, "
                          f"Relapse Dist={config.relapse_distribution}, Response Patterns={'Enabled' if config.enable_response_patterns else 'Disabled'}"
@@ -143,9 +144,9 @@ class PHQ9DataGenerator:
         for pid in range(1, self.config.total_patients + 1):
             dropout_day = None
 
-            if (np.random.rand() < self.config.dropout_rate):
+            if (self.global_rng.random() < self.config.dropout_rate):
                 # Exponential dropout: most dropouts occur mid-to-late study
-                dropout_day = int(np.random.exponential(scale = self.config.total_days * clinical_constants_instance.DROPOUT_EXPONENTIAL_SCALE_FACTOR) + clinical_constants_instance.DROPOUT_MINIMUM_OFFSET_DAYS)
+                dropout_day = int(self.global_rng.exponential(scale = self.config.total_days * clinical_constants_instance.DROPOUT_EXPONENTIAL_SCALE_FACTOR) + clinical_constants_instance.DROPOUT_MINIMUM_OFFSET_DAYS)
                 dropout_day = min(dropout_day, self.config.total_days)
 
             self.missingness_patterns[pid] = {'dropout_day': dropout_day}
@@ -167,9 +168,9 @@ class PHQ9DataGenerator:
         - Handles cases where available days < min_surveys
         """
         for pid in range(1, self.config.total_patients + 1):
-            n_surveys   = np.random.randint(self.config.min_surveys_attempted,
-                                            self.config.maximum_surveys_attempted + 1,
-                                           )
+            n_surveys   = self.global_rng.integers(self.config.min_surveys_attempted,
+                                                   self.config.maximum_surveys_attempted + 1,
+                                                  )
 
             # Determine last valid day for this patient
             dropout_day = self.missingness_patterns[pid]['dropout_day']
@@ -192,10 +193,10 @@ class PHQ9DataGenerator:
                 continue
 
             # Generate random survey days (irregular spacing)
-            survey_days = np.sort(np.random.choice(np.arange(1, max_day + 1),
-                                                   size    = min(n_surveys, available_days),
-                                                   replace = False,
-                                                  )
+            survey_days = np.sort(self.global_rng.choice(np.arange(1, max_day + 1),
+                                                         size    = min(n_surveys, available_days),
+                                                         replace = False,
+                                                        )
                                  )
 
             self.patient_schedules[pid] = survey_days.tolist()
@@ -236,6 +237,9 @@ class PHQ9DataGenerator:
                                                                            relapse_distribution   = self.config.relapse_distribution,
                                                                            enable_plateau         = self.config.enable_plateau_logic,
                                                                           )
+                # MCAR missingness
+                if (trajectory.rng.random() < self.config.mcar_missingness_rate):
+                    continue
 
                 data[f"Patient_{pid}"][idx] = score
 
@@ -326,6 +330,9 @@ class PHQ9DataGenerator:
                                                           autocorr_weight_halflife = self.config.autocorr_weight_halflife,
                                                           max_autocorr_window_days = self.config.max_autocorr_window_days,
                                                          )
+
+        # Attach latent trajectories for diagnostic validation
+        validator.trajectories            = list(self.patient_trajectories.values())
 
         validation                        = validator.validate_all(data)
 

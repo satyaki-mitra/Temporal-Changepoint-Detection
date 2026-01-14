@@ -35,16 +35,45 @@ class BOCPDDetector:
         self.logger = logger
 
 
-    def detect(self, signal: np.ndarray) -> Dict:
+    def detect(self, signal: np.ndarray, hazard_lambda: Optional[float] = None) -> Dict:
         """
         Run BOCPD on aggregated signal
 
+        Arguments:
+        ----------
+            signal        { np.ndarray } : 1D aggregated statistic (e.g., daily CV)
+
+            hazard_lambda   { float }    : Expected run length (λ)
+
         Returns:
         --------
-            { dict } : Detection + validation outputs
+                    { dict }             : Detection + validation outputs
         """
         T             = len(signal)
-        max_r         = self.config.max_run_length
+
+        if (T < 5):
+            return {'method'                   : 'bocpd',
+                    'algorithm'                : 'BOCPD',
+                    'variant'                  : f"bocpd_{self.config.likelihood_model}",
+                    'hazard_lambda'            : hazard_lambda,
+                    'hazard_rate'              : None,
+                    'hazard_source'            : 'auto' if self.config.auto_tune_hazard else 'fixed',
+                    'hazard_range_used'        : self.config.hazard_range if self.config.auto_tune_hazard else None,
+                    'signal_length'            : int(T),
+                    'max_run_length_used'      : None,
+                    'posterior_smoothing'      : int(self.config.posterior_smoothing),
+                    'cp_posterior'             : None,
+                    'run_length_posterior'     : None,
+                    'change_points'            : [],
+                    'change_points_normalized' : [],
+                    'n_changepoints'           : 0,
+                    'validation'               : {'overall_significant' : False,
+                                                  'rejection_reason'    : f'Signal too short for BOCPD (length={T}, minimum=5)',
+                                                 }
+                   }
+
+        # Get the Run Length       
+        max_r         = min(self.config.max_run_length, T)
 
         # Log-space run-length posterior
         log_R         = np.full((T, max_r), -np.inf)
@@ -53,7 +82,7 @@ class BOCPDDetector:
         cp_posterior  = np.zeros(T)
 
         # Hazard rate
-        hazard_lambda = self.config.hazard_lambda
+        hazard_lambda = hazard_lambda if hazard_lambda is not None else self.config.hazard_lambda
         hazard_rate   = min(1.0 / hazard_lambda, 0.99)
 
         # Empirical Bayes prior
@@ -70,46 +99,65 @@ class BOCPDDetector:
             if (self.logger and (t % step == 0)):
                 self.logger.info(f"BOCPD progress: {t}/{T}")
 
-            valid_r                  = min(t, max_r - 1)
-            x                        = signal[t]
+            valid_r        = min(t, max_r - 1)
+            x              = signal[t]
 
-            pred_var                 = vars_[:valid_r + 1] + 1e-8
-            log_pred                 = (- 0.5 * np.log(2 * np.pi * pred_var) - 0.5 * (x - means[:valid_r + 1]) ** 2 / pred_var)
+            # Compute sufficient statistics before rolling and update means and variances for all active run lengths
+            updated_means  = np.copy(means)
+            updated_vars   = np.copy(vars_)
+            updated_counts = np.copy(counts)
 
-            log_pred                -= np.max(log_pred)
+            # Welford's online update for run lengths [0, valid_r)
+            for r in range(valid_r):
+                n_old             = counts[r]
+                n_new             = n_old + 1
+                
+                delta             = x - means[r]
+                updated_means[r]  = means[r] + delta / n_new
+                
+                delta2            = x - updated_means[r]
+                updated_vars[r]   = (n_old * vars_[r] + delta * delta2) / n_new
+                
+                updated_counts[r] = n_new
 
-            log_growth               = (log_R[t-1, :valid_r] + log_pred[:valid_r] + np.log(1.0 - hazard_rate))
+            # log-space posterior update : predictive variance (adding observation noise)
+            pred_var                = vars_[:valid_r + 1] + 1e-8
 
-            log_cp                   = (np.log(hazard_rate) + np.logaddexp.reduce(log_R[t-1, :valid_r + 1] + log_pred))
+            # Log predictive likelihood
+            log_pred                = (- 0.5 * np.log(2 * np.pi * pred_var) - 0.5 * (x - means[:valid_r + 1]) ** 2 / pred_var)
 
-            log_R[t, 1:valid_r + 1]  = log_growth
-            log_R[t, 0]              = log_cp
-            log_R[t]                -= np.logaddexp.reduce(log_R[t])
+            # Log growth probabilities (no change point)
+            log_growth              = (log_R[t-1, :valid_r] + log_pred[:valid_r] + np.log(1.0 - hazard_rate))
 
-            cp_posterior[t]          = np.exp(log_R[t, 0])
+            # Log change point probability
+            log_cp                  = (np.log(hazard_rate) + np.logaddexp.reduce(log_R[t-1, :valid_r + 1] + log_pred))
 
-            # Update sufficient statistics
-            new_means                = np.roll(means, 1)
-            new_vars                 = np.roll(vars_, 1)
-            new_counts               = np.roll(counts, 1)
+            # Update run-length posterior
+            log_R[t, 1:valid_r + 1] = log_growth
+            log_R[t, 0]             = log_cp
 
-            new_means[0]             = mu0
-            new_vars[0]              = var0
-            new_counts[0]            = 1
+            # Normalize in log-space
+            log_norm                = np.logaddexp.reduce(log_R[t, :valid_r + 1])
+            log_R[t, :valid_r + 1] -= log_norm
 
-            delta                    = x - means[:valid_r]
-            new_means[1:valid_r + 1] = means[:valid_r] + delta / (counts[:valid_r] + 1)
+            # Change point posterior (probability of r = 0)
+            cp_posterior[t]         = np.exp(log_R[t, 0])
 
-            delta2                   = x - new_means[1:valid_r + 1]
-            new_vars[1:valid_r + 1]  = ((counts[:valid_r] * vars_[:valid_r] + delta * delta2) / (counts[:valid_r] + 1))
+            # Roll sufficient statistics after updates
+            means                   = np.roll(updated_means, 1)
+            vars_                   = np.roll(updated_vars, 1)
+            counts                  = np.roll(updated_counts, 1)
 
-            means                    = new_means
-            vars_                    = np.maximum(new_vars, 1e-8)
-            counts                   = new_counts
+            # Reset r = 0 to prior
+            means[0]                = mu0
+            vars_[0]                = var0
+            counts[0]               = 1
+
+            # Ensure numerical stability
+            vars_                   = np.maximum(vars_, 1e-8)
 
         # Optional smoothing
         if (self.config.posterior_smoothing > 1):
-    
             cp_posterior = gaussian_filter1d(cp_posterior,
                                              sigma = self.config.posterior_smoothing,
                                              mode  = 'nearest',
@@ -117,17 +165,22 @@ class BOCPDDetector:
 
         # Validation
         validator  = BOCPDStatisticalValidator(posterior_threshold = self.config.cp_posterior_threshold,
-                                               persistence         = 3,
+                                               persistence         = self.config.bocpd_persistence,
                                               )
                                               
         validation = validator.validate(cp_posterior)
  
         return {'method'               : 'bocpd',
+                'algorithm'            : 'BOCPD',
                 'variant'              : f"bocpd_{self.config.likelihood_model}",
                 'hazard_lambda'        : hazard_lambda,
                 'hazard_rate'          : hazard_rate,
+                'signal_length'        : int(T),
+                'max_run_length_used'  : int(max_r),
+                'posterior_smoothing'  : int(self.config.posterior_smoothing),
                 'cp_posterior'         : cp_posterior,
                 'run_length_posterior' : np.exp(log_R),
+                'change_points'        : validation.get('normalized_positions', []),
                 'n_changepoints'       : validation['n_changepoints'],
                 'validation'           : validation,
                }

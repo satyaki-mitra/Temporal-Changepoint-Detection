@@ -103,6 +103,16 @@ class DataValidator:
                                             validation = validation,
                                            )
 
+        # Latent (noise-free) response validation — diagnostic only
+        if hasattr(self, "trajectories") and (self.trajectories is not None):
+            latent_result                           = self._validate_latent_response_rate(trajectories = self.trajectories)
+            validation["checks"]["latent_response"] = latent_result
+
+            if not latent_result["in_expected_range"]:
+                validation["warnings"].append(f"Latent 12-week response rate {latent_result['latent_response_rate_12week']:.1%} outside expected range {latent_result['expected_range']}. "
+                                              f"This suggests response suppression is NOT due to noise."
+                                             )
+
         self._validate_missingness_decomposed(data       = data, 
                                               validation = validation,
                                              )
@@ -142,6 +152,10 @@ class DataValidator:
     def _validate_autocorrelation(self, data: pd.DataFrame, validation: Dict):
         """
         Validate temporal autocorrelation using patient-level gap-aware lag-1 correlations
+
+        Expected DataFrame format:
+        - Columns : patient identifiers
+        - Index   : string with format '<anything>_<day>', where <day> is an integer day index
         
         Features:
         ---------
@@ -373,6 +387,40 @@ class DataValidator:
         if not in_range:
             validation['warnings'].append(f"12-week response rate {rate_12week:.1%} outside expected range {self.expected_response_rate_range}. STAR*D Level-1 ≈ 47%. Final response rate: {rate_final:.1%}")
 
+
+    def _validate_latent_response_rate(self, trajectories):
+        """
+        Validate latent (noise-free) 12-week clinical response against STAR*D
+
+        A patient is a latent responder if: expected PHQ-9 at day 84 <= 50% of baseline
+        """
+        responders = 0
+        total      = len(trajectories)
+
+        for trajectory in trajectories:
+            # Latent baseline expectation (day 1 = treatment start)
+            baseline = trajectory.get_expected_score_at_day(day            = trajectory.treatment_start_day,
+                                                            enable_plateau = False,
+                                                           )
+
+            # Latent 12-week expectation (noise-free)
+            mu_84    = trajectory.get_expected_score_at_day(day            = clinical_constants_instance.STARD_PRIMARY_ENDPOINT_DAYS,
+                                                            enable_plateau = True,
+                                                           )
+
+            if (mu_84 <= 0.5 * baseline):
+                responders += 1
+
+        latent_rate = responders / total
+
+        in_range    = (0.40 <= latent_rate <= 0.70)
+
+        return {"latent_response_rate_12week" : latent_rate,
+                "expected_range"              : "[40%, 70%]",
+                "in_expected_range"           : in_range,
+                "reference"                   : "STAR*D Level-1 latent clinical response",
+               }
+        
 
     def _validate_missingness_decomposed(self, data: pd.DataFrame, validation: Dict):
         """

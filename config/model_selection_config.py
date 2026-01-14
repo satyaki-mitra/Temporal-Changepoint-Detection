@@ -18,7 +18,7 @@ class ModelSelectorConfig(BaseModel):
     - Rewards cross-model agreement
     - Produces a ranked, explainable outcome
     """
-    # MODEL ELIGIBILITY
+    # Model Eligibility
     allowed_families         : List[Literal['pelt', 'bocpd']]                                                                                = Field(default     = ['pelt', 'bocpd'],
                                                                                                                                                      description = "Detector families eligible for selection",
                                                                                                                                                     )
@@ -28,32 +28,31 @@ class ModelSelectorConfig(BaseModel):
                                                                                                                                                      description = "Explicit allow-list of model_ids (None = all)",
                                                                                                                                                     )
 
-    # METRICS USED FOR SCORING (GLOBAL)
-    scoring_metrics          : List[Literal['n_significant_cps', 'mean_effect_size', 'posterior_mass', 'cp_persistence', 'stability_score']] = Field(default     = ['n_significant_cps', 'mean_effect_size', 'stability_score'],
+    # Metrics used for Scoring (Global)
+    scoring_metrics          : List[Literal['n_significant_cps', 'mean_effect_size', 'stability_score', 'posterior_mass']]                   = Field(default     = ['n_significant_cps', 'mean_effect_size', 'stability_score', 'posterior_mass'],
                                                                                                                                                      description = "Metrics used to score each model",
                                                                                                                                                     )
 
-    # METRIC NORMALIZATION
+    # Metric Normalization
     metric_normalization     : Dict[str, Literal['minmax', 'zscore', 'rank']]                                                                = Field(default     = {'n_significant_cps' : 'minmax',
                                                                                                                                                                     'mean_effect_size'  : 'minmax',
                                                                                                                                                                     'posterior_mass'    : 'minmax',
-                                                                                                                                                                    'cp_persistence'    : 'minmax',
                                                                                                                                                                     'stability_score'   : 'minmax',
                                                                                                                                                                    },
                                                                                                                                                      description = "How each metric is normalized across models",
                                                                                                                                                     )
 
-    # METRIC WEIGHTS (SUM ≤ 1.0)
+    # Metric Weights (sum ≤ 1.0)
     metric_weights           : Dict[str, float]                                                                                              = Field(default      = {'n_significant_cps' : 0.30,
                                                                                                                                                                      'mean_effect_size'  : 0.30, 
-                                                                                                                                                                     'stability_score'   : 0.20, 
                                                                                                                                                                      'posterior_mass'    : 0.20,
+                                                                                                                                                                     'stability_score'   : 0.20, 
                                                                                                                                                                     },
                                                                                                                                                      description = "Relative importance of metrics",
                                                                                                                                                     )
 
-    # CROSS-MODEL AGREEMENT
-    agreement_metrics        : List[Literal['temporal_consensus', 'boundary_density', 'directional_consistency']]                            = Field(default     = ['temporal_consensus', 'boundary_density'],
+    # Cross-Model Agreement
+    agreement_metrics        : List[Literal['temporal_consensus', 'boundary_density']]                                                       = Field(default     = ['temporal_consensus', 'boundary_density'],
                                                                                                                                                      description = "Agreement metrics computed against all other models",
                                                                                                                                                     )
 
@@ -63,21 +62,21 @@ class ModelSelectorConfig(BaseModel):
                                                                                                                                                      description = "Bonus weight for agreement with global consensus",
                                                                                                                                                     )
 
-    # SELECTION STRATEGY
+    # Model Selection Strategy
     selection_strategy       : Literal['weighted_score', 'agreement_first', 'conservative']                                                  = Field(default     = 'agreement_first',
-                                                                                                                                                     description = """
-                                                                                                                                                                       weighted_score   : maximize total score
-                                                                                                                                                                       agreement_first  : prioritize agreement, then score
-                                                                                                                                                                       conservative     : fewer CPs + strong effects
-                                                                                                                                                                   """,
+                                                                                                                                                     description = (
+                                                                                                                                                                    "weighted_score   : maximize total score\n"
+                                                                                                                                                                    "agreement_first  : prioritize agreement, then score\n"
+                                                                                                                                                                    "conservative     : fewer CPs + strong effects"
+                                                                                                                                                                   ),
                                                                                                                                                     )
 
-    # TIE BREAKING (APPLIED IN ORDER)
+    # Tie Breaking (Apllied in exact order)
     tie_breaking_rules       : List[Literal['higher_agreement', 'higher_effect_size', 'fewer_change_points', 'simpler_model']]               = Field(default     = ['higher_agreement', 'higher_effect_size', 'fewer_change_points'],
                                                                                                                                                      description = "Tie-breaking rules applied sequentially",
                                                                                                                                                     )
 
-    # OUTPUT CONTROL
+    # Output Control
     save_full_ranking        : bool                                                                                                          = Field(default     = True,
                                                                                                                                                      description = "Persist ranked list of all models",
                                                                                                                                                     )
@@ -96,20 +95,42 @@ class ModelSelectorConfig(BaseModel):
 
 
     
-    # VALIDATION
+    # VALIDATION 
+    @validator('allowed_model_ids')
+    def validate_model_ids(cls, v):
+        if v is not None and not v:
+            raise ValueError("allowed_model_ids cannot be empty if provided")
+
+        return v
+
+
     @validator('metric_weights')
-    def validate_weights(cls, v):
+    def validate_weights(cls, v, values):
+        scoring = values.get('scoring_metrics', [])
+        extra   = set(v.keys()) - set(scoring)
+
+        if extra:
+            raise ValueError(f"Metric weights defined for unused metrics: {extra}")
+
         total = sum(v.values())
-        
+
         if (total > 1.0):
             raise ValueError(f"Metric weights sum to {total:.2f} (> 1.0)")
 
         return v
 
+    
+    @validator('metric_normalization')
+    def validate_normalization(cls, v, values):
+        scoring = values.get('scoring_metrics', [])
+        extra   = set(v.keys()) - set(scoring)
 
-    @validator('agreement_weight')
-    def validate_agreement_weight(cls, v):
-        if (v > 0.5):
-            raise ValueError("agreement_weight > 0.5 risks overpowering evidence")
+        if extra:
+            raise ValueError(f"Normalization defined for unused metrics: {extra}")
 
         return v
+
+
+    class Config:
+        validate_assignment = True
+        extra               = 'forbid'

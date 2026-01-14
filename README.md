@@ -1,16 +1,197 @@
+<div align="center">
+
 # Temporal Change-Point Detection on PHQ-9 Data
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-> **Comprehensive end-to-end pipeline for detecting significant temporal shifts in longitudinal mental health data using clinically grounded synthetic generation, rigorous exploratory analysis, and dual-algorithm change point detection.**
+> **End-to-end pipeline for detecting regime shifts in population-level mental health data through clinically grounded synthesis, rigorous exploratory analysis, and dual-algorithm change point detection.**
+
+[Quick Start](#-quick-start) • [Problem Statement](#-problem-statement) • [Documentation](#-table-of-contents) • [Whitepaper](WHITEPAPER.md)
+
+</div>
+
+---
+
+## 📊 Problem Statement
+
+### **The Core Challenge**
+
+Mental health monitoring generates **sparse, irregular longitudinal data** from thousands of patients. The critical question is not *"What will happen next?"* but rather *"When did the underlying population dynamics fundamentally change?"*
+
+This is a **structural change detection problem**, not a forecasting problem.
+
+---
+
+### **Why Change Point Detection Over Time Series Modeling?**
+
+#### **1. Sparse, Irregular Observations**
+
+Traditional time series methods (ARIMA, LSTM, Prophet) assume:
+- Regular sampling intervals
+- Dense observations
+- Sufficient per-patient data for individual modeling
+
+**PHQ-9 reality:**
+- Patients assessed every 2-8 weeks (irregular)
+- ~95% missing data (structural sparsity)
+- Individual trajectories too sparse for reliable forecasting
+
+```
+Individual Patient View (Traditional Time Series Domain):
+Patient A: [15] -------- [12] ------------ [9] -------- [missing]
+Patient B: [18] -- [16] -------- [missing] -- [14] ---- [11]
+Patient C: [14] ------------ [missing] -------- [8] -- [7]
+          ↓
+Problem: Cannot fit ARIMA/LSTM on individual sparse sequences
+```
+
+#### **2. Population-Level Regime Shifts**
+
+We aggregate to **daily population statistics** (mean, CV) to detect system-wide changes:
+
+```
+Aggregated Population View (Change Point Domain):
+Day   Mean    CV     Status
+0     16.2   0.35   [Baseline - High severity, high variance]
+45    15.8   0.33   ← Potential change point
+90    12.4   0.28   [Treatment effect - Lower severity, reduced variance]
+180   11.9   0.26   ← Plateau phase
+270   13.5   0.31   ← Relapse signal
+```
+
+**Key insight:** We detect when the **distribution** of outcomes shifts, not predict individual trajectories.
+
+---
+
+### **Problem Formalization**
+
+Given:
+- `N` patients with sparse PHQ-9 scores over `T` days
+- Daily aggregated coefficient of variation: `CV(t) = σ(t) / μ(t)`
+
+**Objective:** Identify time points `τ₁, τ₂, ..., τₖ` where the stochastic process governing `CV(t)` undergoes a structural break.
+
+**Mathematical definition:**
+```
+∃ τ : P(CV(t) | t < τ) ≠ P(CV(t) | t ≥ τ)
+```
+
+Where `P` represents the probability distribution characterized by:
+- Mean level (symptom severity)
+- Variance (population heterogeneity)
+- Temporal autocorrelation
+
+---
+
+### **Why Not Traditional Time Series Approaches?**
+
+| Approach | Why It Fails for This Problem |
+|----------|-------------------------------|
+| **ARIMA/SARIMA** | Assumes stationarity; cannot detect regime changes without manual differencing |
+| **LSTM/RNN** | Requires dense sequences; 95% missingness destroys gradient flow |
+| **Prophet** | Designed for forecasting with trend+seasonality; doesn't identify structural breaks |
+| **Kalman Filter** | State-space model assumes known transition dynamics; we seek unknown breakpoints |
+| **VAR** | Multivariate time series, but we need univariate regime detection on aggregates |
+
+**Change point detection**, by contrast:
+- ✅ Explicitly models distributional shifts
+- ✅ Works on sparse aggregated signals
+- ✅ Provides statistical validation of detected changes
+- ✅ No forecasting assumption—only segmentation
+
+---
+
+### **Solution Approach**
+
+Our pipeline addresses the problem through three stages:
+
+```mermaid
+graph TB
+    A[Stage 1: Synthetic Data Generation] --> B[Stage 2: Exploratory Analysis]
+    B --> C[Stage 3: Change Point Detection]
+    
+    A --> A1["AR(1) temporal dynamics<br/>Response pattern heterogeneity<br/>Relapse dynamics"]
+    B --> B1["Clustering validation<br/>Response pattern classification<br/>Temporal stability metrics"]
+    C --> C1["PELT: Offline, frequentist<br/>BOCPD: Online, Bayesian<br/>Statistical validation"]
+    
+    style A fill:#e1f5ff
+    style B fill:#fff4e1
+    style C fill:#e7ffe1
+```
+
+#### **Stage 1: Clinically Grounded Synthesis**
+
+**Rationale:** Real PHQ-9 data is scarce and privacy-restricted. We generate synthetic data that replicates clinical patterns.
+
+**Key features:**
+- **AR(1) temporal model** with gap-aware decay: `α^Δt` handles irregular sampling
+- **Response heterogeneity:** Early (30%), gradual (35%), late (15%), non-responders (20%)
+- **Relapse dynamics:** Exponential/gamma/lognormal distributions
+- **Missingness:** 95% structural sparsity + informative dropout
+
+**Output:** 1000 patients × 365 days with metadata sidecars for validation.
+
+#### **Stage 2: Exploratory Data Analysis**
+
+**Rationale:** Validate synthetic data quality and understand temporal structure before detection.
+
+**Key analyses:**
+- **Temporal clustering** on daily aggregates (mean, CV, severity %)
+- **Response pattern validation** (observed vs. expected distribution)
+- **Plateau detection** (symptom stabilization phases)
+- **Relapse identification** (≥3 point increases with 7-30 day gaps)
+
+**Output:** Quality metrics, comparative rankings, visual diagnostics.
+
+#### **Stage 3: Dual-Algorithm Detection**
+
+**Rationale:** Combine frequentist and Bayesian paradigms for robust detection.
+
+| Algorithm | Paradigm | Strengths | Validation |
+|-----------|----------|-----------|------------|
+| **PELT** | Offline, frequentist | Optimal segmentation, multiple cost functions | Mann-Whitney U, effect sizes |
+| **BOCPD** | Online, Bayesian | Posterior probabilities, uncertainty quantification | Posterior thresholds, credible intervals |
+
+**Model selection:** Cross-model agreement + statistical rigor → explainable recommendations.
+
+---
+
+### **Core Assumptions**
+
+1. **Aggregation preserves signal:** Population-level CV captures meaningful clinical shifts
+2. **Sparsity is structural:** Missing data is not informative for detection (after dropout handling)
+3. **Temporal independence of errors:** After accounting for AR(1), residuals are i.i.d.
+4. **Stationarity within segments:** Between change points, CV follows stable distribution
+5. **Finite change points:** Number of regime shifts is small (k << T)
+
+---
+
+### **Key Constraints**
+
+| Type | Constraint | Implication |
+|------|------------|-------------|
+| **Data** | 95% missing individual observations | Cannot model individual trajectories |
+| **Clinical** | PHQ-9 only every 2-8 weeks | Irregular sampling intervals |
+| **Statistical** | Small effect sizes in mental health | Need robust statistical validation |
+| **Computational** | 1000 patients × 365 days | Algorithms must scale to ~365K data points |
+| **Interpretability** | Must explain to clinicians | Require transparent statistical tests |
+
+---
+
+### **What This Pipeline Is NOT**
+
+❌ **Not a forecasting tool:** We don't predict future PHQ-9 scores  
+❌ **Not individual-level:** We analyze population aggregates, not single patients  
+❌ **Not a diagnostic system:** PHQ-9 screening only, not clinical diagnosis  
+❌ **Not real-time monitoring:** Detection is retrospective on accumulated data  
+
+✅ **What it IS:** A research pipeline for detecting when population mental health dynamics fundamentally changed.
 
 ---
 
 ## 🎯 Project Overview
-
-This repository implements a **complete research pipeline** for temporal change point detection on Patient Health Questionnaire-9 (PHQ-9) depression severity scores. The system is designed for **population-level analysis** of mental health trajectories, enabling identification of critical shifts in symptom patterns over time.
 
 ### **Three-Stage Pipeline**
 
@@ -25,11 +206,11 @@ graph LR
 ```
 
 **What makes this unique:**
-- **Clinically grounded synthesis**: Not just random noise—real response patterns, plateau phases, relapse dynamics
-- **Metadata-aware validation**: Generated data includes provenance tracking for reproducibility
-- **Comparative EDA**: Automated ranking of datasets by temporal stability and clinical realism
-- **Dual-algorithm detection**: Frequentist (PELT) and Bayesian (BOCPD) approaches with rigorous statistical validation
-- **Production-ready**: Config-driven, extensible, fully logged, thoroughly documented
+- **Clinically grounded synthesis:** Real response patterns, plateau phases, relapse dynamics
+- **Metadata-aware validation:** Provenance tracking for reproducibility
+- **Comparative EDA:** Automated ranking by temporal stability and clinical realism
+- **Dual-algorithm detection:** Frequentist + Bayesian with rigorous validation
+- **Production-ready:** Config-driven, extensible, fully logged
 
 ---
 
@@ -44,7 +225,6 @@ graph LR
 7. [Configuration](#-configuration)
 8. [Results & Interpretation](#-results--interpretation)
 9. [References](#-references)
-10. [Contributing](#-contributing)
 
 ---
 
@@ -63,7 +243,7 @@ python scripts/run_eda.py --data data/raw/synthetic_phq9_data.csv
 python scripts/run_detection.py --data data/raw/synthetic_phq9_data.csv --execution-mode ensemble
 ```
 
-**Output**: Change points validated with statistical tests, ranked by cross-model agreement, with comprehensive visualizations.
+**Output:** Change points validated with statistical tests, ranked by cross-model agreement.
 
 ---
 
@@ -72,31 +252,31 @@ python scripts/run_detection.py --data data/raw/synthetic_phq9_data.csv --execut
 ### High-Level Data Flow
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                    GENERATION MODULE                            │
-│  • Synthetic PHQ-9 with AR(1) + response patterns               │
-│  • Relapse dynamics (exponential/gamma/lognormal)               │
-│  • Metadata sidecars for provenance tracking                    │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                       EDA MODULE                                │
-│  • KMeans/temporal clustering on daily features                 │
-│  • Response pattern classification (early/gradual/late/non)     │
-│  • Relapse detection, plateau analysis                          │
-│  • Metadata-aware validation                                    │
-│  • Multi-dataset comparison & ranking                           │
-└────────────────────────────┬────────────────────────────────────┘
-                             │
-                             ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                   DETECTION MODULE                              │
-│  • PELT (offline, frequentist) with BIC penalty tuning          │
-│  • BOCPD (online, Bayesian) with hazard tuning                  │
-│  • Statistical validation (Mann-Whitney U, effect sizes)        │
-│  • Model selection via cross-model agreement                    │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│                    GENERATION MODULE                        │
+│  • Synthetic PHQ-9 with AR(1) + response patterns           │
+│  • Relapse dynamics (exponential/gamma/lognormal)           │
+│  • Metadata sidecars for provenance tracking                │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                       EDA MODULE                            │
+│  • KMeans/temporal clustering on daily features             │
+│  • Response pattern classification                          │
+│  • Relapse detection, plateau analysis                      │
+│  • Metadata-aware validation                                │
+│  • Multi-dataset comparison & ranking                       │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   DETECTION MODULE                          │
+│  • PELT (offline, frequentist) with BIC penalty tuning      │
+│  • BOCPD (online, Bayesian) with hazard tuning              │
+│  • Statistical validation (Mann-Whitney U, effect sizes)    │
+│  • Model selection via cross-model agreement                │
+└─────────────────────────────────────────────────────────────┘
 ```
 
 ### Module Independence
@@ -107,7 +287,7 @@ Each module is **self-contained** with its own:
 - Validation framework
 - Logging infrastructure
 
-**Key insight**: You can run modules independently (e.g., detection on real data without generation).
+**Key insight:** Modules can run independently (e.g., detection on real data without generation).
 
 ---
 
@@ -115,74 +295,48 @@ Each module is **self-contained** with its own:
 
 ### **1. Generation Module** (`src/generation/`)
 
-**Purpose**: Produce clinically realistic synthetic PHQ-9 data for pipeline validation and algorithm benchmarking.
+**Purpose:** Produce clinically realistic synthetic PHQ-9 data for pipeline validation.
 
-**Features**:
-- **Gap-aware AR(1)** temporal model (`α^Δt` decay for irregular sampling)
-- **Response pattern heterogeneity**: Early (30%), gradual (35%), late (15%), non-responders (20%)
-- **Plateau logic**: Symptom stabilization after response with reduced noise
-- **Three relapse distributions**: Exponential, gamma, lognormal for comparison
-- **Missingness**: MCAR + informative dropout (STAR*D-aligned 21% rate)
-- **Metadata sidecars**: JSON files with config hash, response pattern distribution, relapse stats
+**Features:**
+- **Gap-aware AR(1)** temporal model (`α^Δt` decay)
+- **Response pattern heterogeneity:** Early/gradual/late/non-responders
+- **Plateau logic:** Symptom stabilization after response
+- **Three relapse distributions:** Exponential/gamma/lognormal
+- **Missingness:** MCAR + informative dropout (21% STAR*D-aligned)
 
-**Key outputs**:
-- `synthetic_phq9_data_{distribution}.csv` (1000 patients × 365 days, ~95% sparse)
-- `synthetic_phq9_data_{distribution}.metadata.json`
-- `validation_report_{timestamp}.json`
-
-**See**: `src/generation/README.md` for mathematical details.
+**See:** `src/generation/README.md`
 
 ---
 
 ### **2. EDA Module** (`src/eda/`)
 
-**Purpose**: Validate, characterize, and compare PHQ-9 datasets before change point detection.
+**Purpose:** Validate and characterize datasets before change point detection.
 
-**Features**:
-- **Clustering**: KMeans + temporal-aware clustering on daily features (mean, CV, severity %)
-- **Response pattern analysis**: Classify patients by trajectory slope and 12-week improvement
-- **Plateau detection**: Identify symptom stabilization phases using variance + slope windows
-- **Relapse detection**: Flag clinically meaningful score increases (≥3 points, 7-30 day gaps)
-- **Metadata integration**: Validate observed vs expected statistics
-- **Multi-dataset comparison**: Rank datasets by temporal stability, clinical realism, statistical quality
+**Features:**
+- **Clustering:** KMeans + temporal-aware on daily features
+- **Response patterns:** Classify by trajectory slope and 12-week improvement
+- **Plateau detection:** Variance + slope windowing
+- **Relapse detection:** ≥3 point increases with 7-30 day gaps
+- **Multi-dataset comparison:** Rank by temporal stability
 
-**Key outputs**:
-- `cluster_results.png`, `response_patterns.png`, `relapse_events.png`
-- `summary_statistics.csv`, `response_pattern_analysis.csv`
-- `dataset_comparison.csv` (for multi-dataset mode)
-
-**See**: `src/eda/README.md` for methods table and algorithm mapping.
+**See:** `src/eda/README.md`
 
 ---
 
 ### **3. Detection Module** (`src/detection/`)
 
-**Purpose**: Detect and validate significant temporal shifts in aggregated PHQ-9 statistics.
+**Purpose:** Detect and validate significant temporal shifts.
 
-**Algorithms**:
-1. **PELT** (Pruned Exact Linear Time)
-   - Offline, frequentist
-   - Cost functions: L1 (robust), L2, RBF, AR
-   - BIC-based penalty tuning
-   - Mann-Whitney U testing with FDR correction
+**Algorithms:**
+1. **PELT:** Offline, frequentist, BIC-based penalty tuning
+2. **BOCPD:** Online, Bayesian, hazard tuning
 
-2. **BOCPD** (Bayesian Online Change Point Detection)
-   - Online, Bayesian
-   - Gaussian likelihood with empirical Bayes prior
-   - Hazard tuning via heuristic or predictive likelihood
-   - Posterior probability thresholding
+**Validation:**
+- Mann-Whitney U tests with FDR correction
+- Effect size thresholds (Cohen's d ≥ 0.3)
+- Cross-model agreement metrics
 
-**Model selection**:
-- Cross-model agreement metrics (temporal consensus, boundary density)
-- Weighted composite scoring
-- Explainable selection with ranking
-
-**Key outputs**:
-- `all_model_results.json`, `model_selection.json`
-- `best_model/model_result.json`
-- `aggregated_cv_all_models.png`, `model_comparison_grid.png`
-
-**See**: `src/detection/README.md` for algorithm details and fixed bugs.
+**See:** `src/detection/README.md`
 
 ---
 
@@ -190,13 +344,9 @@ Each module is **self-contained** with its own:
 
 ### What is PHQ-9?
 
-The **Patient Health Questionnaire-9** is a validated 9-item self-report measure for:
-- Depression screening and diagnosis
-- Severity quantification (0-27 scale)
-- Longitudinal symptom monitoring
-- Treatment response evaluation
+**Patient Health Questionnaire-9:** Validated 9-item self-report for depression screening.
 
-**Severity interpretation**:
+**Severity scale (0-27):**
 - 0-4: Minimal
 - 5-9: Mild
 - 10-14: Moderate
@@ -205,35 +355,17 @@ The **Patient Health Questionnaire-9** is a validated 9-item self-report measure
 
 ### Why Change Point Detection?
 
-**Research questions this pipeline addresses**:
-1. When do population-level depression symptoms shift significantly?
-2. Do treatment policy changes coincide with symptom pattern shifts?
-3. Are there seasonal or environmental triggers detectable in aggregate data?
-4. How stable are mental health trajectories over 6-12 months?
+**Research questions:**
+1. When do population-level symptoms shift significantly?
+2. Do policy changes coincide with symptom pattern shifts?
+3. Are seasonal/environmental triggers detectable?
+4. How stable are mental health trajectories?
 
-**Use cases**:
-- **Clinical trials**: Detect when treatment effects emerge
-- **Population health**: Monitor community mental health trends
-- **Quality improvement**: Identify when clinic-wide outcomes change
-- **Policy evaluation**: Assess impact of mental health interventions
-
-### Clinical Validity
-
-**Generation module**:
-- Response rates aligned with STAR*D trial (~47% at 12 weeks)
-- Baseline severity typical of RCTs (PHQ-9 15-17)
-- Dropout patterns match real-world attrition (21%)
-- Autocorrelation reflects PHQ-9 test-retest reliability (r=0.84)
-
-**EDA module**:
-- Response pattern thresholds from antidepressant literature
-- Relapse magnitude consistent with clinical observations
-- Plateau detection captures maintenance phase
-
-**Detection module**:
-- Aggregated CV statistic captures population heterogeneity
-- Statistical thresholds (α=0.05, Cohen's d≥0.3) are standard
-- Change points represent shifts in symptom variability, not individual scores
+**Use cases:**
+- Clinical trials (treatment effect timing)
+- Population health monitoring
+- Quality improvement initiatives
+- Policy evaluation
 
 ---
 
@@ -256,204 +388,63 @@ cd phq9-changepoint-detection
 # Install dependencies
 pip install -r requirements.txt
 
-# Verify installation
-python -c "import ruptures, pydantic; print('Installation successful!')"
-```
-
-### Directory Structure
-
-```plaintext
-phq9_analysis/
-├── config/                     # Pydantic configurations
-│   ├── clinical_constants.py
-│   ├── generation_config.py
-│   ├── eda_config.py
-│   ├── eda_constants.py
-│   ├── detection_config.py
-│   └── model_selection_config.py
-├── data/
-│   ├── raw/                    # Generated datasets
-│   └── processed/              # EDA outputs
-├── src/
-│   ├── generation/             # Synthetic data module
-│   ├── eda/                    # Exploratory analysis module
-│   ├── detection/              # Change point detection module
-│   └── utils/                  # Shared utilities (logging)
-├── scripts/                    # CLI entry points
-│   ├── run_generation.py
-│   ├── run_eda.py
-│   ├── compare_distributions.py
-│   └── run_detection.py
-├── results/                    # All outputs
-│   ├── generation/
-│   ├── eda/
-│   ├── comparison/
-│   └── detection/
-├── logs/                       # Execution logs
-├── notebooks/                  # Jupyter exploration
-└── README.md                   # This file
+# Verify
+python -c "import ruptures, pydantic; print('Ready!')"
 ```
 
 ---
 
 ## 🎬 Complete Pipeline Example
 
-### Scenario: Evaluate Three Relapse Distributions
-
-**Goal**: Generate data with exponential, gamma, and lognormal relapse distributions, perform EDA on all three, compare them, select the best, then detect change points.
-
 ```bash
-#!/bin/bash
+# Generate three datasets
+python scripts/run_generation.py --relapse-dist exponential --patients 1000 --days 365
+python scripts/run_generation.py --relapse-dist gamma --patients 1000 --days 365
+python scripts/run_generation.py --relapse-dist lognormal --patients 1000 --days 365
 
-# ============================================================
-# STEP 1: GENERATE THREE DATASETS
-# ============================================================
+# Compare distributions
+python scripts/compare_distributions.py --data-dir data/raw --patterns exponential gamma lognormal
 
-echo "Generating exponential distribution..."
-python scripts/run_generation.py \
-    --relapse-dist exponential \
-    --patients 1000 \
-    --days 365 \
-    --enable-response-patterns \
-    --enable-plateau \
-    --output data/raw/synthetic_phq9_data_exponential.csv \
-    --seed 2023
-
-echo "Generating gamma distribution..."
-python scripts/run_generation.py \
-    --relapse-dist gamma \
-    --patients 1000 \
-    --days 365 \
-    --enable-response-patterns \
-    --enable-plateau \
-    --output data/raw/synthetic_phq9_data_gamma.csv \
-    --seed 2023
-
-echo "Generating lognormal distribution..."
-python scripts/run_generation.py \
-    --relapse-dist lognormal \
-    --patients 1000 \
-    --days 365 \
-    --enable-response-patterns \
-    --enable-plateau \
-    --output data/raw/synthetic_phq9_data_lognormal.csv \
-    --seed 2023
-
-# ============================================================
-# STEP 2: RUN EDA ON ALL THREE + COMPARE
-# ============================================================
-
-echo "Comparing distributions..."
-python scripts/compare_distributions.py \
-    --data-dir data/raw \
-    --output-dir results/comparison \
-    --patterns exponential gamma lognormal
-
-# Output: Recommended dataset based on composite score
-
-# ============================================================
-# STEP 3: DETECT CHANGE POINTS ON BEST DATASET
-# ============================================================
-
-# Assume comparison recommends exponential
-BEST_DATASET="data/raw/synthetic_phq9_data_exponential.csv"
-
-echo "Running change point detection on best dataset..."
-python scripts/run_detection.py \
-    --execution-mode ensemble \
-    --detectors pelt bocpd \
-    --data $BEST_DATASET \
-    --auto-tune-penalty \
-    --auto-tune-hazard \
-    --output-dir results/detection/best_model
-
-echo "Pipeline complete! Check results/detection/best_model/"
+# Detect change points on best dataset
+python scripts/run_detection.py --execution-mode ensemble --data data/raw/synthetic_phq9_data_exponential.csv
 ```
-
-**Outputs**:
-- `results/comparison/comparison_summary/dataset_comparison.csv` → Ranked datasets
-- `results/detection/best_model/model_result.json` → Selected change points
-- `results/detection/plots/*.png` → Visualizations
 
 ---
 
 ## ⚙️ Configuration
 
-### Philosophy
+All behavior is **config-driven** via Pydantic:
+- `generation_config.py`: AR coefficient, recovery rate, relapse distribution
+- `eda_config.py`: Clustering parameters, temporal weighting
+- `detection_config.py`: Penalty, hazard, statistical thresholds
+- `model_selection_config.py`: Metric weights, agreement scoring
 
-**All behavior is config-driven** via Pydantic models:
-- No magic numbers in code
-- CLI arguments override config defaults
-- Configs are validated on instantiation
-- JSON-serializable for reproducibility
-
-### Key Config Files
-
-| File | Purpose | Key Parameters |
-|------|---------|----------------|
-| `generation_config.py` | Synthetic data generation | `ar_coefficient`, `recovery_rate_mean`, `relapse_distribution` |
-| `eda_config.py` | Exploratory analysis | `max_clusters_to_test`, `use_temporal_clustering` |
-| `detection_config.py` | Change point detection | `penalty`, `hazard_lambda`, `alpha` |
-| `model_selection_config.py` | Model ranking | `metric_weights`, `agreement_weight` |
-
-### Example: Custom Detection Run
-
+**Example:**
 ```python
 from config.detection_config import ChangePointDetectionConfig
-from src.detection.detector import ChangePointDetectionOrchestrator
 
-# Override defaults
 config = ChangePointDetectionConfig(
-    execution_mode='compare',
-    detectors=['pelt', 'bocpd'],
-    pelt_cost_models=['l1', 'rbf'],  # Only test robust cost functions
+    execution_mode='ensemble',
     auto_tune_penalty=True,
-    auto_tune_hazard=True,
-    alpha=0.01,  # More conservative testing
-    effect_size_threshold=0.5,  # Larger effects only
+    alpha=0.01,  # Conservative testing
+    effect_size_threshold=0.5
 )
-
-orchestrator = ChangePointDetectionOrchestrator(config)
-results = orchestrator.run()
 ```
 
 ---
 
 ## 📊 Results & Interpretation
 
-### Generation Validation Report
+### Generation Validation
 
-**What to check**:
-- ✅ Autocorrelation in expected range (0.30-0.70 for sparse data)
-- ✅ Baseline severity 13-19 (moderate-severe depression)
-- ✅ 12-week response rate 40-70% (STAR*D benchmark)
-- ✅ Missingness ~95% (structural sparsity + dropout)
+**Check:**
+- ✅ Autocorrelation 0.30-0.70
+- ✅ Baseline severity 13-19
+- ✅ 12-week response 40-70%
+- ✅ Missingness ~95%
 
-**Warning flags**:
-- Observed response patterns deviate >10% from expected → Check recovery rate
-- Excess missingness >10% → Dropout rate too high
-- Autocorrelation <0.3 → Temporal gaps too large
+### Change Point Output
 
----
-
-### EDA Cluster Analysis
-
-**Interpretation**:
-- **2-3 clusters**: Stable period, recovery period, plateau
-- **5+ clusters**: High temporal instability, may indicate model issues
-- **Silhouette score >0.5**: Good separation
-- **Silhouette score <0.3**: Poor clustering, consider temporal weighting
-
-**Response pattern distribution**:
-- Compare observed vs metadata expected
-- Match score >90% → Excellent alignment
-- Match score <70% → Noise suppressing signal
-
----
-
-### Change Point Detection
-
-**PELT output**:
 ```json
 {
   "n_changepoints": 3,
@@ -468,68 +459,41 @@ results = orchestrator.run()
 }
 ```
 
-**Interpretation**:
-- **n_significant < n_changepoints**: Some CPs failed validation (structural issues or small effects)
-- **Mean effect size >0.5**: Large population-level shifts
-- **Rejected CPs**: Check `rejected` dict for reasons (too close to boundaries, insufficient samples)
-
-**BOCPD output**:
-```json
-{
-  "n_changepoints": 2,
-  "validation": {
-    "summary": {
-      "mean_posterior_at_cp": 0.82,
-      "coverage_ratio": 0.10
-    }
-  }
-}
-```
-
-**Interpretation**:
-- **Mean posterior >0.7**: Strong Bayesian evidence
-- **Coverage ratio <0.15**: Sparse change points (as expected)
-- **No change points detected**: Lower threshold or check signal variability
+**Interpretation:**
+- **Effect size >0.5:** Large population shifts
+- **Fraction significant:** Proportion passing statistical validation
 
 ---
 
 ## 📚 References
 
-### Core Papers
-
-1. **PELT Algorithm**: Killick, R., Fearnhead, P., & Eckley, I. A. (2012). Optimal detection of changepoints with a linear computational cost. *Journal of the American Statistical Association*, 107(500), 1590-1598.
-
-2. **BOCPD Algorithm**: Adams, R. P., & MacKay, D. J. (2007). Bayesian online changepoint detection. *arXiv preprint arXiv:0710.3742*.
-
-3. **PHQ-9 Validation**: Kroenke, K., Spitzer, R. L., & Williams, J. B. (2001). The PHQ-9: validity of a brief depression severity measure. *Journal of General Internal Medicine*, 16(9), 606-613.
-
-4. **STAR*D Trial**: Rush, A. J., et al. (2006). Acute and longer-term outcomes in depressed outpatients requiring one or several treatment steps: a STAR*D report. *American Journal of Psychiatry*, 163(11), 1905-1917.
-
-5. **Change Point Review**: Truong, C., Oudre, L., & Vayatis, N. (2020). Selective review of offline change point detection methods. *Signal Processing*, 167, 107299.
+1. **PELT:** Killick et al. (2012). *J. American Statistical Association*
+2. **BOCPD:** Adams & MacKay (2007). *arXiv:0710.3742*
+3. **PHQ-9:** Kroenke et al. (2001). *J. General Internal Medicine*
+4. **STAR*D:** Rush et al. (2006). *American J. Psychiatry*
+5. **Change Point Review:** Truong et al. (2020). *Signal Processing*
 
 ---
 
-## 📜 License
+## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-**Note**: This pipeline is designed for research purpose only. Not intended for clinical use.
+MIT License. **Research purposes only—not for clinical use.**
 
 ---
 
-## 🙋 Author
+## 👤 Author
 
 **Satyaki Mitra**  
-*Data Scientist | ML Enthusiast | Clinical AI Research*
+Data Scientist | ML Enthusiast | Clinical AI Research
 
 ---
 
 ## 🌟 Acknowledgments
 
-- **ruptures** library by Charles Truong et al. for PELT implementation
-- **STAR*D** investigators for clinical benchmarks
-- **PHQ-9** developers (Kroenke, Spitzer, Williams)
+- **ruptures** library (Truong et al.)
+- STAR*D investigators
+- PHQ-9 developers
 
 ---
 
-*Built with care for rigorous, reproducible mental health research.*
+**For detailed methodology, see [WHITEPAPER.md](WHITEPAPER.md)**

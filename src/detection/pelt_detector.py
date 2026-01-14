@@ -56,6 +56,24 @@ class PELTDetector:
                                                - tuning metadata and 
                                                - validation results
         """
+        if (len(aggregated_signal) < 2 * self.config.minimum_segment_size):
+            return {'method'                : 'pelt',
+                    'algorithm'             : 'PELT',
+                    'variant'               : f"pelt_{self.cost_model}",
+                    'change_points'         : [],
+                    'n_changepoints'        : 0,
+                    'penalty_used'          : None,
+                    'penalty_source'        : 'auto_bic' if self.config.auto_tune_penalty else 'fixed',
+                    'penalty_range_used'    : self.config.penalty_range if self.config.auto_tune_penalty else None,
+                    'tuning_results'        : None,
+                    'signal_length'         : int(len(aggregated_signal)),
+                    'min_segment_size_used' : int(self.config.minimum_segment_size),
+                    'jump_used'             : int(self.config.jump),
+                    'validation'            : {'overall_significant' : False,
+                                               'rejection_reason'    : 'Signal too short for PELT',
+                                              }
+                   }
+
         tuning_results = None
 
         # Penalty tuning (optional)
@@ -90,6 +108,7 @@ class PELTDetector:
         validator      = PELTStatisticalValidator(alpha                 = self.config.alpha,
                                                   correction_method     = self.config.multiple_testing_correction,
                                                   effect_size_threshold = self.config.effect_size_threshold,
+                                                  window_size           = self.config.minimum_segment_size,
                                                  )
 
         validation     = validator.validate_all_changepoints(signal        = aggregated_signal,
@@ -97,13 +116,19 @@ class PELTDetector:
                                                             )
 
         # Canonical output
-        return {'method'          : 'pelt',
-                'variant'         : f"pelt_{self.cost_model}",
-                'change_points'   : change_points,
-                'n_changepoints'  : n_changepoints,
-                'penalty_used'    : float(penalty_used),
-                'tuning_results'  : tuning_results,
-                'validation'      : validation,
+        return {'method'                : 'pelt',
+                'algorithm'             : 'PELT',
+                'variant'               : f"pelt_{self.cost_model}",
+                'change_points'         : change_points,
+                'n_changepoints'        : n_changepoints,
+                'penalty_used'          : float(penalty_used),
+                'penalty_source'        : 'auto_bic' if self.config.auto_tune_penalty else 'fixed',
+                'penalty_range_used'    : self.config.penalty_range if self.config.auto_tune_penalty else None,
+                'tuning_results'        : tuning_results,
+                'signal_length'         : int(len(aggregated_signal)),
+                'min_segment_size_used' : int(self.config.minimum_segment_size),
+                'jump_used'             : int(self.config.jump),
+                'validation'            : validation,
                }
 
 
@@ -138,5 +163,14 @@ class PELTDetector:
                                          }
 
             prev                       = cp
+
+        # Final segment
+        if (prev < len(aggregated_index)):
+            segments[f'Segment_{len(segments)+1}'] = {'start_index' : int(prev),
+                                                      'end_index'   : int(len(aggregated_index) - 1),
+                                                      'start_time'  : aggregated_index[prev],
+                                                      'end_time'    : aggregated_index[-1],
+                                                      'length'      : int(len(aggregated_index) - prev),
+                                                     }
 
         return segments

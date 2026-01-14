@@ -1,5 +1,4 @@
 # Dependencies
-from dataclasses import field
 from dataclasses import dataclass
 
 
@@ -34,7 +33,7 @@ class ClinicalConstants:
     BASELINE_VALIDATION_UPPER             : float = 19.0   # Upper bound for moderate-severe
 
     # TREATMENT RESPONSE PARAMETERS
-    TYPICAL_RECOVERY_RATE_MEAN            : float = -0.06  # Points per day (negative = improvement)
+    TYPICAL_RECOVERY_RATE_MEAN            : float = -0.075 # Points per day (negative = improvement)
     TYPICAL_RECOVERY_RATE_STD             : float = 0.03   # Treatment response heterogeneity
     MIN_CLINICALLY_MEANINGFUL_IMPROVEMENT : float = 3.0    # Conservative MCID estimate
 
@@ -95,14 +94,14 @@ class ClinicalConstants:
     PLATEAU_TRANSITION_WEEKS              : int   = 2       # Smooth transition period
 
     # Baseline clipping parameters
-    BASELINE_CLIP_LOWER_STD_MULTIPLIER    : float = 2.0              # For symmetric clipping
-    BASELINE_CLIP_UPPER_LIMIT             : float = PHQ9_MAX_SCORE   # Hard upper bound
+    BASELINE_CLIP_LOWER_STD_MULTIPLIER    : float = 2.0     # For symmetric clipping
+    BASELINE_CLIP_UPPER_LIMIT             : float = 27.0    # Hard upper bound
 
     # SAMPLE SIZE CONSTRAINTS
-    MIN_PATIENTS                          : int   = 100    # Minimum study size
-    MAX_PATIENTS                          : int   = 5000   # Maximum for computational efficiency
-    MIN_STUDY_DAYS                        : int   = 180    # 6 months minimum
-    MAX_STUDY_DAYS                        : int   = 730    # 2 years maximum
+    MIN_PATIENTS                          : int   = 100     # Minimum study size
+    MAX_PATIENTS                          : int   = 5000    # Maximum for computational efficiency
+    MIN_STUDY_DAYS                        : int   = 180     # 6 months minimum
+    MAX_STUDY_DAYS                        : int   = 730     # 2 years maximum
 
 
 
@@ -139,8 +138,8 @@ def get_severity_category(score: float) -> str:
     --------
         { str } : Severity category name
     """
-    if (not (PHQ9_MIN_SCORE <= score <= PHQ9_MAX_SCORE)):
-        raise ValueError(f"Score {score} outside valid range [{PHQ9_MIN_SCORE}, {PHQ9_MAX_SCORE}]")
+    if (not (clinical_constants_instance.PHQ9_MIN_SCORE <= score <= clinical_constants_instance.PHQ9_MAX_SCORE)):
+        raise ValueError(f"Score {score} outside valid range [{clinical_constants_instance.PHQ9_MIN_SCORE}, {clinical_constants_instance.PHQ9_MAX_SCORE}]")
     
     for category, (lower, upper) in PHQ9_SEVERITY_THRESHOLDS.items():
         if (lower <= score <= upper):

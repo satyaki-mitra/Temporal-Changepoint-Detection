@@ -38,7 +38,7 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     description = "Whether to run model selection after detection",
                                                                                    )
 
-    model_selection_config_path  : Path | None                              = Field(default     = None,
+    model_selection_config_path  : Path | None                              = Field(default     = Path('config/model_selection_config.json'),
                                                                                     description = "Path to model_selection_config.py (required if selection_enabled=True)",
                                                                                    )
 
@@ -115,6 +115,12 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     description = "Smoothing window for posterior probabilities",
                                                                                    )
 
+    bocpd_persistence            : int                                      = Field(default     = 3,
+                                                                                    ge          = 1,
+                                                                                    le          = 10,
+                                                                                    description = "Minimum consecutive time steps CP posterior must exceed threshold",
+                                                                                   )
+
     # BOCPD tuning
     auto_tune_hazard             : bool                                     = Field(default     = True,
                                                                                     description = "Automatically tune BOCPD hazard parameter",
@@ -125,7 +131,7 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                    )
     
     hazard_tuning_method         : Literal['predictive_ll', 'heuristic']    = Field(default     = 'heuristic',
-                                                                                    description = "Method for hazard tuning",
+                                                                                    description = "Method for BOCPD hazard tuning",
                                                                                    )
 
     # STATISTICAL TESTING
@@ -145,8 +151,8 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     description = "Minimum Cohen's d for meaningful change",
                                                                                    )
     
-    statistical_test             : Literal['wilcoxon', 't-test', 'auto']    = Field(default     = 'auto',
-                                                                                    description = "Statistical test selection",
+    statistical_test             : Literal['mannwhitney', 't-test', 'auto'] = Field(default     = 'auto',
+                                                                                    description = "Statistical test selection. 'auto' selects Mann-Whitney U for most cases, t-test for large samples",
                                                                                    )
 
     # VISUALIZATION
@@ -166,11 +172,12 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     description = "Figure DPI",
                                                                                    )
 
+
     # VALIDATORS
     @validator('minimum_segment_size')
     def validate_minimum_segment_size(cls, v):
         if (v < 5):
-            raise ValueError("minimum_segment_size must be ≥5")
+            raise ValueError("minimum_segment_size must be ≥5 for reliable statistical testing")
         
         return v
 
@@ -183,8 +190,30 @@ class ChangePointDetectionConfig(BaseModel):
         if ((self.execution_mode == 'compare') and (len(self.detectors) < 2)):
             raise ValueError("execution_mode='compare' requires at least two detectors")
 
-        if ((self.execution_mode == 'ensemble') and (not self.selection_enabled)):
-            warnings.warn("execution_mode='ensemble' typically requires selection_enabled=True")
+        if ((self.execution_mode == 'ensemble') and not self.selection_enabled):
+            raise ValueError("execution_mode='ensemble' requires selection_enabled=True to define how models are combined or selected")
+
+        return self
+
+
+    # Cross-parameter validators
+    @model_validator(mode='after')
+    def validate_cross_parameters(self):
+        """
+        Validate parameter interactions
+        """
+        # Check: hazard_lambda vs max_run_length
+        if (self.hazard_lambda > self.max_run_length):
+            warnings.warn(f"hazard_lambda ({self.hazard_lambda}) > max_run_length ({self.max_run_length}) - expected run length unreachable. Consider increasing max_run_length.")
+
+        # Check: posterior_smoothing vs bocpd_persistence
+        if (self.posterior_smoothing > self.bocpd_persistence):
+            warnings.warn(f"posterior_smoothing ({self.posterior_smoothing}) > bocpd_persistence ({self.bocpd_persistence}) - smoothing may obscure persistence detection.")
+
+        # Check: minimum_segment_size vs penalty_range
+        if (self.minimum_segment_size >= 10) and (self.penalty_range[1] < 1.0):
+            warnings.warn(f"Large minimum_segment_size ({self.minimum_segment_size}) with small penalty_range ({self.penalty_range}) - "
+                         f"may not detect any change points. Consider increasing penalty upper bound.")
 
         return self
 
@@ -192,19 +221,19 @@ class ChangePointDetectionConfig(BaseModel):
     @validator('effect_size_threshold')
     def validate_effect_size(cls, v):
         if (v < 0.2):
-            warnings.warn("Effect size < 0.2 may not be clinically meaningful")
+            warnings.warn("Effect size < 0.2 may not be clinically meaningful (Cohen's d interpretation: 0.2=small, 0.5=medium, 0.8=large)")
 
         return v
     
 
     @validator('hazard_range')
     def validate_hazard_range(cls, v):
-        lo, hi = v
+        low, high = v
         
-        if (lo < 2):
-            raise ValueError("hazard_range lower bound must be ≥ 2")
+        if (low < 2):
+            raise ValueError("hazard_range lower bound must be ≥ 2 (run lengths < 2 are unrealistic)")
 
-        if (hi <= lo):
+        if (high <= low):
             raise ValueError("hazard_range upper bound must be > lower bound")
 
         return v
@@ -218,9 +247,12 @@ class ChangePointDetectionConfig(BaseModel):
     # HELPERS
     def create_output_directories(self):
         dirs = [self.results_base_directory,
+                self.results_base_directory / "per_model",
+                self.results_base_directory / "best_model",
                 self.results_base_directory / "change_points",
                 self.results_base_directory / "statistical_tests",
                 self.results_base_directory / "plots",
+                self.results_base_directory / "diagnostics",
                ]
 
         for d in dirs:
@@ -244,10 +276,10 @@ class ChangePointDetectionConfig(BaseModel):
                                              'Figure size'      : f"{self.figure_size[0]}x{self.figure_size[1]}",
                                              'DPI'              : self.dpi,
                                             },
-                    'Output'              : {'Results directory' : str(self.results_base_directory)}
+                    'Output'              : {'Results directory' : str(self.results_base_directory)},
                    }
 
-        if 'pelt' in self.detectors:
+        if ('pelt' in self.detectors):
             summary['PELT'] = {'Cost model'        : self.pelt_cost_models,
                                'Penalty'           : self.penalty,
                                'Auto-tune penalty' : self.auto_tune_penalty,
@@ -256,7 +288,7 @@ class ChangePointDetectionConfig(BaseModel):
                                'Jump'              : self.jump,
                               }
 
-        if 'bocpd' in self.detectors:
+        if ('bocpd' in self.detectors):
             summary['BOCPD'] = {'Hazard tuning'       : 'auto' if self.auto_tune_hazard else 'disabled',
                                 'Hazard range'        : self.hazard_range,
                                 'Hazard method'       : self.hazard_tuning_method,
@@ -265,6 +297,7 @@ class ChangePointDetectionConfig(BaseModel):
                                 'Max run length'      : self.max_run_length,
                                 'Posterior threshold' : self.cp_posterior_threshold,
                                 'Posterior smoothing' : self.posterior_smoothing,
+                                'bocpd_persistence'   : self.bocpd_persistence,
                                 'Reset on CP'         : self.reset_on_cp,
                                }
 

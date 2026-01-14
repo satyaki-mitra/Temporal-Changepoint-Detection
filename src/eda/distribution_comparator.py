@@ -50,26 +50,26 @@ class DistributionComparator:
             labels       = eda_result.get('labels')
             metadata     = eda_result.get('metadata')
 
-        # Calculate scores
-        scores                 = self._calculate_dataset_scores(data, labels, metadata)
-        scores['dataset_name'] = dataset_name
+            # Calculate scores
+            scores                 = self._calculate_dataset_scores(data, labels, metadata)
+            scores['dataset_name'] = dataset_name
         
-        comparison_results.append(scores)
+            comparison_results.append(scores)
     
-    # Create DataFrame
-    comparison_df                    = pd.DataFrame(data = comparison_results)
-    
-    # Calculate composite score
-    comparison_df['composite_score'] = self._calculate_composite_score(comparison_df = comparison_df)
-    
-    # Rank datasets
-    comparison_df                    = comparison_df.sort_values(by        = 'composite_score', 
-                                                                 ascending = False,
-                                                                )
-                                                                
-    comparison_df['rank']            = range(1, len(comparison_df) + 1)
-    
-    return comparison_df
+        # Create DataFrame
+        comparison_df                    = pd.DataFrame(data = comparison_results)
+        
+        # Calculate composite score
+        comparison_df['composite_score'] = self._calculate_composite_score(comparison_df = comparison_df)
+        
+        # Rank datasets
+        comparison_df                    = comparison_df.sort_values(by        = 'composite_score', 
+                                                                    ascending = False,
+                                                                    )
+                                                                    
+        comparison_df['rank']            = range(1, len(comparison_df) + 1)
+        
+        return comparison_df
 
 
     def _calculate_dataset_scores(self, data: pd.DataFrame, labels: np.ndarray, metadata: Dict) -> Dict:
@@ -119,7 +119,7 @@ class DistributionComparator:
         --------
                  { float }        : Stability score [0, 100]
         """
-        if ((labels is None) or (len(labels) < 2)):
+        if((labels is None) or (labels.ndim != 1) or (len(labels) < 2)):
             # Neutral score
             return 50.0  
         
@@ -151,12 +151,21 @@ class DistributionComparator:
         if (len(scores) == 0):
             return 0.0
         
-        # Calculate CV (coefficient of variation)
-        cv                       = np.std(scores) / np.mean(scores) if (np.mean(scores) > 0) else 0.0
-        
-        # Check if CV is in expected range
-        cv_in_range              = (eda_constants_instance.CV_RANGE_EXPECTED_MIN <= cv <= eda_constants_instance.CV_RANGE_EXPECTED_MAX)
-        
+        # Calculate Day-level CV (coefficient of variation) for clinical meaningfulness
+        daily_mean               = data.mean(axis   = 1, 
+                                             skipna = True,
+                                            )
+
+        daily_std                = data.std(axis   = 1, 
+                                            skipna = True,
+                                           )
+
+        cv_values                = daily_std / (daily_mean + 1e-6)
+        cv_values                = cv_values.replace([np.inf, -np.inf], np.nan)
+
+        cv_mean                  = np.nanmean(cv_values)
+        cv_in_range              = (eda_constants_instance.CV_RANGE_EXPECTED_MIN <= cv_mean <= eda_constants_instance.CV_RANGE_EXPECTED_MAX)
+
         # Calculate severity distribution
         minimal                  = np.sum(scores < eda_constants_instance.MINIMAL_SEVERITY_THRESHOLD) / len(scores)
         mild                     = np.sum((scores >= eda_constants_instance.MINIMAL_SEVERITY_THRESHOLD) & (scores < eda_constants_instance.MILD_SEVERITY_THRESHOLD)) / len(scores)
@@ -256,9 +265,9 @@ class DistributionComparator:
             observed_missingness = float(data.isna().sum().sum() / data.size)
             difference           = abs(observed_missingness - expected_missingness)
             
-            if (difference > 0.02):  
-                # >2% difference
-                score -= 30.0
+            if (difference > 0.03):  
+                # >3% difference
+                score -= 20.0
         
         return max(0.0, score)
 
@@ -302,7 +311,7 @@ class DistributionComparator:
                                             'metadata_consistency' : eda_constants_instance.METADATA_CONSISTENCY_WEIGHT,
                                            },
                   'results'              : comparison_df.to_dict(orient = 'records'),
-                  'recommendation'       : comparison_df.iloc[0]['dataset_name'],
+                  'recommendation'       : comparison_df.iloc[0]['dataset_name'] if len(comparison_df) > 0 else None,
                  }
         
         # Save report

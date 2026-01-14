@@ -6,7 +6,12 @@ from typing import Dict
 from typing import Tuple
 from typing import Literal
 from typing import Optional
-from scipy.stats import false_discovery_control
+
+try:
+    from scipy.stats import false_discovery_control
+
+except ImportError:
+    false_discovery_control = None
 
 
 # Base Utilities
@@ -36,13 +41,13 @@ def calculate_effect_size(group1: np.ndarray, group2: np.ndarray) -> float:
 
 
 
-# PELT — Frequentist Validation
+# PELT – Frequentist Validation
 class PELTStatisticalValidator:
     """
     Frequentist validation of offline change points (PELT)
 
-    Adds:
-    -----
+    Features:
+    ---------
     - Structural validity constraints
     - Explicit rejection reasons
     """
@@ -65,7 +70,7 @@ class PELTStatisticalValidator:
         Validate all detected change points using:
 
         - Structural constraints
-        - Frequentist hypothesis testing
+        - Frequentist hypothesis testing (FIXED: now uses correct tests)
         """
         signal_length = len(signal)
 
@@ -74,21 +79,21 @@ class PELTStatisticalValidator:
 
         for cp in change_points:
             if not (0 < cp < signal_length):
-                rejected_cps[cp] = 'Out of bounds'
+                rejected_cps[cp] = f'Out of bounds (cp={cp}, signal_length={signal_length})'
                 continue
 
             rel_pos = cp / signal_length
 
             if (rel_pos < self.min_relative_position):
-                rejected_cps[cp] = 'Too close to start'
+                rejected_cps[cp] = f'Too close to start (position={rel_pos:.2%} < {self.min_relative_position:.0%})'
                 continue
 
             if (rel_pos > self.max_relative_position):
-                rejected_cps[cp] = 'Too close to end'
+                rejected_cps[cp] = f'Too close to end (position={rel_pos:.2%} > {self.max_relative_position:.0%})'
                 continue
 
             if ((cp < self.min_segment_length) or ((signal_length - cp) < self.min_segment_length)):
-                rejected_cps[cp] = 'Segment too short'
+                rejected_cps[cp] = f'Segment too short (before={cp}, after={signal_length-cp}, min={self.min_segment_length})'
                 continue
 
             accepted_cps.append(cp)
@@ -113,7 +118,7 @@ class PELTStatisticalValidator:
                 after  = after[:self.window_size]
 
             if ((len(before) < 5) or (len(after) < 5)):
-                rejected_cps[cp] = 'Insufficient samples after windowing'
+                rejected_cps[cp] = f'Insufficient samples after windowing (before={len(before)}, after={len(after)}, min=5)'
                 continue
 
             result                              = self._test_single_cp(before        = before,
@@ -132,7 +137,7 @@ class PELTStatisticalValidator:
                 test_results[key]['p_value_corrected']            = float(p_corr)
                 test_results[key]['significant_after_correction'] = (p_corr < self.alpha)
 
-        n_sig = sum(r.get('significant_after_correction', False) for r in test_results.values())
+        n_sig = sum(r.get('significant_after_correction', False) and r.get('meaningful_effect', False) for r in test_results.values())
 
         return {'n_changepoints'      : len(accepted_cps),
                 'n_significant'       : n_sig,
@@ -161,6 +166,7 @@ class PELTStatisticalValidator:
                 'test_statistic'      : float(stat),
                 'p_value'             : float(p_value),
                 'cohens_d'            : float(cohens_d),
+                'test_family'         : 'frequentist',
                 'before_mean'         : float(np.mean(before)),
                 'after_mean'          : float(np.mean(after)),
                 'mean_difference'     : float(mean_diff),
@@ -172,24 +178,59 @@ class PELTStatisticalValidator:
 
     def _select_test(self, group1: np.ndarray, group2: np.ndarray) -> Tuple[str, float, float]:
         """
-        Robust test selection:
+        Robust test selection for independent samples
 
-        - Wilcoxon by default
-        - T-test only when necessary
+        - Mann-Whitney U (Wilcoxon rank-sum) for medium samples (default)
+        - T-test for large samples with normality
+        - Permutation test for small samples
         """
-        if ((len(group1) < 5) or (len(group2) < 5)):
-            stat, p = stats.ttest_ind(group1, group2)
-            
-            return 'T-Test (small sample)', stat, p
+        n1, n2 = len(group1), len(group2)
 
-        if ((np.var(group1) < 1e-10) or (np.var(group2) < 1e-10)):
-            stat, p = stats.ttest_ind(group1, group2)
-            
-            return 'T-Test (constant data)', stat, p
+        # Use Mann-Whitney U-statistic for independent samples
+        if ((n1 >= 10) and (n2 >= 10)):
+            # Check for constant data
+            if ((np.var(group1) < 1e-10) or (np.var(group2) < 1e-10)):
+                # Fallback to permutation test
+                return self._permutation_test(group1, group2)
 
-        stat, p = stats.ranksums(group1, group2)
+            # Use Mann-Whitney U (Wilcoxon rank-sum test for independent samples)
+            stat, p = stats.mannwhitneyu(group1, group2, alternative = 'two-sided')
+            return 'Mann-Whitney U', stat, p
+
+        elif ((n1 >= 30) and (n2 >= 30)):
+            # Large samples: T-test is robust by CLT
+            try:
+                stat, p = stats.ttest_ind(group1, group2)
+                return 'T-Test (large sample)', stat, p
+
+            except:
+                return self._permutation_test(group1, group2)
+
+        else:
+            # Small samples: Use permutation test
+            return self._permutation_test(group1, group2)
+
+
+    def _permutation_test(self, group1: np.ndarray, group2: np.ndarray, n_permutations: int = 10000) -> Tuple[str, float, float]:
+        """
+        Permutation test for small or problematic samples
+        """
+        observed_diff = np.mean(group1) - np.mean(group2)
+        combined      = np.concatenate([group1, group2])
+        n1            = len(group1)
+
+        count         = 0
         
-        return 'Wilcoxon Rank-Sum', stat, p
+        for _ in range(n_permutations):
+            np.random.shuffle(combined)
+            perm_diff = np.mean(combined[:n1]) - np.mean(combined[n1:])
+            
+            if (abs(perm_diff) >= abs(observed_diff)):
+                count += 1
+
+        p_value = count / n_permutations
+
+        return 'Permutation Test', float(observed_diff), float(p_value)
 
 
     def _apply_correction(self, p_values: List[float]) -> np.ndarray:
@@ -197,11 +238,10 @@ class PELTStatisticalValidator:
             return np.minimum(np.array(p_values) * len(p_values), 1.0)
 
         if (self.correction_method == 'fdr_bh'):
-            try:
-                return false_discovery_control(p_values, method = 'bh')
+            if false_discovery_control is not None:
+                return false_discovery_control(p_values, method='bh')
 
-            except Exception:
-                return self._fdr_bh_manual(p_values)
+            return self._fdr_bh_manual(p_values)
 
         return np.array(p_values)
 
@@ -221,7 +261,7 @@ class PELTStatisticalValidator:
 
 
 
-# BOCPD — Bayesian Validation
+# BOCPD – Bayesian Validation
 class BOCPDStatisticalValidator:
     """
     Bayesian validation for BOCPD detections
@@ -237,14 +277,16 @@ class BOCPDStatisticalValidator:
 
         detected   = np.where(persistent)[0]
 
-        return {'n_changepoints'      : len(detected),
-                'indices'             : detected.tolist(),
-                'posterior_threshold' : self.posterior_threshold,
-                'persistence'         : self.persistence,
-                'overall_significant' : (len(detected) > 0),
-                'summary'             : {'mean_posterior_at_cp' : float(np.mean(cp_posterior[detected])) if len(detected) else 0.0,
-                                         'coverage_ratio'       : len(detected) / max(len(cp_posterior), 1),
-                                        },
+        return {'n_changepoints'       : len(detected),
+                'normalized_positions' : (detected / max(len(cp_posterior), 1)).tolist(),
+                'posterior_threshold'  : self.posterior_threshold,
+                'persistence'          : self.persistence,
+                'test_family'          : 'bayesian',
+                'overall_significant'  : (len(detected) > 0),
+                'rejection_reason'     : 'Posterior below threshold or not persistent' if len(detected) == 0 else None,
+                'summary'              : {'mean_posterior_at_cp' : float(np.mean(cp_posterior[detected])) if len(detected) else 0.0,
+                                          'coverage_ratio'       : len(detected) / max(len(cp_posterior), 1),
+                                         },
                }
 
 

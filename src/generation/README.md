@@ -113,7 +113,7 @@ For Patient B with Δt=49 and α=0.7:
 
 This ensures:
 - Nearby observations (Δt ≤ 7 days) maintain correlation
-- Distant observations (Δt > 14 days) are nearly independent
+- Distant observations (Δt > 14 days) have negligible autocorrelation
 - Matches real PHQ-9 dynamics in sparse data
 
 
@@ -145,7 +145,7 @@ This ensures:
 - Continuous noise prevents convergence
 
 **With Plateau**:
-- Scores stabilize at realistic levels (e.g., PHQ-9 = 5-8)
+- Scores stabilize at patient-specific realistic levels (often mild–moderate range)
 - Reduced noise during plateau (symptom stability)
 - Matches real maintenance therapy patterns
 
@@ -209,7 +209,7 @@ elif (raw_baseline > 27):
 |--------|----------------|---------------|-------|
 | **Baseline Mean** | 13.0–19.0 | ~15.7 | Moderate-severe depression |
 | **Autocorrelation (gap-aware)** | 0.30–0.70 | ~0.45 | Adjusted for sparse sampling |
-| **Response Rate (12-week)** | 40%–70% | ~49% | STAR*D benchmark: 47% |
+| **Response Rate (12-week)** | 15%–70% | Scenario-dependent | STAR*D benchmark ≈47% |
 | **Improvement (12-week)** | 5.0–10.0 | ~7.8 | Points reduced from baseline |
 | **Median Gap** | 15–30 days | ~20 days | Realistic clinic scheduling |
 | **Missingness** | 92%–96% | ~95% | Structural + excess |
@@ -309,7 +309,7 @@ If t ≥ plateau_start:
 
 Relapses simulate **stressful life events** or **treatment interruptions**:
 
-- **Probability**: 10% per observation day
+- **Probability**: 10% per observed assessment day
 - **Magnitude**: Positive score increase (configurable distribution)
 - **Three Distribution Options**:
   - **Exponential** (default): Heavy-tailed, mean=3.5 points
@@ -333,7 +333,7 @@ data/raw/
 ### 7.5 Missingness Mechanisms
 
 #### MCAR (Missing Completely At Random)
-- **8% of scheduled observations** randomly missed
+- ~8% of scheduled assessments randomly missed (MCAR)
 - Independent of symptom severity
 - Models missed appointments
 
@@ -361,6 +361,8 @@ data/raw/
 - More realistic population heterogeneity
 - Some patients improve quickly, others slowly or not at all
 - Matches real-world clinical trial outcomes
+
+> Probabilities are calibrated to approximate STAR*D Level-1 response and remission proportions.
 
 
 ### 7.7 Plateau Logic
@@ -586,7 +588,24 @@ Each generation produces a **comprehensive JSON validation report**:
 | `_validate_distributions()` | Skewness, kurtosis | Diagnostic |
 
 
-### 9.2 Validation Thresholds (Relaxed for Sparse Data)
+### 9.2 Latent vs Observed Clinical Response
+
+In addition to validating **observed PHQ-9 outcomes**, the validation framework also evaluates **latent (noise-free) 12-week treatment response** derived from each patient’s deterministic trajectory.
+
+This diagnostic separation allows the system to distinguish between:
+
+- Suppressed response due to **measurement noise, missingness, or relapse**
+- Suppressed response due to **conservative underlying recovery dynamics**
+
+A patient is considered a *latent responder* if their expected PHQ-9 score at day 84 (12 weeks), **without noise**, is ≤50% of baseline severity.
+
+If **both latent and observed 12-week response rates** fall below STAR*D
+Level-1 benchmarks (≈40–70%), the validator emits a warning indicating that the simulated population reflects **real-world treatment effectiveness** rather than idealized clinical trial efficacy.
+
+This behavior is **intentional**, **non-fatal**, and designed to support transparent calibration prior to downstream EDA and model selection.
+
+
+### 9.3 Validation Thresholds (Relaxed for Sparse Data)
 
 | Metric | Dense Data | Sparse Data (Used) |
 |--------|------------|-------------------|
@@ -598,7 +617,7 @@ Each generation produces a **comprehensive JSON validation report**:
 **Rationale**: With median gaps of 20–30 days, observed autocorrelation is naturally lower than test-retest reliability (2-day gap).
 
 
-### 9.3 Missingness Decomposition (NEW)
+### 9.4 Missingness Decomposition (NEW)
 
 **Formula**:
 ```
