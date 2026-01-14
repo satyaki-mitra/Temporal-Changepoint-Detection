@@ -1,605 +1,535 @@
-<div align="center">
-
-# Temporal Change-Point Detection on Sparse Time Series Data (PHQ-9 Dataset)
+# Temporal Change-Point Detection on PHQ-9 Data
 
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-> **End-to-end system for detecting significant changes in mental health trajectories using PHQ-9 scores. Includes synthetic data generation, exploratory analysis, and multi-algorithm change-point detection with automatic model selection.**
-
-</div>
+> **Comprehensive end-to-end pipeline for detecting significant temporal shifts in longitudinal mental health data using clinically grounded synthetic generation, rigorous exploratory analysis, and dual-algorithm change point detection.**
 
 ---
 
-## 🎯 Overview
+## 🎯 Project Overview
 
-This framework analyzes **Patient Health Questionnaire-9 (PHQ-9)** time series to identify significant shifts in depression severity. It combines:
+This repository implements a **complete research pipeline** for temporal change point detection on Patient Health Questionnaire-9 (PHQ-9) depression severity scores. The system is designed for **population-level analysis** of mental health trajectories, enabling identification of critical shifts in symptom patterns over time.
 
-1. **Synthetic Data Generation** - Realistic PHQ-9 trajectories with AR(1) autocorrelation, relapses, and dropout
-2. **Exploratory Data Analysis** - Clustering, trend analysis, and statistical validation
-3. **Data Validation** - Cross-dataset comparison based on Medical benchmarks and EDA findings
-4. **Change-Point Detection** - 6 detector models (PELT + BOCPD) with automatic selection
-5. **Model Selection** - Agreement-first scoring to identify best-performing detector
+### **Three-Stage Pipeline**
 
-###  Pipeline Architecture
-
-```
-Generation  →  EDA   → Literature Validation → Detection → Model Selection
-    ↓           ↓              ↓                   ↓              ↓
- 3 datasets   3 EDAs     Compare & Select      Best data      Best model
+```mermaid
+graph LR
+    A[1. Data Generation] --> B[2. Exploratory Analysis]
+    B --> C[3. Change Point Detection]
+    
+    A --> A1[Synthetic PHQ-9<br/>with clinical realism]
+    B --> B1[Clustering, validation,<br/>response patterns]
+    C --> C1[PELT + BOCPD<br/>with model selection]
 ```
 
---- 
-## Problem Statement
-
-> **The aim of this analysis is to detect significant changes in the Aggregated Patient Health Questionnaire-9 (PHQ-9) scores across 365 days using the Coefficient of Variation (CV) as the aggregated statistic. The sample dataset comprises 1000 patients identified by unique patient IDs, with each patient's PHQ-9 score recorded for 50 randomly selected days amongst the total 365 days of a year.**
-
-### Key Challenges:
-
-- **Sparse Data**: Each patient attempts the survey at most 6 times during the 365-day span
-- **Missing Values**: Not all patients respond every day, resulting in NaN values
-- **Heterogeneous Population**: Diverse baseline PHQ-9 scores across patients
-- **Temporal Patterns**: Need to identify critical shifts in depression levels over time
+**What makes this unique:**
+- **Clinically grounded synthesis**: Not just random noise—real response patterns, plateau phases, relapse dynamics
+- **Metadata-aware validation**: Generated data includes provenance tracking for reproducibility
+- **Comparative EDA**: Automated ranking of datasets by temporal stability and clinical realism
+- **Dual-algorithm detection**: Frequentist (PELT) and Bayesian (BOCPD) approaches with rigorous statistical validation
+- **Production-ready**: Config-driven, extensible, fully logged, thoroughly documented
 
 ---
 
-## 📋 Context & Clinical Background
+## 📋 Table of Contents
 
-### About PHQ-9
-
-The Patient Health Questionnaire-9 (PHQ-9) is a multipurpose instrument used for:
-
-- `Diagnosis and screening of depression`
-- `Monitoring and measuring severity of depression`
-- `Clinical utility as a brief, self-report tool`
-- `Repeated administration for tracking improvement or regression`
-
-### PHQ-9 Severity Levels:
-
-- `0-4`: Minimal depression
-- `5-9`: Mild depression
-- `10-14`: Moderate depression
-- `15-19`: Moderately severe depression
-- `20-27`: Severe depression
-
-### Clinical Applications
-
-- `Treatment response monitoring`
-- `Relapse detection`
-- `Clinical trial analytics`
-- `Personalized intervention strategies`
-
----
-
-### 🧩 Key Features
-
-✅ **Clinically Grounded** - Literature-validated parameters (Kroenke et al., Rush et al.)  
-✅ **Sparse Data Ready** - Handles irregular observations and high missingness  
-✅ **Multi-Algorithm** - PELT (L1/L2/RBF/AR) + BOCPD (Gaussian)  
-✅ **Auto-Tuned** - BIC penalty tuning (PELT), hazard optimization (BOCPD)  
-✅ **Statistically Validated** - Wilcoxon tests, FDR correction, effect sizes  
-✅ **Production Ready** - Pydantic configs, structured logging, reproducible outputs
-
----
-
-## 📂 Project Structure
-
-```
-phq9_analysis/
-├── config/                          # Configuration modules
-│   ├── generation_config.py         # Data generation parameters
-│   ├── eda_config.py                # EDA settings
-│   ├── detection_config.py          # Detection algorithms
-│   └── model_selection_config.py    # Model scoring/ranking
-│
-├── src/                             # Core package
-│   ├── generation/                  # Synthetic data generation
-│   │   ├── generator.py             # Main generator
-│   │   ├── trajectory_models.py     # AR(1) + relapse models
-│   │   └── validators.py            # Literature validation
-│   │
-│   ├── eda/                         # Exploratory analysis
-│   │   ├── analyzer.py              # Main EDA orchestrator
-│   │   ├── clustering.py            # KMeans, Agglomerative, Temporal
-│   │   └── visualizations.py        # Plotting engine
-|   | 
-|   ├── validation/
-|   |    ├── __init__.py
-|   |    ├── literature_validator.py    # Main validator
-|   |    ├── clinical_criteria.py       # Medical benchmarks
-|   |    ├── comparator.py              # Cross-dataset comparison         
-|   |    └── README.md
-│   │
-│   ├── detection/                   # Change-point detection
-│   │   ├── detector.py              # Main orchestrator
-│   │   ├── pelt_detector.py         # PELT implementation
-│   │   ├── bocpd_detector.py        # BOCPD implementation
-│   │   ├── penalty_tuning.py        # BIC-based PELT tuning
-│   │   ├── hazard_tuning.py         # BOCPD hazard optimization
-│   │   ├── statistical_tests.py     # Frequentist/Bayesian validation
-│   │   ├── visualizations.py        # Detection plots
-│   │   └── model_selector.py        # Best model selection
-│   │
-│   └── utils/                       # Utilities
-│       └── logging_util.py          # Structured logging
-│
-├── scripts/                         # Execution scripts
-│   ├── run_generation.py            # Generate synthetic data
-│   ├── run_eda.py                   # Run exploratory analysis
-│   └── run_detection.py             # Run detection pipeline
-│
-├── data/                              # Data storage
-│   ├── raw/                           # 3 generated datasets
-|   ├── finalized_data/                # Selected best dataset
-│   |   ├── phq9_data_finalized.csv
-│   |   └── selection_metadata.json
-│   └── processed/                   # Processed data
-│
-├── results/                         # Analysis outputs
-│   ├── generation/
-|   ├── eda/
-|   │   ├── exponential/
-|   │   ├── gamma/
-|   │   └── lognormal/
-|   ├── validation/                      # Validation reports
-|   │   ├── exponential_validation.json
-|   |   ├── gamma_validation.json
-|   |   ├── lognormal_validation.json
-|   │   ├── comparison_report.json
-|   |   └── dataset_comparison.png
-|   ├── detection/                       # Only runs on finalized data
-|   └── best_model/ 
-│
-├── logs/                            # Execution logs
-├── docs/                            # Documentation
-└── requirements.txt
-```
+1. [Quick Start](#-quick-start)
+2. [System Architecture](#-system-architecture)
+3. [Module Descriptions](#-module-descriptions)
+4. [Clinical Context](#-clinical-context)
+5. [Installation](#-installation)
+6. [Complete Pipeline Example](#-complete-pipeline-example)
+7. [Configuration](#-configuration)
+8. [Results & Interpretation](#-results--interpretation)
+9. [References](#-references)
+10. [Contributing](#-contributing)
 
 ---
 
 ## 🚀 Quick Start
 
-### Installation
+### Minimal Example (3 Commands)
 
 ```bash
-git clone https://github.com/yourusername/phq9-changepoint-detection.git
+# 1. Generate synthetic data with clinical realism
+python scripts/run_generation.py --patients 1000 --days 365 --enable-response-patterns
+
+# 2. Perform exploratory analysis
+python scripts/run_eda.py --data data/raw/synthetic_phq9_data.csv
+
+# 3. Detect change points
+python scripts/run_detection.py --data data/raw/synthetic_phq9_data.csv --execution-mode ensemble
+```
+
+**Output**: Change points validated with statistical tests, ranked by cross-model agreement, with comprehensive visualizations.
+
+---
+
+## 🏗 System Architecture
+
+### High-Level Data Flow
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    GENERATION MODULE                            │
+│  • Synthetic PHQ-9 with AR(1) + response patterns              │
+│  • Relapse dynamics (exponential/gamma/lognormal)              │
+│  • Metadata sidecars for provenance tracking                    │
+└────────────────┬────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                       EDA MODULE                                │
+│  • KMeans/temporal clustering on daily features                │
+│  • Response pattern classification (early/gradual/late/non)    │
+│  • Relapse detection, plateau analysis                         │
+│  • Metadata-aware validation                                    │
+│  • Multi-dataset comparison & ranking                           │
+└────────────────┬────────────────────────────────────────────────┘
+                 │
+                 ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                   DETECTION MODULE                              │
+│  • PELT (offline, frequentist) with BIC penalty tuning         │
+│  • BOCPD (online, Bayesian) with hazard tuning                 │
+│  • Statistical validation (Mann-Whitney U, effect sizes)       │
+│  • Model selection via cross-model agreement                    │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Module Independence
+
+Each module is **self-contained** with its own:
+- Configuration (`config/*.py`)
+- README (`src/*/README.md`)
+- Validation framework
+- Logging infrastructure
+
+**Key insight**: You can run modules independently (e.g., detection on real data without generation).
+
+---
+
+## 📦 Module Descriptions
+
+### **1. Generation Module** (`src/generation/`)
+
+**Purpose**: Produce clinically realistic synthetic PHQ-9 data for pipeline validation and algorithm benchmarking.
+
+**Features**:
+- **Gap-aware AR(1)** temporal model (`α^Δt` decay for irregular sampling)
+- **Response pattern heterogeneity**: Early (30%), gradual (35%), late (15%), non-responders (20%)
+- **Plateau logic**: Symptom stabilization after response with reduced noise
+- **Three relapse distributions**: Exponential, gamma, lognormal for comparison
+- **Missingness**: MCAR + informative dropout (STAR*D-aligned 21% rate)
+- **Metadata sidecars**: JSON files with config hash, response pattern distribution, relapse stats
+
+**Key outputs**:
+- `synthetic_phq9_data_{distribution}.csv` (1000 patients × 365 days, ~95% sparse)
+- `synthetic_phq9_data_{distribution}.metadata.json`
+- `validation_report_{timestamp}.json`
+
+**See**: `src/generation/README.md` for mathematical details.
+
+---
+
+### **2. EDA Module** (`src/eda/`)
+
+**Purpose**: Validate, characterize, and compare PHQ-9 datasets before change point detection.
+
+**Features**:
+- **Clustering**: KMeans + temporal-aware clustering on daily features (mean, CV, severity %)
+- **Response pattern analysis**: Classify patients by trajectory slope and 12-week improvement
+- **Plateau detection**: Identify symptom stabilization phases using variance + slope windows
+- **Relapse detection**: Flag clinically meaningful score increases (≥3 points, 7-30 day gaps)
+- **Metadata integration**: Validate observed vs expected statistics
+- **Multi-dataset comparison**: Rank datasets by temporal stability, clinical realism, statistical quality
+
+**Key outputs**:
+- `cluster_results.png`, `response_patterns.png`, `relapse_events.png`
+- `summary_statistics.csv`, `response_pattern_analysis.csv`
+- `dataset_comparison.csv` (for multi-dataset mode)
+
+**See**: `src/eda/README.md` for methods table and algorithm mapping.
+
+---
+
+### **3. Detection Module** (`src/detection/`)
+
+**Purpose**: Detect and validate significant temporal shifts in aggregated PHQ-9 statistics.
+
+**Algorithms**:
+1. **PELT** (Pruned Exact Linear Time)
+   - Offline, frequentist
+   - Cost functions: L1 (robust), L2, RBF, AR
+   - BIC-based penalty tuning
+   - Mann-Whitney U testing with FDR correction
+
+2. **BOCPD** (Bayesian Online Change Point Detection)
+   - Online, Bayesian
+   - Gaussian likelihood with empirical Bayes prior
+   - Hazard tuning via heuristic or predictive likelihood
+   - Posterior probability thresholding
+
+**Model selection**:
+- Cross-model agreement metrics (temporal consensus, boundary density)
+- Weighted composite scoring
+- Explainable selection with ranking
+
+**Key outputs**:
+- `all_model_results.json`, `model_selection.json`
+- `best_model/model_result.json`
+- `aggregated_cv_all_models.png`, `model_comparison_grid.png`
+
+**See**: `src/detection/README.md` for algorithm details and fixed bugs.
+
+---
+
+## ⚕️ Clinical Context
+
+### What is PHQ-9?
+
+The **Patient Health Questionnaire-9** is a validated 9-item self-report measure for:
+- Depression screening and diagnosis
+- Severity quantification (0-27 scale)
+- Longitudinal symptom monitoring
+- Treatment response evaluation
+
+**Severity interpretation**:
+- 0-4: Minimal
+- 5-9: Mild
+- 10-14: Moderate
+- 15-19: Moderately severe
+- 20-27: Severe
+
+### Why Change Point Detection?
+
+**Research questions this pipeline addresses**:
+1. When do population-level depression symptoms shift significantly?
+2. Do treatment policy changes coincide with symptom pattern shifts?
+3. Are there seasonal or environmental triggers detectable in aggregate data?
+4. How stable are mental health trajectories over 6-12 months?
+
+**Use cases**:
+- **Clinical trials**: Detect when treatment effects emerge
+- **Population health**: Monitor community mental health trends
+- **Quality improvement**: Identify when clinic-wide outcomes change
+- **Policy evaluation**: Assess impact of mental health interventions
+
+### Clinical Validity
+
+**Generation module**:
+- Response rates aligned with STAR*D trial (~47% at 12 weeks)
+- Baseline severity typical of RCTs (PHQ-9 15-17)
+- Dropout patterns match real-world attrition (21%)
+- Autocorrelation reflects PHQ-9 test-retest reliability (r=0.84)
+
+**EDA module**:
+- Response pattern thresholds from antidepressant literature
+- Relapse magnitude consistent with clinical observations
+- Plateau detection captures maintenance phase
+
+**Detection module**:
+- Aggregated CV statistic captures population heterogeneity
+- Statistical thresholds (α=0.05, Cohen's d≥0.3) are standard
+- Change points represent shifts in symptom variability, not individual scores
+
+---
+
+## 🛠 Installation
+
+### Requirements
+
+- Python 3.8+
+- Core: `numpy`, `pandas`, `scipy`, `matplotlib`, `seaborn`
+- ML: `scikit-learn`, `ruptures`
+- Config: `pydantic`
+
+### Setup
+
+```bash
+# Clone repository
+git clone https://github.com/satyaki-mitra/phq9-changepoint-detection.git
 cd phq9-changepoint-detection
+
+# Install dependencies
 pip install -r requirements.txt
+
+# Verify installation
+python -c "import ruptures, pydantic; print('Installation successful!')"
 ```
 
-### Basic Workflow
+### Directory Structure
 
-```bash
-# 1. Generate synthetic data
-python scripts/run_generation.py
-
-# 2. Explore data
-python scripts/run_eda.py
-
-# 3. Detect change points (all 6 models + selection)
-python scripts/run_detection.py --enable-selection
+```plaintext
+phq9_analysis/
+├── config/                     # Pydantic configurations
+│   ├── clinical_constants.py
+│   ├── generation_config.py
+│   ├── eda_config.py
+│   ├── eda_constants.py
+│   ├── detection_config.py
+│   └── model_selection_config.py
+├── data/
+│   ├── raw/                    # Generated datasets
+│   └── processed/              # EDA outputs
+├── src/
+│   ├── generation/             # Synthetic data module
+│   ├── eda/                    # Exploratory analysis module
+│   ├── detection/              # Change point detection module
+│   └── utils/                  # Shared utilities (logging)
+├── scripts/                    # CLI entry points
+│   ├── run_generation.py
+│   ├── run_eda.py
+│   ├── compare_distributions.py
+│   └── run_detection.py
+├── results/                    # All outputs
+│   ├── generation/
+│   ├── eda/
+│   ├── comparison/
+│   └── detection/
+├── logs/                       # Execution logs
+├── notebooks/                  # Jupyter exploration
+└── README.md                   # This file
 ```
-
-**Outputs:**
-- `data/raw/synthetic_phq9_data.csv` - Generated data
-- `results/eda/` - EDA plots and statistics
-- `results/detection/` - All 6 model results
-- `results/best_model/` - Selected model's change points
 
 ---
 
-## 🔬 Complete Pipeline with Literature Validation
+## 🎬 Complete Pipeline Example
 
-**What it does:**
-1. Generates 3 datasets (exponential, gamma, lognormal relapses)
-2. Performs EDA on each
-3. **Validates against clinical literature** (Kroenke, STAR*D, etc.)
-4. **Selects best dataset** based on compliance score
-5. Runs detection on finalized data only
-6. Selects best detection model
+### Scenario: Evaluate Three Relapse Distributions
 
-### Manual Step-by-Step
+**Goal**: Generate data with exponential, gamma, and lognormal relapse distributions, perform EDA on all three, compare them, select the best, then detect change points.
+
 ```bash
-# 1. Generate all 3 distributions
-for dist in exponential gamma lognormal; do
-    python scripts/run_generation.py --relapse-dist $dist
-done
+#!/bin/bash
 
-# 2. EDA on each
-for dist in exponential gamma lognormal; do
-    python scripts/run_eda.py \
-        --data data/raw/synthetic_phq9_data_$dist.csv \
-        --output-dir results/eda/$dist
-done
+# ============================================================
+# STEP 1: GENERATE THREE DATASETS
+# ============================================================
 
-# 3. Literature validation & selection
-python scripts/run_validation.py
-
-# 4. Detection on finalized data
-python scripts/run_detection.py \
-    --data data/finalized_data/phq9_data_finalized.csv \
-    --enable-selection
-```
-
-### Validation Criteria
-
-Data validated against:
-- **Kroenke et al. (2001)**: PHQ-9 autocorrelation (r=0.84)
-- **Rush et al. (2006)**: STAR*D response rates (~47%)
-- **Löwe et al. (2004)**: MCID thresholds
-- **Fournier et al. (2010)**: Dropout meta-analysis
-- **Clinical RCT standards**: Baseline severity, improvement trajectories
-
-**Compliance Score**: Weighted combination of all criteria (threshold: 0.70)
-
----
-
-## 📊 Modules
-
-### 1. Data Generation
-
-**Purpose**: Create realistic PHQ-9 trajectories with:
-- AR(1) autocorrelation (ρ = 0.70)
-- Exponential dropout (~18%)
-- Relapse events (10% daily probability)
-- Sparse, irregular sampling
-
-**Usage:**
-```bash
-# Default configuration
-python scripts/run_generation.py
-
-# Custom parameters
+echo "Generating exponential distribution..."
 python scripts/run_generation.py \
-    --patients 500 \
-    --days 180 \
-    --baseline 18.0 \
-    --recovery-rate -0.08
-```
+    --relapse-dist exponential \
+    --patients 1000 \
+    --days 365 \
+    --enable-response-patterns \
+    --enable-plateau \
+    --output data/raw/synthetic_phq9_data_exponential.csv \
+    --seed 2023
 
-**Outputs:**
-- `data/raw/synthetic_phq9_data.csv`
-- `results/generation/validation_reports/validation_report.json`
+echo "Generating gamma distribution..."
+python scripts/run_generation.py \
+    --relapse-dist gamma \
+    --patients 1000 \
+    --days 365 \
+    --enable-response-patterns \
+    --enable-plateau \
+    --output data/raw/synthetic_phq9_data_gamma.csv \
+    --seed 2023
 
-**Key Parameters:**
-```python
-total_patients: 1000              # Sample size
-total_days: 365                   # Study duration
-baseline_mean_score: 16.0         # Initial severity
-recovery_rate_mean: -0.06         # Daily improvement
-ar_coefficient: 0.70              # Autocorrelation
-relapse_probability: 0.10         # Daily relapse risk
-dropout_rate: 0.18                # Study attrition
-```
+echo "Generating lognormal distribution..."
+python scripts/run_generation.py \
+    --relapse-dist lognormal \
+    --patients 1000 \
+    --days 365 \
+    --enable-response-patterns \
+    --enable-plateau \
+    --output data/raw/synthetic_phq9_data_lognormal.csv \
+    --seed 2023
 
-**See:** [phq9_analysis/generation/README.md](phq9_analysis/generation/README.md)
+# ============================================================
+# STEP 2: RUN EDA ON ALL THREE + COMPARE
+# ============================================================
 
----
+echo "Comparing distributions..."
+python scripts/compare_distributions.py \
+    --data-dir data/raw \
+    --output-dir results/comparison \
+    --patterns exponential gamma lognormal
 
-### 2. Exploratory Data Analysis (EDA)
+# Output: Recommended dataset based on composite score
 
-**Purpose**: Statistical analysis and clustering to understand data structure.
+# ============================================================
+# STEP 3: DETECT CHANGE POINTS ON BEST DATASET
+# ============================================================
 
-**Usage:**
-```bash
-# Full analysis
-python scripts/run_eda.py
+# Assume comparison recommends exponential
+BEST_DATASET="data/raw/synthetic_phq9_data_exponential.csv"
 
-# Temporal clustering
-python scripts/run_eda.py --temporal
-
-# Fixed K clusters (skip optimization)
-python scripts/run_eda.py --n-clusters 4
-```
-
-**Outputs:**
-- `results/eda/visualizations/` - Scatter, daily averages, clusters
-- `results/eda/summary_statistics.csv` - Daily statistics
-- `results/eda/cluster_characteristics.csv` - Cluster properties
-- `results/eda/analysis_summary.json` - Overall results
-
-**Key Features:**
-- **Clustering**: KMeans, Agglomerative, Temporal-aware
-- **Optimization**: Elbow, Silhouette, Gap Statistic
-- **Validation**: Literature-based parameter checks
-
-**See:** [phq9_analysis/eda/README.md](phq9_analysis/eda/README.md)
-
----
-
-### 3. Change-Point Detection
-
-**Purpose**: Detect significant shifts in aggregated PHQ-9 statistics using 6 models.
-
-#### 3.1 Detectors
-
-**PELT (Offline):**
-- **PELT_L1**: Robust to outliers (MAD-based)
-- **PELT_L2**: Least-squares minimization
-- **PELT_RBF**: Kernel-based nonlinear detection
-- **PELT_AR**: Autoregressive cost function
-
-**BOCPD (Online Bayesian):**
-- **BOCPD_Gaussian_Heuristic**: ACF-based hazard tuning
-- **BOCPD_Gaussian_Predictive_LL**: Likelihood-optimized hazard
-
-#### 3.2 Usage
-
-```bash
-# Run all 6 models + selection
-python scripts/run_detection.py --enable-selection
-
-# Single model
+echo "Running change point detection on best dataset..."
 python scripts/run_detection.py \
-    --execution-mode single \
-    --detectors pelt \
-    --cost-model l1
+    --execution-mode ensemble \
+    --detectors pelt bocpd \
+    --data $BEST_DATASET \
+    --auto-tune-penalty \
+    --auto-tune-hazard \
+    --output-dir results/detection/best_model
 
-# Custom parameters
-python scripts/run_detection.py \
-    --penalty 2.0 \
-    --posterior-threshold 0.7 \
-    --alpha 0.01
+echo "Pipeline complete! Check results/detection/best_model/"
 ```
 
-#### 3.3 Outputs
-
-**All Models:**
-```
-results/detection/
-├── change_points/          # JSON per model
-│   ├── pelt_l1.json
-│   ├── pelt_l2.json
-│   ├── ...
-├── statistical_tests/      # Validation CSVs
-│   ├── pelt_l1_validation.csv
-│   ├── pelt_l1_summary.json
-│   ├── ...
-├── plots/
-│   ├── pelt_comparison.png
-│   ├── bocpd_comparison.png
-│   ├── all_models_grid.png
-│   └── bocpd_gaussian_*_posterior.png
-└── run_metadata.json
-```
-
-**Best Model (if selection enabled):**
-```
-results/best_model/
-├── change_points.json
-├── validation.csv
-└── selection_metadata.json
-```
-
-#### 3.4 Key Algorithms
-
-**PELT:**
-- Dynamic programming with pruning (O(n) complexity)
-- BIC-based penalty tuning
-- Wilcoxon rank-sum validation with FDR correction
-
-**BOCPD:**
-- Online Bayesian inference
-- Hazard parameter tuning (heuristic or predictive likelihood)
-- Posterior probability thresholding
-
-**Model Selection:**
-- Metrics: n_significant_cps, mean_effect_size, posterior_mass, stability_score
-- Agreement-first strategy: rewards cross-model consensus
-- Explainable ranking with rationale
-
-**See:** [phq9_analysis/detection/README.md](phq9_analysis/detection/README.md)
+**Outputs**:
+- `results/comparison/comparison_summary/dataset_comparison.csv` → Ranked datasets
+- `results/detection/best_model/model_result.json` → Selected change points
+- `results/detection/plots/*.png` → Visualizations
 
 ---
 
-## 🔧 Configuration
+## ⚙️ Configuration
 
-All modules use Pydantic for validated configurations:
+### Philosophy
+
+**All behavior is config-driven** via Pydantic models:
+- No magic numbers in code
+- CLI arguments override config defaults
+- Configs are validated on instantiation
+- JSON-serializable for reproducibility
+
+### Key Config Files
+
+| File | Purpose | Key Parameters |
+|------|---------|----------------|
+| `generation_config.py` | Synthetic data generation | `ar_coefficient`, `recovery_rate_mean`, `relapse_distribution` |
+| `eda_config.py` | Exploratory analysis | `max_clusters_to_test`, `use_temporal_clustering` |
+| `detection_config.py` | Change point detection | `penalty`, `hazard_lambda`, `alpha` |
+| `model_selection_config.py` | Model ranking | `metric_weights`, `agreement_weight` |
+
+### Example: Custom Detection Run
 
 ```python
-# Example: Detection config override
 from config.detection_config import ChangePointDetectionConfig
+from src.detection.detector import ChangePointDetectionOrchestrator
 
+# Override defaults
 config = ChangePointDetectionConfig(
     execution_mode='compare',
     detectors=['pelt', 'bocpd'],
-    penalty=1.5,
+    pelt_cost_models=['l1', 'rbf'],  # Only test robust cost functions
     auto_tune_penalty=True,
-    hazard_lambda=50.0,
     auto_tune_hazard=True,
-    alpha=0.01,
-    selection_enabled=True
-)
-```
-
-**Config Files:**
-- `config/generation_config.py` - Data parameters
-- `config/eda_config.py` - Clustering/visualization
-- `config/detection_config.py` - Detection algorithms
-- `config/model_selection_config.py` - Scoring weights
-
----
-
-## 📈 Typical Workflow
-
-### End-to-End Pipeline
-
-```bash
-# 1. Generate 1000 patients, 365 days
-python scripts/run_generation.py --patients 1000 --days 365
-
-# 2. Explore data patterns
-python scripts/run_eda.py --max-clusters 15
-
-# 3. Detect change points with all models
-python scripts/run_detection.py --enable-selection
-
-# 4. Inspect best model
-cat results/best_model/selection_metadata.json
-```
-
-### Custom Analysis
-
-```python
-from config.detection_config import ChangePointDetectionConfig
-from phq9_analysis.detection.detector import ChangePointDetectionOrchestrator
-
-# Load custom config
-config = ChangePointDetectionConfig(
-    data_path='my_real_data.csv',
-    pelt_cost_models=['l1', 'l2'],
-    auto_tune_penalty=True,
-    hazard_tuning_method='predictive_ll',
-    selection_enabled=True
+    alpha=0.01,  # More conservative testing
+    effect_size_threshold=0.5,  # Larger effects only
 )
 
-# Run detection
-orchestrator = ChangePointDetectionOrchestrator(config=config)
+orchestrator = ChangePointDetectionOrchestrator(config)
 results = orchestrator.run()
-
-# Best model is saved to results/best_model/
 ```
 
 ---
 
-## 📊 Visualization Examples
+## 📊 Results & Interpretation
 
-### EDA Outputs
+### Generation Validation Report
 
-1. **Scatter Plot** - All PHQ-9 scores over time
-2. **Daily Averages** - Mean trajectory with severity bands
-3. **Cluster Results** - Temporal segments with boundaries
-4. **Cluster Optimization** - Elbow + Silhouette curves
+**What to check**:
+- ✅ Autocorrelation in expected range (0.30-0.70 for sparse data)
+- ✅ Baseline severity 13-19 (moderate-severe depression)
+- ✅ 12-week response rate 40-70% (STAR*D benchmark)
+- ✅ Missingness ~95% (structural sparsity + dropout)
 
-### Detection Outputs
-
-1. **PELT Comparison** - All 4 PELT cost models overlaid
-2. **BOCPD Comparison** - Both hazard tuning methods
-3. **6-Panel Grid** - Individual model results with annotations
-4. **BOCPD Posterior** - Run-length heatmap + CP posterior
-
----
-
-## 🧪 Testing & Validation
-
-### Generation Validation
-
-Checks against literature benchmarks:
-- Autocorrelation: 0.6-0.85 (Kroenke et al., 2001)
-- Baseline severity: 14-18 (typical RCT enrollment)
-- Response rate: 40-60% (STAR*D Level-1)
-- Dropout: 10-20% (Fournier et al., 2010)
-
-### Detection Validation
-
-**PELT:**
-- Wilcoxon rank-sum tests (p < 0.05)
-- FDR correction (Benjamini-Hochberg)
-- Cohen's d effect sizes (d ≥ 0.3)
-
-**BOCPD:**
-- Posterior probability thresholds (default: 0.6)
-- Persistence filtering (3+ consecutive time points)
+**Warning flags**:
+- Observed response patterns deviate >10% from expected → Check recovery rate
+- Excess missingness >10% → Dropout rate too high
+- Autocorrelation <0.3 → Temporal gaps too large
 
 ---
 
-## 📚 Key References
+### EDA Cluster Analysis
 
-1. **PELT Algorithm**  
-   Killick, R., Fearnhead, P., & Eckley, I. A. (2012). *Optimal detection of changepoints with a linear computational cost.* JASA.
+**Interpretation**:
+- **2-3 clusters**: Stable period, recovery period, plateau
+- **5+ clusters**: High temporal instability, may indicate model issues
+- **Silhouette score >0.5**: Good separation
+- **Silhouette score <0.3**: Poor clustering, consider temporal weighting
 
-2. **BOCPD Algorithm**  
-   Adams, R. P., & MacKay, D. J. (2007). *Bayesian online changepoint detection.* arXiv:0710.3742.
-
-3. **PHQ-9 Validation**  
-   Kroenke, K., Spitzer, R. L., & Williams, J. B. (2001). *The PHQ-9: validity of a brief depression severity measure.* J Gen Intern Med.
-
-4. **STAR*D Study**  
-   Rush, A. J., et al. (2006). *Acute and longer-term outcomes in depressed outpatients requiring one or several treatment steps: STAR*D.* Am J Psychiatry.
-
-5. **Meta-Analysis**  
-   Fournier, J. C., et al. (2010). *Antidepressant drug effects and depression severity: a patient-level meta-analysis.* JAMA.
+**Response pattern distribution**:
+- Compare observed vs metadata expected
+- Match score >90% → Excellent alignment
+- Match score <70% → Noise suppressing signal
 
 ---
 
-## 🔬 Clinical Applications
+### Change Point Detection
 
-### Research
-- **Clinical Trial Analytics** - Detect treatment effect timing
-- **Biomarker Discovery** - Correlate change points with biological markers
-- **Population Health** - Study community mental health dynamics
-
-### Clinical Practice
-- **Treatment Monitoring** - Track patient response in real-time
-- **Relapse Detection** - Early identification of symptom worsening
-- **Personalized Care** - Tailor interventions based on trajectories
-
-### Healthcare Systems
-- **Resource Allocation** - Predict high-demand periods
-- **Quality Improvement** - Monitor clinic-wide trends
-- **Policy Evaluation** - Assess intervention impact timing
-
----
-
-## 🛠️ Requirements
-
-**Python:** 3.8+
-
-**Core:**
-- `numpy` - Numerical computing
-- `pandas` - Data manipulation
-- `scipy` - Statistical tests
-- `pydantic` - Configuration validation
-
-**Detection:**
-- `ruptures` - PELT implementation
-- `scikit-learn` - Clustering, preprocessing
-
-**Visualization:**
-- `matplotlib` - Plotting
-- `seaborn` - Statistical graphics
-
-**Install all:**
-```bash
-pip install -r requirements.txt
+**PELT output**:
+```json
+{
+  "n_changepoints": 3,
+  "n_significant": 2,
+  "change_points": [45, 120, 210],
+  "validation": {
+    "summary": {
+      "mean_effect_size": 0.65,
+      "fraction_significant": 0.67
+    }
+  }
+}
 ```
 
+**Interpretation**:
+- **n_significant < n_changepoints**: Some CPs failed validation (structural issues or small effects)
+- **Mean effect size >0.5**: Large population-level shifts
+- **Rejected CPs**: Check `rejected` dict for reasons (too close to boundaries, insufficient samples)
+
+**BOCPD output**:
+```json
+{
+  "n_changepoints": 2,
+  "validation": {
+    "summary": {
+      "mean_posterior_at_cp": 0.82,
+      "coverage_ratio": 0.10
+    }
+  }
+}
+```
+
+**Interpretation**:
+- **Mean posterior >0.7**: Strong Bayesian evidence
+- **Coverage ratio <0.15**: Sparse change points (as expected)
+- **No change points detected**: Lower threshold or check signal variability
+
 ---
 
-## 📖 Documentation
+## 📚 References
 
-- **Generation:** [phq9_analysis/generation/README.md](phq9_analysis/generation/README.md)
-- **EDA:** [phq9_analysis/eda/README.md](phq9_analysis/eda/README.md)
-- **Detection:** [phq9_analysis/detection/README.md](phq9_analysis/detection/README.md)
-- **Architecture:** [docs/architecture.md](docs/architecture.md)
-- **Literature:** [docs/literature_references.md](docs/literature_references.md)
+### Core Papers
+
+1. **PELT Algorithm**: Killick, R., Fearnhead, P., & Eckley, I. A. (2012). Optimal detection of changepoints with a linear computational cost. *Journal of the American Statistical Association*, 107(500), 1590-1598.
+
+2. **BOCPD Algorithm**: Adams, R. P., & MacKay, D. J. (2007). Bayesian online changepoint detection. *arXiv preprint arXiv:0710.3742*.
+
+3. **PHQ-9 Validation**: Kroenke, K., Spitzer, R. L., & Williams, J. B. (2001). The PHQ-9: validity of a brief depression severity measure. *Journal of General Internal Medicine*, 16(9), 606-613.
+
+4. **STAR*D Trial**: Rush, A. J., et al. (2006). Acute and longer-term outcomes in depressed outpatients requiring one or several treatment steps: a STAR*D report. *American Journal of Psychiatry*, 163(11), 1905-1917.
+
+5. **Change Point Review**: Truong, C., Oudre, L., & Vayatis, N. (2020). Selective review of offline change point detection methods. *Signal Processing*, 167, 107299.
 
 ---
 
 ## 📜 License
 
-MIT License - See [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+**Note**: This pipeline is designed for research purpose only. Not intended for clinical use.
 
 ---
 
-## 👤 Author
+## 🙋 Authors & Contact
 
 **Satyaki Mitra**  
-*Data Scientist | ML Researcher | Clinical AI*
+*Data Scientist | ML Enthusiast | Clinical AI Research*
 
 ---
 
 ## 🌟 Acknowledgments
 
-This project synthesizes methods from:
-- Killick et al. (PELT algorithm)
-- Adams & MacKay (BOCPD algorithm)
-- Kroenke et al. (PHQ-9 validation)
-- Rush et al. (STAR*D clinical trial)
-
-Special thanks to the open-source community for foundational libraries.
+- **ruptures** library by Charles Truong et al. for PELT implementation
+- **STAR*D** investigators for clinical benchmarks
+- **PHQ-9** developers (Kroenke, Spitzer, Williams)
 
 ---
 
-⭐ **If this project helps your research, please consider citing it and starring the repository!** ⭐
+*Built with care for rigorous, reproducible mental health research.*
