@@ -74,27 +74,27 @@ python scripts/run_detection.py --data data/raw/synthetic_phq9_data.csv --execut
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                    GENERATION MODULE                            │
-│  • Synthetic PHQ-9 with AR(1) + response patterns              │
-│  • Relapse dynamics (exponential/gamma/lognormal)              │
+│  • Synthetic PHQ-9 with AR(1) + response patterns               │
+│  • Relapse dynamics (exponential/gamma/lognormal)               │
 │  • Metadata sidecars for provenance tracking                    │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-                 ▼
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                       EDA MODULE                                │
-│  • KMeans/temporal clustering on daily features                │
-│  • Response pattern classification (early/gradual/late/non)    │
-│  • Relapse detection, plateau analysis                         │
+│  • KMeans/temporal clustering on daily features                 │
+│  • Response pattern classification (early/gradual/late/non)     │
+│  • Relapse detection, plateau analysis                          │
 │  • Metadata-aware validation                                    │
 │  • Multi-dataset comparison & ranking                           │
-└────────────────┬────────────────────────────────────────────────┘
-                 │
-                 ▼
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+                             ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   DETECTION MODULE                              │
-│  • PELT (offline, frequentist) with BIC penalty tuning         │
-│  • BOCPD (online, Bayesian) with hazard tuning                 │
-│  • Statistical validation (Mann-Whitney U, effect sizes)       │
+│  • PELT (offline, frequentist) with BIC penalty tuning          │
+│  • BOCPD (online, Bayesian) with hazard tuning                  │
+│  • Statistical validation (Mann-Whitney U, effect sizes)        │
 │  • Model selection via cross-model agreement                    │
 └─────────────────────────────────────────────────────────────────┘
 ```
