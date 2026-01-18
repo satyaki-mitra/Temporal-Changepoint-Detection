@@ -105,7 +105,7 @@ Where `P` represents the probability distribution characterized by:
 
 ### **Solution Approach**
 
-Our pipeline addresses the problem through three stages:
+This proposed pipeline addresses the problem through three stages:
 
 ```mermaid
 graph TB
@@ -502,7 +502,7 @@ MIT License. **Research purposes only—not for clinical use.**
 ## 👤 Author
 
 **Satyaki Mitra**  
-Data Scientist | ML Enthusiast | Clinical AI Research
+Data Scientist | Statistics Learner | ML Enthusiast | Clinical AI Research
 
 ---
 
