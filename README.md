@@ -514,4 +514,4 @@ Data Scientist | Statistics Learner | ML Enthusiast | Clinical AI Research
 
 ---
 
-**For detailed methodology, see [WHITEPAPER.md](WHITEPAPER.md)**
+**For detailed methodology, see [THORETICAL_DETAILS.md](docs/THORETICAL_DETAILS.md)**
