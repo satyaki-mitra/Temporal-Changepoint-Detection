@@ -465,6 +465,21 @@ config = ChangePointDetectionConfig(
 
 ---
 
+## ⚠️ Limitations & Future Work
+
+### Current Limitations
+1. **Univariate only**: Detects shifts in CV only (not multivariate patterns)
+2. **Retrospective**: Not real-time (though BOCPD supports online)
+3. **PHQ-9 specific**: Some clinical constants are PHQ-9 specific
+
+### Planned Extensions
+1. **Multivariate CPD**: Detect correlated shifts across multiple metrics
+2. **Hierarchical models**: Patient subgroup-aware detection
+3. **Real-time dashboard**: Streamlit/Plotly visualization
+4. **Alternative scales**: Extend to GAD-7, PHQ-15, etc.
+
+---
+
 ## 📚 References
 
 1. **PELT:** Killick et al. (2012). *J. American Statistical Association*
