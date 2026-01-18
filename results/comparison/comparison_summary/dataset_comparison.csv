@@ -1,0 +1,4 @@
+temporal_stability,clinical_realism,statistical_quality,metadata_consistency,dataset_name,composite_score,rank
+87.08791208791209,86.27923976608187,100.0,100.0,synthetic_phq9_data_gamma,91.36454116059379,1
+86.53846153846155,86.38428998614252,100.0,100.0,synthetic_phq9_data_lognormal,91.2037485343043,2
+86.53846153846155,86.36973319725908,100.0,100.0,synthetic_phq9_data_exponential,91.19938149763927,3

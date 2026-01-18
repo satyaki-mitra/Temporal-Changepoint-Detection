@@ -1,0 +1,139 @@
+{
+    "overall_valid": true,
+    "checks": {
+        "score_range": {
+            "min": 0.0002205912436306079,
+            "max": 26.883231564278717,
+            "valid": true
+        },
+        "autocorrelation": {
+            "mean_gap_aware": 0.3600964535564468,
+            "std": 0.43827961942756277,
+            "min": -0.9568067429559173,
+            "max": 0.9976529693593824,
+            "n_patients": 900,
+            "in_expected_range": true,
+            "median_temporal_gap": 14.0,
+            "valid_lag_pairs_pct": 50.22016040257902,
+            "total_observation_pairs": 12718,
+            "expected_range": "[0.30, 0.70]"
+        },
+        "baseline": {
+            "mean": 14.630716555534427,
+            "std": 4.243354753111223,
+            "min": 0.5245831202454423,
+            "max": 26.75461120571445,
+            "n_patients": 1000,
+            "in_expected_range": true,
+            "expected_range": "[13.0, 19.0]"
+        },
+        "improvement": {
+            "mean_improvement_12week": 3.477620465836069,
+            "mean_improvement_final": 4.660659562417106,
+            "std_12week": 4.200291869273664,
+            "n_patients_12week": 722,
+            "n_patients_final": 1000,
+            "shows_improvement": true,
+            "endpoint": "12 weeks (84 days)"
+        },
+        "response_rate": {
+            "rate_12week": 0.15373961218836565,
+            "rate_final": 0.248,
+            "n_evaluable_12week": 722,
+            "n_evaluable_final": 1000,
+            "n_responders_12week": 111,
+            "n_responders_final": 248,
+            "in_expected_range": false,
+            "expected_range": "[40%, 70%]",
+            "endpoint": "12 weeks"
+        },
+        "latent_response": {
+            "latent_response_rate_12week": 0.153,
+            "expected_range": "[40%, 70%]",
+            "in_expected_range": false,
+            "reference": "STAR*D Level-1 latent clinical response"
+        },
+        "missingness": {
+            "total_missingness": 0.9624164383561644,
+            "structural_sparsity_expected": 0.9589041095890412,
+            "excess_missingness": 0.003512328767123263,
+            "excess_missingness_pct": 0.36628571428571166,
+            "mean_per_patient": 0.9624164383561644,
+            "std_per_patient": 0.008301712392977452,
+            "min_per_patient": 0.9452054794520548,
+            "max_per_patient": 0.9808219178082191,
+            "interpretation": "Within expected range for sparse longitudinal studies"
+        },
+        "distributions": {
+            "mean": 11.293294629058886,
+            "std": 4.7512746641332,
+            "skewness": -0.0033925225924429973,
+            "kurtosis": -0.11977371748996823,
+            "normality_p_value": null
+        }
+    },
+    "warnings": [
+        "12-week response rate 15.4% outside expected range (0.4, 0.7). STAR*D Level-1 \u2248 47%. Final response rate: 24.8%",
+        "Latent 12-week response rate 15.3% outside expected range [40%, 70%]. This suggests response suppression is NOT due to noise."
+    ],
+    "errors": [],
+    "relapse_statistics": {
+        "n_patients": 1000,
+        "total_relapses": 1553,
+        "patients_with_relapses": 805,
+        "patient_relapse_rate": 0.805,
+        "mean_relapses_per_patient": 1.553,
+        "max_relapses_single_patient": 6
+    },
+    "dropout_statistics": {
+        "n_patients": 1000,
+        "n_dropouts": 222,
+        "dropout_rate": 0.222,
+        "mean_dropout_day": 166.35135135135135,
+        "median_dropout_day": 144.0
+    },
+    "generation_metadata": {
+        "generation_timestamp": "2026-01-17T20:02:05.902894",
+        "random_seed": 2023,
+        "config_hash": "0105c2ea2e47d0c1",
+        "study_design": {
+            "n_patients": 1000,
+            "total_days": 365,
+            "min_surveys_per_patient": 10,
+            "max_surveys_per_patient": 20
+        },
+        "model_parameters": {
+            "ar_coefficient": 0.7,
+            "baseline_mean": 16.0,
+            "baseline_std": 3.0,
+            "recovery_rate_mean": -0.075,
+            "recovery_rate_std": 0.03,
+            "noise_std": 2.5
+        },
+        "relapse_config": {
+            "distribution": "exponential",
+            "probability": 0.1,
+            "magnitude_mean": 3.5
+        },
+        "missingness_config": {
+            "dropout_rate": 0.21,
+            "mcar_rate": 0.08
+        },
+        "features": {
+            "response_patterns_enabled": true,
+            "plateau_logic_enabled": true
+        },
+        "response_pattern_distribution": {
+            "non_responder": 190,
+            "gradual_responder": 362,
+            "early_responder": 316,
+            "late_responder": 132
+        },
+        "generation_statistics": {
+            "total_observations": 13718,
+            "missingness_rate": 0.9624164383561644,
+            "n_observation_days": 365,
+            "patients_in_plateau": 789
+        }
+    }
+}

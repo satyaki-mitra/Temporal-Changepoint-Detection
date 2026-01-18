@@ -1,0 +1,76 @@
+{
+    "model_id": "bocpd_gaussian_heuristic",
+    "method": "bocpd",
+    "algorithm": "BOCPD",
+    "variant": "bocpd_gaussian",
+    "n_changepoints": 10,
+    "signal_length": 365,
+    "change_points": [
+        0.2191780821917808,
+        0.2493150684931507,
+        0.3150684931506849,
+        0.5342465753424658,
+        0.5589041095890411,
+        0.5863013698630137,
+        0.6301369863013698,
+        0.7068493150684931,
+        0.863013698630137,
+        0.9698630136986301
+    ],
+    "validation": {
+        "n_changepoints": 10,
+        "normalized_positions": [
+            0.2191780821917808,
+            0.2493150684931507,
+            0.3150684931506849,
+            0.5342465753424658,
+            0.5589041095890411,
+            0.5863013698630137,
+            0.6301369863013698,
+            0.7068493150684931,
+            0.863013698630137,
+            0.9698630136986301
+        ],
+        "detected_indices": [
+            80,
+            91,
+            115,
+            195,
+            204,
+            214,
+            230,
+            258,
+            315,
+            354
+        ],
+        "posterior_threshold": 0.1,
+        "persistence": 3,
+        "test_family": "bayesian",
+        "overall_significant": true,
+        "rejection_reason": null,
+        "summary": {
+            "mean_posterior_at_cp": 0.10000000000000006,
+            "max_posterior_at_cp": 0.10000000000000012,
+            "coverage_ratio": 0.0273972602739726,
+            "max_posterior_overall": 0.10000000000000012,
+            "mean_posterior_overall": 0.09951999447118444
+        }
+    },
+    "timestamp": "2026-01-18T19:40:54.396062",
+    "hazard_lambda": 10.0,
+    "hazard_rate": 0.1,
+    "posterior_threshold": 0.1,
+    "max_run_length_used": 365,
+    "hazard_tuning": {
+        "optimal_hazard_lambda": 10.0,
+        "optimal_hazard_rate": 0.1,
+        "lambdas_tested": [
+            10.0
+        ],
+        "scores": null,
+        "criterion": "heuristic_autocorr",
+        "method": "heuristic",
+        "strategy": "autocorr",
+        "notes": "Autocorrelation-based: ACF(1)=0.472 \u2192 raw \u03bb=1.3, clipped to [10.0, 300.0] \u2192 10.0"
+    }
+}

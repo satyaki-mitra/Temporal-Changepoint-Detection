@@ -31,13 +31,50 @@ class DetectionVisualizer:
         plt.style.use(style)
 
 
+    @staticmethod
+    def _normalize_change_points(change_points: List, signal_length: int, method: str) -> List[int]:
+        """
+        Convert change points to integer indices regardless of input format
+
+        PELT  :  change_points are already integers [24, 58, 135]
+        BOCPD : change_points are normalized floats [0.0657, 0.1589, 0.3698]
+
+        Arguments:
+        ----------
+            change_points  { list }  : Change point positions (int or float)
+
+            signal_length  { int }   : Total signal length
+            
+            method         { str }   : Detection method ('pelt' or 'bocpd')
+
+        Returns:
+        --------
+                          { list }  : Integer indices
+        """
+        if not change_points:
+            return []
+
+        # Check if already integers (PELT format)
+        if all(isinstance(cp, (int, np.integer)) for cp in change_points):
+            return [int(cp) for cp in change_points]
+
+        # Convert normalized positions to indices (BOCPD format)
+        if all(isinstance(cp, (float, np.floating)) for cp in change_points):
+            if all(0 <= cp <= 1 for cp in change_points):
+                # Normalized positions - convert to indices
+                return [int(cp * signal_length) for cp in change_points]
+
+        # Fallback: assume they're already indices
+        return [int(cp) for cp in change_points]
+
+
     def plot_aggregated_cv_with_all_models(self, aggregated_data: pd.Series, model_results: Dict[str, Dict], save_path: Optional[Path] = None):
         """
         Plot aggregated CV with change points from all models overlaid
 
         Each model is expected to provide:
         ---------------------------------
-        - change_points : List[int]
+        - change_points : List[int] or List[float]  (handles both formats)
         - color         : str
         - linestyle     : str
         """
@@ -55,11 +92,16 @@ class DetectionVisualizer:
 
         # Overlay CPs from each model
         for model_id, result in model_results.items():
-            cps       = result.get("change_points", [])
-            color     = result.get("color", "red")
-            linestyle = result.get("linestyle", "--")
+            cps           = result.get("change_points", [])
+            color         = result.get("color", "red")
+            linestyle     = result.get("linestyle", "--")
+            method        = result.get("method", "unknown")
+            signal_length = result.get("signal_length", len(aggregated_data))
 
-            for i, cp in enumerate(cps):
+            # Normalize change points to integer indices
+            cps_indices   = self._normalize_change_points(cps, signal_length, method)
+
+            for i, cp in enumerate(cps_indices):
                 ax.axvline(cp,
                            color     = color,
                            linestyle = linestyle,
@@ -104,7 +146,7 @@ class DetectionVisualizer:
         x         = np.arange(len(aggregated_data))
 
         for idx, (model_id, result) in enumerate(model_results.items()):
-            ax        = axes[idx]
+            ax            = axes[idx]
 
             ax.plot(x,
                     aggregated_data.values,
@@ -113,11 +155,16 @@ class DetectionVisualizer:
                     alpha     = 0.8,
                    )
 
-            cps       = result.get("change_points", [])
-            color     = result.get("color", "red")
-            linestyle = result.get("linestyle", "--")
+            cps           = result.get("change_points", [])
+            color         = result.get("color", "red")
+            linestyle     = result.get("linestyle", "--")
+            method        = result.get("method", "unknown")
+            signal_length = result.get("signal_length", len(aggregated_data))
 
-            for cp in cps:
+            # Normalize change points to integer indices
+            cps_indices   = self._normalize_change_points(cps, signal_length, method)
+
+            for cp in cps_indices:
                 ax.axvline(cp, 
                            color     = color, 
                            linestyle = linestyle, 
@@ -125,7 +172,7 @@ class DetectionVisualizer:
                            linewidth = 2,
                           )
 
-            n_cps = len(cps)
+            n_cps = len(cps_indices)
             
             # Show validation status
             validation = result.get('validation', {})
@@ -167,12 +214,12 @@ class DetectionVisualizer:
                     cbar_kws = {'label': 'P(run length | data)'},
                    )
 
-        ax1.set_title("BOCPD Run-Length Posterior", fontsize=14, pad=15)
-        ax1.set_ylabel("Run Length", fontsize=12)
+        ax1.set_title("BOCPD Run-Length Posterior", fontsize = 14, pad = 15)
+        ax1.set_ylabel("Run Length", fontsize = 12)
         ax1.set_xlabel("")
 
         # CP posterior
-        ax2.plot(cp_posterior, color = "blue", linewidth = 2.5, label='P(change point)')
+        ax2.plot(cp_posterior, color = "blue", linewidth = 2.5, label = 'P(change point)')
         
         ax2.axhline(posterior_threshold,
                     color     = "red",
@@ -199,13 +246,11 @@ class DetectionVisualizer:
         ax2.grid(True, alpha = 0.3, linestyle = ':')
         ax2.legend(loc = 'upper right', fontsize = 10)
 
-        plt.tight_layout()
-
         self._save_or_show(save_path = save_path)
 
 
     # Diagnostic plots
-    def plot_segment_diagnostics(self, aggregated_data: pd.Series, change_points: List[int], model_id: str, save_path: Optional[Path] = None):
+    def plot_segment_diagnostics(self, aggregated_data: pd.Series, change_points: List, model_id: str, method: str = 'pelt', save_path: Optional[Path] = None):
         """
         Plot segment-level diagnostics
 
@@ -215,12 +260,19 @@ class DetectionVisualizer:
         - Residuals within segments
         - Segment lengths
         """
-        fig        = plt.figure(figsize = (16, 12))
-        gs         = GridSpec(3, 1, height_ratios = [2, 1, 1], hspace = 0.3)
+        # Normalize change points
+        signal_length = len(aggregated_data)
+        change_points = self._normalize_change_points(change_points = change_points, 
+                                                      signal_length = signal_length, 
+                                                      method        = method,
+                                                     )
+
+        fig          = plt.figure(figsize = (16, 12))
+        gs           = GridSpec(3, 1, height_ratios = [2, 1, 1], hspace = 0.3)
 
         # Prepare segments
-        boundaries = [0] + list(change_points) + [len(aggregated_data)]
-        segments   = []
+        boundaries   = [0] + list(change_points) + [len(aggregated_data)]
+        segments     = []
 
         for start, end in zip(boundaries[:-1], boundaries[1:]):
             seg_data = aggregated_data.iloc[start:end]
@@ -231,7 +283,7 @@ class DetectionVisualizer:
                              'length': end - start,
                            })
 
-        # Plot 1: Signal with segment means
+        # Signal with segment means
         ax1 = fig.add_subplot(gs[0])
         x   = np.arange(len(aggregated_data))
 
@@ -259,7 +311,7 @@ class DetectionVisualizer:
         ax1.grid(True, alpha = 0.3)
         ax1.legend(loc = 'best', fontsize = 9)
 
-        # Plot 2: Residuals
+        # Residuals
         ax2 = fig.add_subplot(gs[1])
         
         for seg in segments:
@@ -272,7 +324,7 @@ class DetectionVisualizer:
         ax2.set_title("Within-Segment Residuals", fontsize = 13)
         ax2.grid(True, alpha = 0.3)
 
-        # Plot 3: Segment statistics
+        # Segment statistics
         ax3         = fig.add_subplot(gs[2])
         
         seg_indices = range(len(segments))

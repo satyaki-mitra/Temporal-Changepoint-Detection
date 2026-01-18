@@ -1,0 +1,40 @@
+{
+    "comparison_timestamp": "2026-01-17T20:13:05.381271",
+    "datasets_compared": 3,
+    "scoring_weights": {
+        "temporal_stability": 0.35,
+        "clinical_realism": 0.3,
+        "statistical_quality": 0.2,
+        "metadata_consistency": 0.15
+    },
+    "results": [
+        {
+            "temporal_stability": 87.08791208791209,
+            "clinical_realism": 86.27923976608187,
+            "statistical_quality": 100.0,
+            "metadata_consistency": 100.0,
+            "dataset_name": "synthetic_phq9_data_gamma",
+            "composite_score": 91.36454116059379,
+            "rank": 1
+        },
+        {
+            "temporal_stability": 86.53846153846155,
+            "clinical_realism": 86.38428998614252,
+            "statistical_quality": 100.0,
+            "metadata_consistency": 100.0,
+            "dataset_name": "synthetic_phq9_data_lognormal",
+            "composite_score": 91.2037485343043,
+            "rank": 2
+        },
+        {
+            "temporal_stability": 86.53846153846155,
+            "clinical_realism": 86.36973319725908,
+            "statistical_quality": 100.0,
+            "metadata_consistency": 100.0,
+            "dataset_name": "synthetic_phq9_data_exponential",
+            "composite_score": 91.19938149763927,
+            "rank": 3
+        }
+    ],
+    "recommendation": "synthetic_phq9_data_gamma"
+}

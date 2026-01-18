@@ -58,7 +58,7 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     description = "PELT penalty parameter",
                                                                                    )
     
-    penalty_range                : Tuple[float, float]                      = Field(default     = (0.1, 10.0),
+    penalty_range                : Tuple[float, float]                      = Field(default     = (0.01, 10.0),
                                                                                     description = "Penalty tuning range for BIC",
                                                                                    )
     
@@ -93,14 +93,14 @@ class ChangePointDetectionConfig(BaseModel):
                                                                                     description = "Maximum run length tracked",
                                                                                    )
 
-    hazard_lambda                : float                                    = Field(default     = 30.0,
-                                                                                    ge          = 2.0,
+    hazard_lambda                : float                                    = Field(default     = 75.0,
+                                                                                    ge          = 10.0,
                                                                                     le          = 500.0,
                                                                                     description = "Expected run length (λ) for BOCPD. Auto-tuned if auto_tune_hazard=True"
                                                                                    )
 
-    cp_posterior_threshold       : float                                    = Field(default     = 0.6,
-                                                                                    ge          = 0.1,
+    cp_posterior_threshold       : float                                    = Field(default     = 0.1,
+                                                                                    ge          = 0.05,
                                                                                     le          = 0.99,
                                                                                     description = "Posterior probability threshold for CP declaration",
                                                                                    )
@@ -230,12 +230,20 @@ class ChangePointDetectionConfig(BaseModel):
     def validate_hazard_range(cls, v):
         low, high = v
         
-        if (low < 2):
-            raise ValueError("hazard_range lower bound must be ≥ 2 (run lengths < 2 are unrealistic)")
+        if (low < 10):
+            raise ValueError("hazard_range lower bound must be ≥ 10 (run lengths < 10 days are too frequent for typical PHQ-9 monitoring)")
 
         if (high <= low):
             raise ValueError("hazard_range upper bound must be > lower bound")
 
+        return v
+
+
+    @validator('cp_posterior_threshold')
+    def validate_cp_threshold(cls, v):
+        if (v > 0.5):
+            warnings.warn(f"cp_posterior_threshold ({v}) is very high - BOCPD posteriors rarely exceed 0.5. Consider lowering to 0.1-0.3 for better sensitivity.")
+        
         return v
 
 

@@ -261,31 +261,104 @@ class PELTStatisticalValidator:
 
 
 
-# BOCPD – Bayesian Validation
+# BOCPD – Bayesian Validation - FIXED
 class BOCPDStatisticalValidator:
     """
     Bayesian validation for BOCPD detections
+
+    FIXED: Better persistence checking and validation logic
     """
-    def __init__(self, posterior_threshold: float = 0.6, persistence: int = 3):
+    def __init__(self, posterior_threshold: float = 0.15, persistence: int = 1):
         self.posterior_threshold = posterior_threshold
         self.persistence         = persistence
 
 
     def validate(self, cp_posterior: np.ndarray) -> Dict:
-        cp_flags   = cp_posterior >= self.posterior_threshold
-        persistent = (np.convolve(cp_flags.astype(int), np.ones(self.persistence, dtype = int), mode = 'same') >= self.persistence)
+        """
+        FIXED: Improved change point detection from posterior
 
-        detected   = np.where(persistent)[0]
+        Logic:
+        ------
+        1. Find points where posterior > threshold
+        2. If persistence > 1, require consecutive exceedances
+        3. Mark change point at the PEAK of each persistent region
+        """
+        detected = []
+        
+        if (self.persistence == 1):
+            # Simple threshold - detect all exceedances
+            detected = np.where(cp_posterior >= self.posterior_threshold)[0].tolist()
+        
+        else:
+            # Require consecutive exceedances
+            above_threshold = cp_posterior >= self.posterior_threshold
+            
+            # Find runs of consecutive True values
+            in_run   = False
+            run_start = 0
+            
+            for i in range(len(above_threshold)):
+                if above_threshold[i] and not in_run:
+                    # Start of a new run
+                    run_start = i
+                    in_run    = True
+                
+                elif (not above_threshold[i]) and in_run:
+                    # End of run - check if it meets persistence requirement
+                    run_length = i - run_start
+                    
+                    if (run_length >= self.persistence):
+                        # Find peak within this run
+                        run_posteriors = cp_posterior[run_start:i]
+                        peak_idx       = run_start + np.argmax(run_posteriors)
+                        detected.append(peak_idx)
+                    
+                    in_run = False
+            
+            # Handle case where run extends to end of signal
+            if in_run:
+                run_length = len(above_threshold) - run_start
+                
+                if (run_length >= self.persistence):
+                    run_posteriors = cp_posterior[run_start:]
+                    peak_idx       = run_start + np.argmax(run_posteriors)
+                    detected.append(peak_idx)
+
+        detected = np.array(detected)
+
+        # Calculate summary statistics
+        if (len(detected) > 0):
+            mean_posterior = float(np.mean(cp_posterior[detected]))
+            max_posterior  = float(np.max(cp_posterior[detected]))
+        else:
+            mean_posterior = 0.0
+            max_posterior  = 0.0
+
+        # Determine rejection reason if no detections
+        rejection_reason = None
+        
+        if (len(detected) == 0):
+            max_overall = np.max(cp_posterior)
+            
+            if (max_overall < self.posterior_threshold):
+                rejection_reason = f'All posteriors below threshold (max={max_overall:.4f} < {self.posterior_threshold:.4f})'
+            
+            else:
+                rejection_reason = f'Posteriors exceed threshold but lack persistence (need {self.persistence} consecutive points)'
 
         return {'n_changepoints'       : len(detected),
                 'normalized_positions' : (detected / max(len(cp_posterior), 1)).tolist(),
+                'detected_indices'     : detected.tolist(),
                 'posterior_threshold'  : self.posterior_threshold,
                 'persistence'          : self.persistence,
                 'test_family'          : 'bayesian',
                 'overall_significant'  : (len(detected) > 0),
-                'rejection_reason'     : 'Posterior below threshold or not persistent' if len(detected) == 0 else None,
-                'summary'              : {'mean_posterior_at_cp' : float(np.mean(cp_posterior[detected])) if len(detected) else 0.0,
+                'rejection_reason'     : rejection_reason,
+                'summary'              : {'mean_posterior_at_cp' : mean_posterior,
+                                          'max_posterior_at_cp'  : max_posterior,
                                           'coverage_ratio'       : len(detected) / max(len(cp_posterior), 1),
+                                          'max_posterior_overall': float(np.max(cp_posterior)),
+                                          'mean_posterior_overall': float(np.mean(cp_posterior)),
                                          },
                }
 

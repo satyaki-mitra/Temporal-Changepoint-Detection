@@ -1,0 +1,55 @@
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - logging_util.py:113 - Logging to file: logs/comparison/comparison_20260117_201217.log
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - logging_util.py:150 -                          PHQ-9 DISTRIBUTION COMPARISON                          
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:81 - Start time: 2026-01-17 20:12:17
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:92 - Found: data/raw/synthetic_phq9_data_exponential.csv
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:92 - Found: data/raw/synthetic_phq9_data_gamma.csv
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:92 - Found: data/raw/synthetic_phq9_data_lognormal.csv
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:101 - 
+Analyzing 3 datasets...
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:107 - 
+================================================================================
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:108 - Processing: synthetic_phq9_data_exponential
+2026-01-17 20:12:17 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:109 - ================================================================================
+2026-01-17 20:12:32 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:116 - Completed: synthetic_phq9_data_exponential
+2026-01-17 20:12:32 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:107 - 
+================================================================================
+2026-01-17 20:12:32 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:108 - Processing: synthetic_phq9_data_gamma
+2026-01-17 20:12:32 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:109 - ================================================================================
+2026-01-17 20:12:48 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:116 - Completed: synthetic_phq9_data_gamma
+2026-01-17 20:12:48 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:107 - 
+================================================================================
+2026-01-17 20:12:48 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:108 - Processing: synthetic_phq9_data_lognormal
+2026-01-17 20:12:48 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:109 - ================================================================================
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:116 - Completed: synthetic_phq9_data_lognormal
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:119 - 
+================================================================================
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:120 - COMPARING DATASETS
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:121 - ================================================================================
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:127 - 
+Comparison Results:
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:128 - 
+   temporal_stability  clinical_realism  statistical_quality  metadata_consistency                     dataset_name  composite_score  rank
+1           87.087912         86.279240                100.0                 100.0        synthetic_phq9_data_gamma        91.364541     1
+2           86.538462         86.384290                100.0                 100.0    synthetic_phq9_data_lognormal        91.203749     2
+0           86.538462         86.369733                100.0                 100.0  synthetic_phq9_data_exponential        91.199381     3
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - distribution_comparator.py:333 - Comparison report saved to results/comparison/comparison_summary/comparison_report.json
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - distribution_comparator.py:334 - Recommended dataset: synthetic_phq9_data_gamma
+2026-01-17 20:13:05 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:144 - 
+Generating comparison visualizations...
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:159 - 
+================================================================================
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:160 - 
+DATASET RECOMMENDATION
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:161 - ================================================================================
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:162 - Best dataset: synthetic_phq9_data_gamma
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:163 - Composite score: 91.36/100
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:164 - 
+Use this dataset for change-point detection:
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:165 -   data/raw/synthetic_phq9_data_gamma.csv
+
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:167 - 
+Comparison completed successfully!
+2026-01-17 20:13:06 - phq9_analysis.comparison - [92mINFO[0m - compare_distributions.py:175 - 
+End time: 2026-01-17 20:13:06

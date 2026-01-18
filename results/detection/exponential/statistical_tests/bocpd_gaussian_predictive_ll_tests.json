@@ -1,0 +1,19 @@
+{
+    "model_id": "bocpd_gaussian_predictive_ll",
+    "method": "bocpd",
+    "test_family": "bayesian",
+    "n_changepoints": 11,
+    "n_significant": null,
+    "overall_significant": true,
+    "alpha": null,
+    "tests": {},
+    "summary": {
+        "mean_posterior_at_cp": 0.10000000000000007,
+        "max_posterior_at_cp": 0.10000000000000014,
+        "coverage_ratio": 0.030136986301369864,
+        "max_posterior_overall": 0.10000000000000014,
+        "mean_posterior_overall": 0.09951999447118443
+    },
+    "rejection_reason": null,
+    "timestamp": "2026-01-18T19:37:09.385858"
+}

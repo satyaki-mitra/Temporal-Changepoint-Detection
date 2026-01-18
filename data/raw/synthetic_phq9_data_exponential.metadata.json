@@ -1,0 +1,44 @@
+{
+    "generation_timestamp": "2026-01-17T20:02:05.902894",
+    "random_seed": 2023,
+    "config_hash": "0105c2ea2e47d0c1",
+    "study_design": {
+        "n_patients": 1000,
+        "total_days": 365,
+        "min_surveys_per_patient": 10,
+        "max_surveys_per_patient": 20
+    },
+    "model_parameters": {
+        "ar_coefficient": 0.7,
+        "baseline_mean": 16.0,
+        "baseline_std": 3.0,
+        "recovery_rate_mean": -0.075,
+        "recovery_rate_std": 0.03,
+        "noise_std": 2.5
+    },
+    "relapse_config": {
+        "distribution": "exponential",
+        "probability": 0.1,
+        "magnitude_mean": 3.5
+    },
+    "missingness_config": {
+        "dropout_rate": 0.21,
+        "mcar_rate": 0.08
+    },
+    "features": {
+        "response_patterns_enabled": true,
+        "plateau_logic_enabled": true
+    },
+    "response_pattern_distribution": {
+        "non_responder": 190,
+        "gradual_responder": 362,
+        "early_responder": 316,
+        "late_responder": 132
+    },
+    "generation_statistics": {
+        "total_observations": 13718,
+        "missingness_rate": 0.9624164383561644,
+        "n_observation_days": 365,
+        "patients_in_plateau": 789
+    }
+}

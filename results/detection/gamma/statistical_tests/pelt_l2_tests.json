@@ -1,0 +1,66 @@
+{
+    "model_id": "pelt_l2",
+    "method": "pelt",
+    "test_family": null,
+    "n_changepoints": 3,
+    "n_significant": 2,
+    "overall_significant": true,
+    "alpha": 0.05,
+    "tests": {
+        "CP_1_at_24": {
+            "change_point_index": 24,
+            "test_name": "Permutation Test",
+            "test_statistic": -0.03397533295722527,
+            "p_value": 0.0327,
+            "cohens_d": 1.8565141407186905,
+            "test_family": "frequentist",
+            "before_mean": 0.26249781920371773,
+            "after_mean": 0.296473152160943,
+            "mean_difference": 0.03397533295722527,
+            "significant": true,
+            "meaningful_effect": true,
+            "normalized_position": 0.06575342465753424,
+            "p_value_corrected": 0.049049999999999996,
+            "significant_after_correction": true
+        },
+        "CP_2_at_58": {
+            "change_point_index": 58,
+            "test_name": "Permutation Test",
+            "test_statistic": -0.069787727974296,
+            "p_value": 0.0164,
+            "cohens_d": 2.062794420874574,
+            "test_family": "frequentist",
+            "before_mean": 0.31772953890032163,
+            "after_mean": 0.3875172668746176,
+            "mean_difference": 0.069787727974296,
+            "significant": true,
+            "meaningful_effect": true,
+            "normalized_position": 0.1589041095890411,
+            "p_value_corrected": 0.049049999999999996,
+            "significant_after_correction": true
+        },
+        "CP_3_at_149": {
+            "change_point_index": 149,
+            "test_name": "Permutation Test",
+            "test_statistic": -0.07460596957524623,
+            "p_value": 0.1132,
+            "cohens_d": 1.0875706009160444,
+            "test_family": "frequentist",
+            "before_mean": 0.38088831698239894,
+            "after_mean": 0.4554942865576452,
+            "mean_difference": 0.07460596957524623,
+            "significant": false,
+            "meaningful_effect": true,
+            "normalized_position": 0.40821917808219177,
+            "p_value_corrected": 0.1132,
+            "significant_after_correction": false
+        }
+    },
+    "summary": {
+        "fraction_significant": 0.6666666666666666,
+        "mean_effect_size": 1.6689597208364362,
+        "max_effect_size": 2.062794420874574
+    },
+    "rejection_reason": null,
+    "timestamp": "2026-01-18T19:39:02.053734"
+}

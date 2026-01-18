@@ -1,5 +1,6 @@
 # Dependencies
 import numpy as np
+import pandas as pd
 from typing import Dict
 from typing import Optional
 
@@ -57,11 +58,11 @@ class BOCPDHazardTuner:
 
 
     # HEURISTIC TUNER (DEFAULT, FAST)
-    def _tune_heuristic(self, signal: np.ndarray, target_n_cps: Optional[int] = None, strategy: str = 'uniform') -> Dict:
+    def _tune_heuristic(self, signal: np.ndarray, target_n_cps: Optional[int] = None, strategy: str = 'autocorr') -> Dict:
         """
         Heuristic hazard tuning
 
-        REFINED: Added multiple heuristic strategies
+        FIXED: Proper target_n_cps calculation and bounds enforcement
 
         Strategies:
         -----------
@@ -73,24 +74,35 @@ class BOCPDHazardTuner:
         lo, hi        = self.config.hazard_range
 
         if (strategy == 'uniform'):
-            # Original uniform spacing assumption
+            # Better default target based on signal length
             if target_n_cps is None:
-                target_n_cps = 3
+                # For 365-day signal, expect 3-6 change points → λ ≈ 60-120
+                target_n_cps = max(3, min(6, T // 60))
 
-            hazard_lambda = float(np.clip(T / (target_n_cps + 1), lo, hi))
+            # Ensure lambda is within bounds
+            raw_lambda    = T / (target_n_cps + 1)
+            hazard_lambda = float(np.clip(raw_lambda, lo, hi))
 
-            notes         = f"Uniform spacing: λ ≈ T/(k+1) = {T}/({target_n_cps}+1)"
+            notes         = f"Uniform spacing: λ ≈ T/(k+1) = {T}/({target_n_cps}+1) = {raw_lambda:.1f}, clipped to [{lo}, {hi}] → {hazard_lambda:.1f}"
 
         elif (strategy == 'autocorr'):
-            # Autocorrelation-based heuristic: λ ≈ 1 / (1 - ACF(lag=1))
+            # More robust autocorrelation-based heuristic
             if (len(signal) > 5):
+                # Use lag-1 autocorrelation
                 acf_1         = np.corrcoef(signal[:-1], signal[1:])[0, 1]
                 acf_1         = np.clip(acf_1, -0.99, 0.99)
 
-                hazard_lambda = 1.0 / max(1.0 - acf_1, 0.01)
-                hazard_lambda = float(np.clip(hazard_lambda, lo, hi))
+                # Expected run length based on autocorrelation decay
+                # If ACF is high (e.g., 0.9), changes are rare → high λ
+                # If ACF is low (e.g., 0.1), changes are common → low λ
+                if (acf_1 > 0):
+                    raw_lambda = -1.0 / np.log(acf_1) if acf_1 > 0.01 else T / 4
+                
+                else:
+                    raw_lambda = T / 4
 
-                notes         = f"Autocorrelation-based: ACF(1)={acf_1:.3f} → λ={hazard_lambda:.1f}"
+                hazard_lambda = float(np.clip(raw_lambda, lo, hi))
+                notes         = f"Autocorrelation-based: ACF(1)={acf_1:.3f} → raw λ={raw_lambda:.1f}, clipped to [{lo}, {hi}] → {hazard_lambda:.1f}"
             
             else:
                 # Fallback to uniform
@@ -98,25 +110,37 @@ class BOCPDHazardTuner:
                 notes         = "Autocorr failed (signal too short) - fallback to uniform"
 
         elif (strategy == 'variance'):
-            # Variance-based heuristic: estimate segment lengths from variance changes
-            rolling_var = pd.Series(signal).rolling(window=5, center=True).var().fillna(method='bfill').fillna(method='ffill')
-            var_diff    = np.abs(np.diff(rolling_var))
-            
-            # Find rough change points
-            threshold   = np.percentile(var_diff, 75)
-            rough_cps   = np.where(var_diff > threshold)[0]
+            # Variance-based heuristic
+            if (len(signal) >= 10):
+                rolling_var = pd.Series(signal).rolling(window=5, center=True).var().fillna(method='bfill').fillna(method='ffill')
+                var_diff    = np.abs(np.diff(rolling_var))
+                
+                # Find rough change points
+                threshold   = np.percentile(var_diff, 75)
+                rough_cps   = np.where(var_diff > threshold)[0]
 
-            if (len(rough_cps) > 0):
-                avg_segment   = np.mean(np.diff([0] + list(rough_cps) + [T]))
-                hazard_lambda = float(np.clip(avg_segment, lo, hi))
-                notes         = f"Variance-based: {len(rough_cps)} rough CPs → avg segment={avg_segment:.1f}"
-            
+                if (len(rough_cps) > 1):
+                    # Calculate average segment length
+                    segments      = np.diff([0] + list(rough_cps) + [T])
+                    avg_segment   = float(np.median(segments))  # Median for robustness
+                    raw_lambda    = avg_segment
+                    hazard_lambda = float(np.clip(raw_lambda, lo, hi))
+                    notes         = f"Variance-based: {len(rough_cps)} rough CPs → median segment={avg_segment:.1f}, clipped to [{lo}, {hi}] → {hazard_lambda:.1f}"
+                
+                else:
+                    # Fallback: assume ~4-5 change points
+                    hazard_lambda = float(np.clip(T / 5, lo, hi))
+                    notes         = "Variance-based: no clear variance changes - fallback to T/5"
             else:
                 hazard_lambda = float(np.clip(T / 4, lo, hi))
-                notes         = "Variance-based failed (no variance changes) - fallback"
+                notes         = "Variance-based failed (signal too short) - fallback"
 
         else:
             raise ValueError(f"Unknown heuristic strategy: {strategy}")
+
+        # Validation check
+        if (hazard_lambda < 10):
+            notes += f" WARNING: λ={hazard_lambda:.1f} is very low (expecting CP every {hazard_lambda:.0f} days)"
 
         return {'optimal_hazard_lambda' : hazard_lambda,
                 'optimal_hazard_rate'   : 1.0 / hazard_lambda,
@@ -129,7 +153,7 @@ class BOCPDHazardTuner:
                }
 
 
-    # PREDICTIVE LOG-LIKELIHOOD TUNER (OFFLINE / ANALYSIS)
+    # PREDICTIVE LOG-LIKELIHOOD TUNER (OFFLINE / ANALYSIS) 
     @staticmethod
     def _gaussian_predictive_ll(train: np.ndarray, test: np.ndarray) -> float:
         """
@@ -147,7 +171,7 @@ class BOCPDHazardTuner:
         return float(ll)
 
 
-    def _tune_predictive_ll(self, signal: np.ndarray, n_lambdas: int = 20, train_ratio: float = 0.7, n_folds: int = 3, horizon: int = 10) -> Dict:
+    def _tune_predictive_ll(self, signal: np.ndarray, n_lambdas: int = 15, train_ratio: float = 0.7, n_folds: int = 3, horizon: int = 10) -> Dict:
         """
         Tune λ via time-series cross-validated predictive log-likelihood
 
@@ -159,7 +183,7 @@ class BOCPDHazardTuner:
         """
         low, high  = self.config.hazard_range
 
-        # Use fewer lambdas for faster tuning
+        # Log-space grid for better coverage
         lambdas    = np.logspace(np.log10(low), np.log10(high), n_lambdas)
 
         scores     = list()
@@ -201,9 +225,29 @@ class BOCPDHazardTuner:
             
             return heuristic_result
 
-        idx         = int(np.argmax(scores))
-        best_lambda = float(lambdas[idx])
-        best_score  = scores[idx]
+        # Exclude -inf scores from consideration
+        valid_indices = [i for i, s in enumerate(scores) if s > -np.inf]
+        
+        if not valid_indices:
+            # All scores invalid - fallback
+            heuristic_result           = self._tune_heuristic(signal, strategy='uniform')
+            heuristic_result['notes']  = 'All predictive LL scores invalid - fallback to heuristic'
+            heuristic_result['method'] = 'predictive_ll_fallback'
+            
+            return heuristic_result
+
+        valid_scores  = [scores[i] for i in valid_indices]
+        valid_lambdas = [lambdas[i] for i in valid_indices]
+
+        idx           = int(np.argmax(valid_scores))
+        best_lambda   = float(valid_lambdas[idx])
+        best_score    = valid_scores[idx]
+
+        notes         = f'Gaussian plug-in predictive likelihood (approximate), best LL={best_score:.2f} at λ={best_lambda:.1f}'
+
+        # ADDED: Warning for extreme values
+        if (best_lambda < 20):
+            notes += f" WARNING: Selected λ={best_lambda:.1f} is low (expecting CP every {best_lambda:.0f} days)"
 
         return {'optimal_hazard_lambda' : best_lambda,
                 'optimal_hazard_rate'   : 1.0 / best_lambda,
@@ -215,5 +259,5 @@ class BOCPDHazardTuner:
                 'n_folds'               : n_folds,
                 'train_ratio'           : train_ratio,
                 'horizon'               : horizon,
-                'notes'                 : f'Gaussian plug-in predictive likelihood (approximate), best LL={best_score:.2f}',
+                'notes'                 : notes,
                }

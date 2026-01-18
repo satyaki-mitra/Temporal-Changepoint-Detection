@@ -1,0 +1,376 @@
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:113 - Logging to file: logs/detection/detection_20260118_192801.log
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                           PHQ-9 CHANGE POINT DETECTION                          
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:247 - Start time: 2026-01-18T19:28:01.846836
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                         PROCESSING DATASET: EXPONENTIAL                         
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:176 - Configuration Summary:
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Execution: {'Mode': 'compare', 'Detectors': ['pelt', 'bocpd']}
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Data: {'Input path': 'data/raw/synthetic_phq9_data_exponential.csv'}
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Statistical Testing: {'Alpha': 0.05, 'Test': 'auto', 'Multiple testing correction': 'fdr_bh', 'Effect size threshold': 0.3}
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Visualization: {'Smoothing window': 10, 'Figure size': '15x10', 'DPI': 300}
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Output: {'Results directory': 'results/detection_exponential'}
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   PELT: {'Cost model': ['l1', 'l2', 'rbf', 'ar'], 'Penalty': 0.5, 'Auto-tune penalty': True, 'Penalty range': (0.01, 10.0), 'Min segment size': 5, 'Jump': 1}
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   BOCPD: {'Hazard tuning': 'auto', 'Hazard range': (10.0, 300.0), 'Hazard method': 'heuristic', 'Likelihood model': 'gaussian', 'Prior type': 'empirical (data-adaptive)', 'Max run length': 500, 'Posterior threshold': 0.1, 'Posterior smoothing': 3, 'bocpd_persistence': 3, 'Reset on CP': True}
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Model Selection: {'Enabled': True, 'Config': 'config/model_selection_config.json'}
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:185 - Running detection pipeline...
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - detector.py:113 - Loaded data: shape=(365, 1000)
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - detector.py:150 - Aggregated CV: length=365, mean=0.408, std=0.082
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - detector.py:178 - Running PELT with 4 cost models...
+2026-01-18 19:28:01 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [1/4] pelt_l1
+2026-01-18 19:28:25 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 2)
+2026-01-18 19:28:26 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [2/4] pelt_l2
+2026-01-18 19:28:49 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 2)
+2026-01-18 19:28:50 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [3/4] pelt_rbf
+2026-01-18 19:28:59 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 2)
+2026-01-18 19:29:00 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [4/4] pelt_ar
+2026-01-18 19:29:42 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 6 change points (significant: 2)
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - detector.py:235 - Running BOCPD with 2 hazard tuning methods...
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - detector.py:241 -   [1/2] bocpd_gaussian_heuristic
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - detector.py:250 -     Tuning hazard (method=heuristic)...
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - detector.py:261 -     → Optimal λ = 10.0
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - detector.py:264 -     → Autocorrelation-based: ACF(1)=0.470 → raw λ=1.3, clipped to [10.0, 300.0] → 10.0
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 18/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 36/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 54/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 72/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 90/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 108/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 126/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 144/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 162/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 180/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 198/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 216/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 234/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 252/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 270/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 288/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 306/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 324/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 342/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 360/365
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:168 - BOCPD diagnostics:
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:169 -   Hazard lambda: 10.0, rate: 0.1000
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:170 -   Max CP posterior: 0.1000
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:171 -   Mean CP posterior: 0.0995
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:172 -   Std CP posterior: 0.0042
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:173 -   Threshold: 0.1000
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:174 -   Points above threshold: 203
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:178 -   Top 10 posteriors: [0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1]
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:179 -   At time indices: [364, 363, 283, 281, 251, 252, 284, 282, 250, 253]
+2026-01-18 19:29:43 - phq9_analysis.detection - [92mINFO[0m - detector.py:286 -     → Detected 11 change points
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - detector.py:241 -   [2/2] bocpd_gaussian_predictive_ll
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - detector.py:250 -     Tuning hazard (method=predictive_ll)...
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - detector.py:261 -     → Optimal λ = 10.0
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - detector.py:264 -     → Gaussian plug-in predictive likelihood (approximate), best LL=10.39 at λ=10.0 WARNING: Selected λ=10.0 is low (expecting CP every 10 days)
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 18/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 36/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 54/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 72/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 90/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 108/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 126/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 144/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 162/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 180/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 198/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 216/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 234/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 252/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 270/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 288/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 306/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 324/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 342/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 360/365
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:168 - BOCPD diagnostics:
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:169 -   Hazard lambda: 10.0, rate: 0.1000
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:170 -   Max CP posterior: 0.1000
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:171 -   Mean CP posterior: 0.0995
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:172 -   Std CP posterior: 0.0042
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:173 -   Threshold: 0.1000
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:174 -   Points above threshold: 203
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:178 -   Top 10 posteriors: [0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1]
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:179 -   At time indices: [364, 363, 283, 281, 251, 252, 284, 282, 250, 253]
+2026-01-18 19:29:45 - phq9_analysis.detection - [92mINFO[0m - detector.py:286 -     → Detected 11 change points
+2026-01-18 19:29:47 - phq9_analysis.detection - [92mINFO[0m - detector.py:317 - Generating visualizations...
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - detector.py:336 - Saving results...
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - detector.py:344 - ✓ All results saved successfully
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                                 MODEL SELECTION                                 
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:205 - ✓ Best model selected: pelt_rbf
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:206 -   Score: 0.922
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:207 -   Ranking: ['pelt_rbf', 'pelt_l1', 'pelt_l2', 'bocpd_gaussian_heuristic', 'bocpd_gaussian_predictive_ll', 'pelt_ar']
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:222 - 
+Results saved at: results/detection_exponential
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                               SUMMARY: EXPONENTIAL                              
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_l1: 3 CPs
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_l2: 3 CPs
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_rbf: 3 CPs
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_ar: 6 CPs
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ bocpd_gaussian_heuristic: 11 CPs
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ bocpd_gaussian_predictive_ll: 11 CPs
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                            PROCESSING DATASET: GAMMA                            
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:176 - Configuration Summary:
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Execution: {'Mode': 'compare', 'Detectors': ['pelt', 'bocpd']}
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Data: {'Input path': 'data/raw/synthetic_phq9_data_gamma.csv'}
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Statistical Testing: {'Alpha': 0.05, 'Test': 'auto', 'Multiple testing correction': 'fdr_bh', 'Effect size threshold': 0.3}
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Visualization: {'Smoothing window': 10, 'Figure size': '15x10', 'DPI': 300}
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Output: {'Results directory': 'results/detection_gamma'}
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   PELT: {'Cost model': ['l1', 'l2', 'rbf', 'ar'], 'Penalty': 0.5, 'Auto-tune penalty': True, 'Penalty range': (0.01, 10.0), 'Min segment size': 5, 'Jump': 1}
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   BOCPD: {'Hazard tuning': 'auto', 'Hazard range': (10.0, 300.0), 'Hazard method': 'heuristic', 'Likelihood model': 'gaussian', 'Prior type': 'empirical (data-adaptive)', 'Max run length': 500, 'Posterior threshold': 0.1, 'Posterior smoothing': 3, 'bocpd_persistence': 3, 'Reset on CP': True}
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Model Selection: {'Enabled': True, 'Config': 'config/model_selection_config.json'}
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:185 - Running detection pipeline...
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - detector.py:113 - Loaded data: shape=(365, 1000)
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - detector.py:150 - Aggregated CV: length=365, mean=0.406, std=0.081
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - detector.py:178 - Running PELT with 4 cost models...
+2026-01-18 19:29:50 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [1/4] pelt_l1
+2026-01-18 19:30:14 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 3)
+2026-01-18 19:30:15 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [2/4] pelt_l2
+2026-01-18 19:30:39 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 2)
+2026-01-18 19:30:40 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [3/4] pelt_rbf
+2026-01-18 19:30:49 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 3)
+2026-01-18 19:30:50 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [4/4] pelt_ar
+2026-01-18 19:31:32 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 2 change points (significant: 1)
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - detector.py:235 - Running BOCPD with 2 hazard tuning methods...
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - detector.py:241 -   [1/2] bocpd_gaussian_heuristic
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - detector.py:250 -     Tuning hazard (method=heuristic)...
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - detector.py:261 -     → Optimal λ = 10.0
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - detector.py:264 -     → Autocorrelation-based: ACF(1)=0.491 → raw λ=1.4, clipped to [10.0, 300.0] → 10.0
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 18/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 36/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 54/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 72/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 90/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 108/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 126/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 144/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 162/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 180/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 198/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 216/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 234/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 252/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 270/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 288/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 306/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 324/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 342/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 360/365
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:168 - BOCPD diagnostics:
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:169 -   Hazard lambda: 10.0, rate: 0.1000
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:170 -   Max CP posterior: 0.1000
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:171 -   Mean CP posterior: 0.0995
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:172 -   Std CP posterior: 0.0042
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:173 -   Threshold: 0.1000
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:174 -   Points above threshold: 246
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:178 -   Top 10 posteriors: [0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1]
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:179 -   At time indices: [260, 259, 258, 257, 333, 261, 262, 271, 331, 334]
+2026-01-18 19:31:34 - phq9_analysis.detection - [92mINFO[0m - detector.py:286 -     → Detected 8 change points
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - detector.py:241 -   [2/2] bocpd_gaussian_predictive_ll
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - detector.py:250 -     Tuning hazard (method=predictive_ll)...
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - detector.py:261 -     → Optimal λ = 10.0
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - detector.py:264 -     → Gaussian plug-in predictive likelihood (approximate), best LL=11.41 at λ=10.0 WARNING: Selected λ=10.0 is low (expecting CP every 10 days)
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 18/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 36/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 54/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 72/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 90/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 108/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 126/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 144/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 162/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 180/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 198/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 216/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 234/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 252/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 270/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 288/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 306/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 324/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 342/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 360/365
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:168 - BOCPD diagnostics:
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:169 -   Hazard lambda: 10.0, rate: 0.1000
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:170 -   Max CP posterior: 0.1000
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:171 -   Mean CP posterior: 0.0995
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:172 -   Std CP posterior: 0.0042
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:173 -   Threshold: 0.1000
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:174 -   Points above threshold: 246
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:178 -   Top 10 posteriors: [0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1]
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:179 -   At time indices: [260, 259, 258, 257, 333, 261, 262, 271, 331, 334]
+2026-01-18 19:31:36 - phq9_analysis.detection - [92mINFO[0m - detector.py:286 -     → Detected 8 change points
+2026-01-18 19:31:38 - phq9_analysis.detection - [92mINFO[0m - detector.py:317 - Generating visualizations...
+2026-01-18 19:31:40 - phq9_analysis.detection - [92mINFO[0m - detector.py:336 - Saving results...
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - detector.py:344 - ✓ All results saved successfully
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                                 MODEL SELECTION                                 
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:205 - ✓ Best model selected: pelt_l1
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:206 -   Score: 0.806
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:207 -   Ranking: ['pelt_l1', 'pelt_rbf', 'pelt_l2', 'pelt_ar', 'bocpd_gaussian_heuristic', 'bocpd_gaussian_predictive_ll']
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:222 - 
+Results saved at: results/detection_gamma
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                                  SUMMARY: GAMMA                                 
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_l1: 3 CPs
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_l2: 3 CPs
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_rbf: 3 CPs
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_ar: 2 CPs
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ bocpd_gaussian_heuristic: 8 CPs
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ bocpd_gaussian_predictive_ll: 8 CPs
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                          PROCESSING DATASET: LOGNORMAL                          
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:176 - Configuration Summary:
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Execution: {'Mode': 'compare', 'Detectors': ['pelt', 'bocpd']}
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Data: {'Input path': 'data/raw/synthetic_phq9_data_lognormal.csv'}
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Statistical Testing: {'Alpha': 0.05, 'Test': 'auto', 'Multiple testing correction': 'fdr_bh', 'Effect size threshold': 0.3}
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Visualization: {'Smoothing window': 10, 'Figure size': '15x10', 'DPI': 300}
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Output: {'Results directory': 'results/detection_lognormal'}
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   PELT: {'Cost model': ['l1', 'l2', 'rbf', 'ar'], 'Penalty': 0.5, 'Auto-tune penalty': True, 'Penalty range': (0.01, 10.0), 'Min segment size': 5, 'Jump': 1}
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   BOCPD: {'Hazard tuning': 'auto', 'Hazard range': (10.0, 300.0), 'Hazard method': 'heuristic', 'Likelihood model': 'gaussian', 'Prior type': 'empirical (data-adaptive)', 'Max run length': 500, 'Posterior threshold': 0.1, 'Posterior smoothing': 3, 'bocpd_persistence': 3, 'Reset on CP': True}
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:178 -   Model Selection: {'Enabled': True, 'Config': 'config/model_selection_config.json'}
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:185 - Running detection pipeline...
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - detector.py:113 - Loaded data: shape=(365, 1000)
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - detector.py:150 - Aggregated CV: length=365, mean=0.404, std=0.082
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - detector.py:178 - Running PELT with 4 cost models...
+2026-01-18 19:31:41 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [1/4] pelt_l1
+2026-01-18 19:32:04 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 2)
+2026-01-18 19:32:05 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [2/4] pelt_l2
+2026-01-18 19:32:29 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 2)
+2026-01-18 19:32:30 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [3/4] pelt_rbf
+2026-01-18 19:32:38 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 3 change points (significant: 2)
+2026-01-18 19:32:40 - phq9_analysis.detection - [92mINFO[0m - detector.py:184 -   [4/4] pelt_ar
+2026-01-18 19:33:22 - phq9_analysis.detection - [92mINFO[0m - detector.py:208 -     → Detected 4 change points (significant: 0)
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - detector.py:235 - Running BOCPD with 2 hazard tuning methods...
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - detector.py:241 -   [1/2] bocpd_gaussian_heuristic
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - detector.py:250 -     Tuning hazard (method=heuristic)...
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - detector.py:261 -     → Optimal λ = 10.0
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - detector.py:264 -     → Autocorrelation-based: ACF(1)=0.472 → raw λ=1.3, clipped to [10.0, 300.0] → 10.0
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 18/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 36/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 54/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 72/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 90/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 108/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 126/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 144/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 162/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 180/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 198/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 216/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 234/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 252/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 270/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 288/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 306/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 324/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 342/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 360/365
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:168 - BOCPD diagnostics:
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:169 -   Hazard lambda: 10.0, rate: 0.1000
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:170 -   Max CP posterior: 0.1000
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:171 -   Mean CP posterior: 0.0995
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:172 -   Std CP posterior: 0.0042
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:173 -   Threshold: 0.1000
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:174 -   Points above threshold: 230
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:178 -   Top 10 posteriors: [0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1]
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:179 -   At time indices: [315, 316, 258, 314, 313, 312, 355, 354, 230, 259]
+2026-01-18 19:33:23 - phq9_analysis.detection - [92mINFO[0m - detector.py:286 -     → Detected 10 change points
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - detector.py:241 -   [2/2] bocpd_gaussian_predictive_ll
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - detector.py:250 -     Tuning hazard (method=predictive_ll)...
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - detector.py:261 -     → Optimal λ = 10.0
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - detector.py:264 -     → Gaussian plug-in predictive likelihood (approximate), best LL=10.20 at λ=10.0 WARNING: Selected λ=10.0 is low (expecting CP every 10 days)
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 18/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 36/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 54/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 72/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 90/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 108/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 126/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 144/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 162/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 180/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 198/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 216/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 234/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 252/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 270/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 288/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 306/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 324/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 342/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:100 - BOCPD progress: 360/365
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:168 - BOCPD diagnostics:
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:169 -   Hazard lambda: 10.0, rate: 0.1000
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:170 -   Max CP posterior: 0.1000
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:171 -   Mean CP posterior: 0.0995
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:172 -   Std CP posterior: 0.0042
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:173 -   Threshold: 0.1000
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:174 -   Points above threshold: 230
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:178 -   Top 10 posteriors: [0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1 0.1]
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - bocpd_detector.py:179 -   At time indices: [315, 316, 258, 314, 313, 312, 355, 354, 230, 259]
+2026-01-18 19:33:25 - phq9_analysis.detection - [92mINFO[0m - detector.py:286 -     → Detected 10 change points
+2026-01-18 19:33:27 - phq9_analysis.detection - [92mINFO[0m - detector.py:317 - Generating visualizations...
+2026-01-18 19:33:29 - phq9_analysis.detection - [92mINFO[0m - detector.py:336 - Saving results...
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - detector.py:344 - ✓ All results saved successfully
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                                 MODEL SELECTION                                 
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:205 - ✓ Best model selected: pelt_l1
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:206 -   Score: 0.933
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:207 -   Ranking: ['pelt_l1', 'pelt_rbf', 'pelt_l2', 'bocpd_gaussian_heuristic', 'bocpd_gaussian_predictive_ll']
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:222 - 
+Results saved at: results/detection_lognormal
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                                SUMMARY: LOGNORMAL                               
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_l1: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_l2: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ pelt_rbf: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✗ pelt_ar: 4 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ bocpd_gaussian_heuristic: 10 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:231 -   ✓ bocpd_gaussian_predictive_ll: 10 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:149 - ================================================================================
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:150 -                             CROSS-DATASET COMPARISON                            
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - logging_util.py:151 - ================================================================================
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:271 - 
+EXPONENTIAL:
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:272 -   Models run: 6
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_l1: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_l2: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_rbf: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_ar: 6 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - bocpd_gaussian_heuristic: 11 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - bocpd_gaussian_predictive_ll: 11 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:271 - 
+GAMMA:
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:272 -   Models run: 6
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_l1: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_l2: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_rbf: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_ar: 2 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - bocpd_gaussian_heuristic: 8 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - bocpd_gaussian_predictive_ll: 8 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:271 - 
+LOGNORMAL:
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:272 -   Models run: 6
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_l1: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_l2: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_rbf: 3 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - pelt_ar: 4 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - bocpd_gaussian_heuristic: 10 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:276 -     - bocpd_gaussian_predictive_ll: 10 CPs
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:296 - Detection completed successfully.
+2026-01-18 19:33:30 - phq9_analysis.detection - [92mINFO[0m - run_detection.py:297 - End time: 2026-01-18T19:33:30.177765

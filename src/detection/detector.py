@@ -8,6 +8,7 @@ from src.detection.pelt_detector import PELTDetector
 from src.detection.bocpd_detector import BOCPDDetector
 from src.detection.hazard_tuning import BOCPDHazardTuner
 from src.detection.visualizations import DetectionVisualizer
+from src.detection.results_saver import DetectionResultsSaver
 from config.detection_config import ChangePointDetectionConfig
 
 
@@ -86,6 +87,9 @@ class ChangePointDetectionOrchestrator:
         self.visualizer = DetectionVisualizer(figsize = config.figure_size,
                                               dpi     = config.dpi,
                                              )
+
+        # Initialize results saver
+        self.results_saver = DetectionResultsSaver(base_directory = config.results_base_directory)
 
         # Model style configuration (can be overridden)
         self.style_config = None
@@ -201,7 +205,16 @@ class ChangePointDetectionOrchestrator:
                                               }
 
                     if self.logger:
-                        self.logger.info(f"    → Detected {result['n_changepoints']} change points")
+                        self.logger.info(f"    → Detected {result['n_changepoints']} change points (significant: {result['validation'].get('n_significant', 0)})")
+
+                    # ADDED: Segment diagnostics for PELT
+                    if (len(result.get('change_points', [])) > 0):
+                        self.visualizer.plot_segment_diagnostics(aggregated_data = aggregated,
+                                                                 change_points    = result['change_points'],
+                                                                 model_id         = model_id,
+                                                                 method           = 'pelt',
+                                                                 save_path        = self.config.results_base_directory / "diagnostics" / f"{model_id}_segments.png",
+                                                                )
 
                 except Exception as e:
                     if self.logger:
@@ -246,6 +259,9 @@ class ChangePointDetectionOrchestrator:
 
                         if self.logger:
                             self.logger.info(f"    → Optimal λ = {hazard_lambda:.1f}")
+                            
+                            if hazard_tuning_result.get('notes'):
+                                self.logger.info(f"    → {hazard_tuning_result['notes']}")
 
                     # Detection
                     detector                = BOCPDDetector(config = self.config,
@@ -276,10 +292,20 @@ class ChangePointDetectionOrchestrator:
                                                              posterior_threshold  = self.config.cp_posterior_threshold,
                                                              save_path            = self.config.results_base_directory / "plots" / f"{model_id}_posterior.png",
                                                             )
+                    
+                    # ADDED: Segment diagnostics for BOCPD
+                    if (len(result.get('change_points', [])) > 0):
+                        self.visualizer.plot_segment_diagnostics(aggregated_data = aggregated,
+                                                                 change_points    = result['change_points'],
+                                                                 model_id         = model_id,
+                                                                 method           = 'bocpd',
+                                                                 save_path        = self.config.results_base_directory / "diagnostics" / f"{model_id}_segments.png",
+                                                                )
 
                 except Exception as e:
                     if self.logger:
                         self.logger.error(f"    → BOCPD {method} failed: {e}")
+                    
                     continue
 
         # Check if any models succeeded
@@ -304,5 +330,21 @@ class ChangePointDetectionOrchestrator:
         except Exception as e:
             if self.logger:
                 self.logger.warning(f"Visualization failed: {e}")
+
+        # SAVE ALL RESULTS
+        if self.logger:
+            self.logger.info("Saving results...")
+
+        try:
+            self.results_saver.save_all_results(model_results = model_results,
+                                                config        = self.config.get_summary(),
+                                               )
+
+            if self.logger:
+                self.logger.info("✓ All results saved successfully")
+
+        except Exception as e:
+            if self.logger:
+                self.logger.error(f"Failed to save results: {e}")
 
         return model_results

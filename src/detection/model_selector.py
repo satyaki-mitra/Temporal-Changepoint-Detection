@@ -55,7 +55,7 @@ class ModelResultAdapter:
         # Normalize change points to [0, 1]
         norm_cps       = [cp / signal_length for cp in cps]
 
-        # ADDED: Check statistical validity
+        # Check statistical validity
         n_sig          = validation.get('n_significant', 0)
         is_valid       = (n_sig > 0) and validation.get('overall_significant', False)
 
@@ -74,12 +74,15 @@ class ModelResultAdapter:
         validation = result.get('validation', {})
         summary    = validation.get('summary', {})
 
-        # Check statistical validity
-        is_valid = validation.get('overall_significant', False) and len(validation.get('normalized_positions', [])) > 0
+        # Check statistical validity - use detected_indices if available
+        detected_indices = validation.get('detected_indices', [])
+        norm_positions   = validation.get('normalized_positions', [])
+        
+        is_valid         = validation.get('overall_significant', False) and len(detected_indices) > 0
 
         return ModelResult(model_id               = model_id,
                            family                 = 'bocpd',
-                           change_points          = validation.get('normalized_positions', []),
+                           change_points          = norm_positions,
                            posterior_mass         = summary.get('mean_posterior_at_cp', 0.0),
                            posterior_coverage     = summary.get('coverage_ratio', 0.0),
                            is_statistically_valid = is_valid,
@@ -231,6 +234,8 @@ class ModelSelector:
                     'ranking'     : [],
                     'scores'      : {},
                     'explanation' : f"No models passed statistical validation (total models: {len(models)})",
+                    'n_candidates': len(models),
+                    'n_valid'     : 0,
                    }
 
         if (len(valid_models) == 1):
@@ -240,6 +245,8 @@ class ModelSelector:
                     'ranking'     : [mid],
                     'scores'      : {mid: 1.0},
                     'explanation' : f"Only one statistically valid model: {mid}",
+                    'n_candidates': len(models),
+                    'n_valid'     : 1,
                    }
 
         # Use valid models for scoring
@@ -304,7 +311,7 @@ class ModelSelector:
 
     def _score_models(self, models: Dict[str, ModelResult]) -> Dict[str, float]:
         """
-        Score the models best on their detections
+        Score the models based on their detections
         """
         scores = defaultdict(float)
 

@@ -14,6 +14,7 @@ This module provides **change point detection** for longitudinal PHQ-9 datasets.
 - **Automated parameter tuning**: BIC-based penalty selection (PELT), cross-validated hazard tuning (BOCPD)
 - **Rigorous statistical validation**: Hypothesis testing with multiple testing correction, effect size quantification
 - **Model selection framework**: Cross-model agreement metrics, weighted composite scoring
+- **Complete results persistence**: Structured directory output with all artifacts
 - **Production-ready**: Config-driven, extensible, fully logged
 
 ---
@@ -34,7 +35,7 @@ This module provides **change point detection** for longitudinal PHQ-9 datasets.
 **When to use**: Known study period, need interpretable frequentist statistics, offline analysis.
 
 
-### 2.BOCPD (Bayesian Online Change Point Detection)
+### 2. BOCPD (Bayesian Online Change Point Detection)
 
 | Aspect | Details |
 |--------|---------|
@@ -57,7 +58,7 @@ This module provides **change point detection** for longitudinal PHQ-9 datasets.
 python scripts/run_detection.py \
     --execution-mode single \
     --detectors pelt \
-    --data data/processed/synthetic_phq9_aggregated.csv \
+    --dataset exponential \
     --auto-tune-penalty
 ```
 
@@ -67,63 +68,102 @@ python scripts/run_detection.py \
 python scripts/run_detection.py \
     --execution-mode compare \
     --detectors pelt bocpd \
-    --data data/processed/synthetic_phq9_aggregated.csv
+    --dataset exponential
 ```
 
-### Ensemble with Model Selection
+### With Model Selection
 
 ```bash
 python scripts/run_detection.py \
-    --execution-mode ensemble \
-    --detectors pelt bocpd \
-    --data data/processed/synthetic_phq9_aggregated.csv
+    --dataset exponential \
+    --select-model
+```
+
+### Run All Datasets
+
+```bash
+python scripts/run_detection.py \
+    --all-datasets \
+    --select-model
+```
+
+### Custom Parameters
+
+```bash
+python scripts/run_detection.py \
+    --dataset exponential \
+    --hazard-lambda 75.0 \
+    --posterior-threshold 0.15 \
+    --bocpd-persistence 1 \
+    --select-model
 ```
 
 ---
 
-## 📐 Mathematical Framework
+## 📁 Output Structure
 
-### PELT Cost Function
-
-**Objective**: Minimize total cost + penalty for each change point
-
-```
-Cost(τ) = Σ[C(y_{τ_i:τ_{i+1}})] + β × K
-```
-
-- `C(·)`: Segment cost (L1, L2, RBF, AR)
-- `β`: Penalty parameter (tuned via BIC)
-- `K`: Number of change points
-
-**BIC Formula** (FIXED in this version):
-```
-BIC = n × log(σ²) + p × log(n)
-where p = 2 × n_segments (mean + variance per segment)
-```
-
----
-
-### BOCPD Posterior Update
-
-**Run-length posterior** at time `t`:
-
-```
-P(r_t | y_{1:t}) ∝ P(y_t | r_{t-1}, y_{1:t-1}) × [
-    P(r_t = 0) × Σ P(r_{t-1})           (change point)
-    P(r_t = r_{t-1} + 1 | r_{t-1}) × P(r_{t-1})  (growth)
-]
-```
-
-**Hazard function** (constant):
-```
-H(τ) = 1 / λ
-where λ = expected run length
+```plaintext
+results/detection_{dataset}/
+├── all_model_results.json              # Complete results (all models)
+├── per_model/                          # Individual model JSONs
+│   ├── pelt_l1.json
+│   ├── pelt_l2.json
+│   ├── pelt_rbf.json
+│   ├── pelt_ar.json
+│   ├── bocpd_gaussian_heuristic.json
+│   └── bocpd_gaussian_predictive_ll.json
+├── change_points/                      # Change point CSVs
+│   ├── pelt_l1_changepoints.csv
+│   ├── bocpd_gaussian_heuristic_changepoints.csv
+│   └── all_changepoints_comparison.csv # Cross-model comparison
+├── statistical_tests/                  # Statistical validation
+│   ├── pelt_l1_tests.json
+│   ├── bocpd_gaussian_heuristic_tests.json
+│   └── statistical_summary.csv
+├── diagnostics/                        # Segment diagnostics
+│   ├── pelt_l1_segments.png
+│   ├── bocpd_gaussian_heuristic_segments.png
+│   └── detection_summary.json
+├── plots/                              # Visualizations
+│   ├── aggregated_cv_all_models.png    # Overlay of all models
+│   ├── model_comparison_grid.png       # Side-by-side comparison
+│   ├── bocpd_gaussian_heuristic_posterior.png
+│   └── bocpd_gaussian_predictive_ll_posterior.png
+├── model_selection.json                # Selection results (if enabled)
+└── best_model/                         # Model selection results
+    ├── metadata.json                   # Selection explanation
+    └── model_result.json               # Best model details
 ```
 
-**FIXED ISSUES** in this version:
-- ✅ Corrected log-space normalization
-- ✅ Fixed sufficient statistics tracking (Welford's algorithm)
-- ✅ Added numerical stability checks
+### What Each Directory Contains
+
+#### **`per_model/`**
+Individual JSON files with:
+- Model configuration
+- Detected change points (indices and normalized positions)
+- Validation results
+- Method-specific metadata
+
+#### **`change_points/`**
+CSV files for analysis:
+- Per-model change points
+- `all_changepoints_comparison.csv` - All models in one table
+
+#### **`statistical_tests/`**
+Statistical validation:
+- Detailed test results (p-values, effect sizes)
+- `statistical_summary.csv` - Cross-model summary
+
+#### **`diagnostics/`**
+Segment-level analysis:
+- Segment means and residuals (PNG)
+- `detection_summary.json` - Overall summary
+
+#### **`plots/`**
+Visual comparisons:
+- All models overlaid on signal
+- Side-by-side subplots
+- BOCPD posterior heatmaps
 
 ---
 
@@ -145,24 +185,23 @@ jump                 = 1                          # Subsampling (1 = no subsampl
 pelt_cost_models     = ['l1', 'l2', 'rbf', 'ar']  # All variants tested
 ```
 
-### 2. BOCPD Parameters
+### 2. BOCPD Parameters (Updated Defaults)
 
 ```python
 # Hazard control
-hazard_lambda          = 30.0          # Expected run length (days)
+hazard_lambda          = 75.0           # Expected run length (FIXED: was 30.0)
 auto_tune_hazard       = True          # Automatic tuning
 hazard_tuning_method   = 'heuristic'   # 'heuristic' or 'predictive_ll'
-hazard_range           = (10.0, 300.0)
+hazard_range           = (30.0, 300.0) # FIXED: minimum raised to 30
 
 # Detection thresholds
-cp_posterior_threshold = 0.6           # P(change point) threshold
-bocpd_persistence      = 3             # Consecutive timesteps required
+cp_posterior_threshold = 0.15           # FIXED: lowered from 0.6
+bocpd_persistence      = 1              # FIXED: reduced from 3
 posterior_smoothing    = 3             # Gaussian smoothing (σ)
 
 # Computational
 max_run_length         = 500           # Maximum tracked run length
 ```
-
 
 ### 3. Statistical Testing
 
@@ -174,86 +213,48 @@ effect_size_threshold       = 0.3        # Minimum Cohen's d
 
 ---
 
-## 📊 Output Structure
+## 🔍 Mathematical Framework
 
-```plaintext
-results/detection/
-├── all_model_results.json           # Complete outputs from all detectors
-├── model_selection.json              # Selection results (if enabled)
-├── best_model/
-│   ├── model_result.json             # Best model's canonical result
-│   ├── metadata.json                 # Selection metadata
-│   └── *.png                         # Plots for best model
-├── per_model/
-│   ├── pelt_l1/
-│   │   ├── change_points.json
-│   │   ├── segments.json
-│   │   ├── validation.json
-│   │   └── tuning_results.json
-│   └── bocpd_gaussian_heuristic/
-│       ├── change_points.json
-│       ├── hazard_tuning.json
-│       └── validation.json
-└── plots/
-    ├── aggregated_cv_all_models.png  # Overlay of all detections
-    ├── model_comparison_grid.png     # Side-by-side subplots
-    └── bocpd_*_posterior.png         # BOCPD diagnostics
+### PELT Cost Function
+
+**Objective**: Minimize total cost + penalty for each change point
+
 ```
+Cost(τ) = Σ[C(y_{τ_i:τ_{i+1}})] + β × K
+```
+
+- `C(·)`: Segment cost (L1, L2, RBF, AR)
+- `β`: Penalty parameter (tuned via BIC)
+- `K`: Number of change points
 
 ---
 
-## 🧬 Model Selection
+### BOCPD Posterior Update (FIXED)
 
-### Canonical Result Format
+**Run-length posterior** at time `t`:
 
-All detectors output a **unified result structure**:
+```
+P(r_t | y_{1:t}) ∝ P(y_t | r_{t-1}, y_{1:t-1}) × [
+    P(r_t = 0) × Σ P(r_{t-1})           (change point)
+    P(r_t = r_{t-1} + 1 | r_{t-1}) × P(r_{t-1})  (growth)
+]
+```
 
+**Change point posterior** (CRITICAL FIX):
 ```python
-{
-    "method": "pelt" | "bocpd",
-    "variant": "pelt_l1" | "bocpd_gaussian_heuristic",
-    "change_points": [45, 120, 210],       # Absolute indices
-    "n_changepoints": 3,
-    "validation": {
-        "n_significant": 2,
-        "overall_significant": True,
-        "summary": {
-            "mean_effect_size": 0.65,      # PELT only
-            "mean_posterior_at_cp": 0.82,  # BOCPD only
-        }
-    },
-    "tuning_results": {...}
-}
+# BEFORE (WRONG):
+cp_posterior[t] = np.exp(log_R[t, 0])
+
+# AFTER (CORRECT):
+cp_posterior[t] = np.exp(log_cp - log_norm)
 ```
 
-### Selection Metrics
-
-| Metric | PELT | BOCPD | Normalization |
-|--------|------|-------|---------------|
-| `n_significant_cps` | ✓ | — | MinMax |
-| `mean_effect_size` | ✓ | — | MinMax |
-| `posterior_mass` | — | ✓ | MinMax |
-| `stability_score` | ✓ | ✓ | MinMax |
-
-**Agreement metrics** (cross-model):
-- **Temporal consensus**: % of change points within 2% tolerance of others
-- **Boundary density**: Clustering of change points across models
-
-### Composite Score
-
-```
-score = Σ(weight_i × normalized_metric_i) + agreement_weight × stability_score
-
-Default weights:
-- n_significant_cps: 0.30
-- mean_effect_size:  0.30
-- posterior_mass:    0.20
-- agreement:         0.25
-```
+This fix ensures the CP posterior represents the **probability of transitioning to r=0**, not just the probability mass at r=0.
 
 ---
 
 ## 🎨 Visualizations
+
 
 ### 1. Aggregated CV with All Models
 - Base signal (aggregated CV)
@@ -275,102 +276,146 @@ Default weights:
 
 ---
 
-## 🔍 Statistical Validation
+## 📊 Statistical Validation
 
 ### PELT (Frequentist)
 
-**Hypothesis test**: Do segment means differ significantly?
-
-**Test selection** (FIXED in this version):
+**Test selection**:
 1. **Mann-Whitney U** (default, n ≥ 10): Non-parametric, robust
 2. **T-test** (n ≥ 30): Large sample, CLT applies
 3. **Permutation test** (n < 10): Exact, no assumptions
 
-**Effect size**: Cohen's d with threshold = 0.3 (small-to-medium effect)
+**Effect size**: Cohen's d with threshold = 0.3
 
-**Multiple testing correction**:
-- **FDR (Benjamini-Hochberg)**: Default, controls false discovery rate
-- **Bonferroni**: Conservative, controls family-wise error rate
-- **None**: Use with caution
+**Multiple testing correction**: FDR (Benjamini-Hochberg) by default
 
-### BOCPD (Bayesian)
+### BOCPD (Bayesian) - FIXED
 
-**Validation criteria**:
-1. Posterior probability > threshold (default: 0.6)
-2. Persistence filter: ≥ 3 consecutive timesteps
+**Validation criteria** (improved):
+1. Posterior probability > threshold (default: 0.15, lowered from 0.6)
+2. Persistence filter: ≥ 1 consecutive timesteps (reduced from 3)
+3. **Peak detection**: Marks CP at the peak of persistent regions
 
-**Interpretation**:
-- `P(change point) = 0.82` → Strong evidence for regime shift
-- `coverage_ratio = 0.15` → 15% of timesteps have high CP probability
-
----
-
-## 🧪 Ground Truth Evaluation
-
-**Use case**: Validate detectors on synthetic data with known change points.
-
-```python
-from src.detection.ground_truth_evaluator import GroundTruthEvaluator
-
-evaluator = GroundTruthEvaluator(true_changepoints = [50, 150, 250], 
-                                 tolerance         = 5,
-                                )
-
-metrics   = evaluator.evaluate(detected_changepoints = [48, 155, 248])
-
-# {'precision': 1.0, 'recall': 1.0, 'f1_score': 1.0, 'hausdorff_distance': 5.0}
-```
+**Fixed validation logic**:
+- Now correctly identifies runs of consecutive exceedances
+- Marks change point at maximum posterior within each run
+- Better rejection reason messages
 
 ---
 
-## ⚙️ Advanced Usage
+## 🧬 Model Selection
 
-### Custom Cost Function (PELT)
+### Canonical Result Format
+
+All detectors output a **unified result structure**:
 
 ```python
-from src.detection.pelt_detector import PELTDetector
-from config.detection_config import ChangePointDetectionConfig
-
-
-config   = ChangePointDetectionConfig(pelt_cost_models = ['ar'])
-detector = PELTDetector(config     = config, 
-                        cost_model = 'ar',
-                       )
-
-result   = detector.detect(signal = aggregated_signal)
+{
+    "method": "pelt" | "bocpd",
+    "variant": "pelt_l1" | "bocpd_gaussian_heuristic",
+    "change_points": [45, 120, 210],       # PELT: indices, BOCPD: normalized
+    "n_changepoints": 3,
+    "validation": {
+        "n_significant": 2,
+        "overall_significant": True,
+        "summary": {
+            "mean_effect_size": 0.65,      # PELT only
+            "mean_posterior_at_cp": 0.82,  # BOCPD only
+        }
+    }
+}
 ```
 
-### Custom Hazard Function (BOCPD)
+### Selection Strategy
 
-```python
-from src.detection.bocpd_detector import BOCPDDetector
+**Agreement-first approach**:
+1. Compute cross-model temporal consensus
+2. Weight models by agreement + internal metrics
+3. Apply tie-breaking rules
 
-# Override hazard lambda
-detector = BOCPDDetector(config = config)
-result   = detector.detect(signal        = signal, 
-                           hazard_lambda = 50.0,
-                          )
+**Tie-breaking order**:
+1. Higher cross-model agreement
+2. Higher effect size (PELT) / posterior mass (BOCPD)
+3. Fewer change points (parsimony)
+4. Simpler model (PELT preferred over BOCPD)
+
+---
+
+## 🐛 Troubleshooting
+
+### BOCPD detects 0 change points
+
+**Check diagnostics**:
+```
+BOCPD diagnostics:
+  Max CP posterior: 0.0847
+  Threshold: 0.15
+  Points above threshold: 0
 ```
 
-### Ensemble Combination
+**Solutions**:
+1. Lower threshold: `--posterior-threshold 0.10`
+2. Adjust hazard lambda: `--hazard-lambda 60`
+3. Reduce persistence: `--bocpd-persistence 1`
 
-```python
-from src.detection.model_selector import ModelSelector
-from config.model_selection_config import ModelSelectorConfig
+---
 
-selector_config = ModelSelectorConfig(agreement_weight = 0.40,  # Prioritize consensus
-                                      metric_weights   = {'n_significant_cps' : 0.25,
-                                                          'mean_effect_size'  : 0.35,
-                                                         }
-                                     )
+## 📚 Command Reference
 
-selector        = ModelSelector(selector_config)
-selection       = selector.select(all_model_results)
+### Basic Usage
+
+```bash
+# Single dataset with defaults
+python scripts/run_detection.py --dataset exponential
+
+# All datasets
+python scripts/run_detection.py --all-datasets
+
+# With model selection
+python scripts/run_detection.py --dataset exponential --select-model
+```
+
+### Advanced Usage
+
+```bash
+# PELT only, custom parameters
+python scripts/run_detection.py \
+    --dataset exponential \
+    --execution-mode single \
+    --detectors pelt \
+    --penalty 0.5 \
+    --min-size 7
+
+# BOCPD only, manual tuning
+python scripts/run_detection.py \
+    --dataset exponential \
+    --execution-mode single \
+    --detectors bocpd \
+    --hazard-lambda 60.0 \
+    --posterior-threshold 0.12 \
+    --bocpd-persistence 1
+
+# Custom data path
+python scripts/run_detection.py \
+    --data path/to/custom_data.csv \
+    --output-dir results/custom_analysis
+```
+
+### Verification
+
+```bash
+# Check results completeness
+python scripts/verify_results_structure.py results/detection_exponential
+
+# Expected output:
+# ✓ Passed: 45+
+# ⚠ Warnings: 0
+# ❌ Failed: 0
 ```
 
 ---
 
-## 📚 References
+## 📖 References
 
 ### Core Algorithms
 - **PELT**: Killick, R., Fearnhead, P., & Eckley, I. A. (2012). Optimal detection of changepoints with a linear computational cost. *Journal of the American Statistical Association*.
@@ -378,42 +423,10 @@ selection       = selector.select(all_model_results)
 
 ### Statistical Methods
 - **BIC**: Schwarz, G. (1978). Estimating the dimension of a model. *The Annals of Statistics*.
-- **Mann-Whitney U**: Mann, H. B., & Whitney, D. R. (1947). On a test of whether one of two random variables is stochastic ally larger than the other. *Annals of Mathematical Statistics*.
+- **Mann-Whitney U**: Mann, H. B., & Whitney, D. R. (1947). On a test of whether one of two random variables is stochastically larger than the other. *Annals of Mathematical Statistics*.
 - **FDR**: Benjamini, Y., & Hochberg, Y. (1995). Controlling the false discovery rate. *Journal of the Royal Statistical Society: Series B*.
 
 ### Clinical Context
 - **PHQ-9**: Kroenke, K., Spitzer, R. L., & Williams, J. B. (2001). The PHQ-9: validity of a brief depression severity measure. *Journal of General Internal Medicine*.
 
 ---
-
-## 🔮 Future Enhancements
-
-- **Multivariate change point detection**: Detect shifts across multiple aggregated metrics simultaneously
-- **Adaptive hazard functions**: Time-varying hazard rates for BOCPD
-- **Confidence intervals**: Bootstrap CIs for PELT, credible intervals for BOCPD
-- **Real-time dashboard**: Live monitoring with streaming BOCPD
-- **Student-t likelihood**: More robust to outliers than Gaussian
-
----
-
-## 🙋 Troubleshooting
-
-### "Signal too short for PELT"
-**Cause**: Signal length < 2 × minimum_segment_size
-**Fix**: Reduce `minimum_segment_size` or aggregate over longer periods
-
-### "Penalty tuning failed: all values caused PELT failure"
-**Cause**: Penalty range inappropriate for signal characteristics
-**Fix**: Adjust `penalty_range`, try different cost function
-
-### "BOCPD detects no change points"
-**Cause**: `cp_posterior_threshold` too high or signal has no shifts
-**Fix**: Lower threshold (e.g., 0.4), check signal visually
-
-### "Model selection returns None"
-**Cause**: No models passed structural validation
-**Fix**: Review rejection reasons in validation reports
-
----
-
-*This module provides the foundation for rigorous, reproducible change point detection in longitudinal mental health research.*

@@ -129,7 +129,7 @@ class BOCPDDetector:
             # Log growth probabilities (no change point)
             log_growth              = (log_R[t-1, :valid_r] + log_pred[:valid_r] + np.log(1.0 - hazard_rate))
 
-            # Log change point probability
+            # Log change point probability (FIXED: this is the actual CP posterior)
             log_cp                  = (np.log(hazard_rate) + np.logaddexp.reduce(log_R[t-1, :valid_r + 1] + log_pred))
 
             # Update run-length posterior
@@ -140,8 +140,8 @@ class BOCPDDetector:
             log_norm                = np.logaddexp.reduce(log_R[t, :valid_r + 1])
             log_R[t, :valid_r + 1] -= log_norm
 
-            # Change point posterior (probability of r = 0)
-            cp_posterior[t]         = np.exp(log_R[t, 0])
+            # FIXED: Change point posterior = probability of transitioning to r=0 (use log_cp directly)
+            cp_posterior[t]         = np.exp(log_cp - log_norm)
 
             # Roll sufficient statistics after updates
             means                   = np.roll(updated_means, 1)
@@ -162,6 +162,21 @@ class BOCPDDetector:
                                              sigma = self.config.posterior_smoothing,
                                              mode  = 'nearest',
                                             )
+
+        # Diagnostics
+        if self.logger:
+            self.logger.info(f"BOCPD diagnostics:")
+            self.logger.info(f"  Hazard lambda: {hazard_lambda:.1f}, rate: {hazard_rate:.4f}")
+            self.logger.info(f"  Max CP posterior: {cp_posterior.max():.4f}")
+            self.logger.info(f"  Mean CP posterior: {cp_posterior.mean():.4f}")
+            self.logger.info(f"  Std CP posterior: {cp_posterior.std():.4f}")
+            self.logger.info(f"  Threshold: {self.config.cp_posterior_threshold:.4f}")
+            self.logger.info(f"  Points above threshold: {(cp_posterior > self.config.cp_posterior_threshold).sum()}")
+            
+            # Show top 10 posterior values
+            top_indices = np.argsort(cp_posterior)[-10:][::-1]
+            self.logger.info(f"  Top 10 posteriors: {cp_posterior[top_indices]}")
+            self.logger.info(f"  At time indices: {top_indices.tolist()}")
 
         # Validation
         validator  = BOCPDStatisticalValidator(posterior_threshold = self.config.cp_posterior_threshold,

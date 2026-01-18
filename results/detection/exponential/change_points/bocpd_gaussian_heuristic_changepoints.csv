@@ -1,0 +1,12 @@
+change_point_index,model_id,normalized_position
+34,bocpd_gaussian_heuristic,0.09315068493150686
+86,bocpd_gaussian_heuristic,0.2356164383561644
+115,bocpd_gaussian_heuristic,0.3150684931506849
+126,bocpd_gaussian_heuristic,0.3452054794520548
+168,bocpd_gaussian_heuristic,0.4602739726027397
+179,bocpd_gaussian_heuristic,0.4904109589041096
+190,bocpd_gaussian_heuristic,0.5205479452054794
+225,bocpd_gaussian_heuristic,0.6164383561643836
+250,bocpd_gaussian_heuristic,0.6876712328767123
+283,bocpd_gaussian_heuristic,0.7753424657534247
+363,bocpd_gaussian_heuristic,0.9945205479452055

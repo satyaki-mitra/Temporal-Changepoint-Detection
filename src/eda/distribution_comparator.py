@@ -119,6 +119,10 @@ class DistributionComparator:
         --------
                  { float }        : Stability score [0, 100]
         """
+        # Convert to numpy array if needed
+        if labels is not None:
+            labels = np.asarray(labels)
+            
         if((labels is None) or (labels.ndim != 1) or (len(labels) < 2)):
             # Neutral score
             return 50.0  
