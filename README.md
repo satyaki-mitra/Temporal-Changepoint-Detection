@@ -109,16 +109,19 @@ Our pipeline addresses the problem through three stages:
 
 ```mermaid
 graph TB
-    A[Stage 1: Synthetic Data Generation] --> B[Stage 2: Exploratory Analysis]
-    B --> C[Stage 3: Change Point Detection]
+    A[Stage 1:<br/>Synthetic Data<br/> Generation] --> B[Stage 2:<br/> Exploratory Analysis]
+    B --> C[Stage 3: Change Point<br/>Detection]
     
     A --> A1["AR(1) temporal dynamics<br/>Response pattern heterogeneity<br/>Relapse dynamics"]
     B --> B1["Clustering validation<br/>Response pattern classification<br/>Temporal stability metrics"]
     C --> C1["PELT: Offline, frequentist<br/>BOCPD: Online, Bayesian<br/>Statistical validation"]
     
-    style A fill:#e1f5ff
-    style B fill:#fff4e1
-    style C fill:#e7ffe1
+    style A fill:#e1f5ff,font-size:18px,font-weight:bold
+    style B fill:#fff4e1,font-size:18px,font-weight:bold
+    style C fill:#e7ffe1,font-size:18px,font-weight:bold
+    style A1 fill:none,font-size:12px
+    style B1 fill:none,font-size:12px
+    style C1 fill:none,font-size:12px
 ```
 
 #### **Stage 1: Clinically Grounded Synthesis**
