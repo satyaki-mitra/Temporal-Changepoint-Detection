@@ -44,8 +44,7 @@
 | 6 | BOCPD-Predictive | 0.333 | 8 | 8 (100%) | N/A |  **Over-segmented** |
 
 
-### **Selection Rationale**: PELT-L1 chosen over tied PELT-RBF for computational efficiency (O(n) vs O(n²)) and interpretability (median-based cost function).
-
+> **Selection Rationale**: PELT-L1 chosen over tied PELT-RBF for computational efficiency (O(n) vs O(n²)) and interpretability (median-based cost function).
 
 ![Model Comparison Grid](../results/detection/gamma/plots/model_comparison_grid.png)
 
