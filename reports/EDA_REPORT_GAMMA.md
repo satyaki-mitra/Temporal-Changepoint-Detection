@@ -5,8 +5,8 @@
 
 </div>
 
-- **Dataset**: `../data/raw/synthetic_phq9_data_gamma.csv`
-- **Metadata**: `../data/raw/synthetic_phq9_data_gamma.metadata.json`
+- **Dataset**: `synthetic_phq9_data_gamma.csv`
+- **Metadata**: `synthetic_phq9_data_gamma.metadata.json`
 - **Study Period**: `365 days`
 - **Sample Size**: `1,000 patients`  
 
