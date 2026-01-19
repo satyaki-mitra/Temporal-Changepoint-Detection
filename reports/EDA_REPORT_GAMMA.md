@@ -1,9 +1,10 @@
 <div align="center">
 
-# Exploratory Data Analysis Performed on: `Synthetic PHQ-9 Dataset with Gamma Relapse Distribution`
+# Exploratory Data Analysis 
+## `Synthetic PHQ-9 Dataset with Gamma Relapse Distribution`
 
-**Dataset**: `../data/raw/synthetic_phq9_data_gamma.csv`  
-**Metadata**: `../data/raw/synthetic_phq9_data_gamma.metadata.json`
+**Dataset**: ../data/raw/synthetic_phq9_data_gamma.csv 
+**Metadata**: ../data/raw/synthetic_phq9_data_gamma.metadata.json
 **Study Period**: 365 days  
 **Sample Size**: 1,000 patients  
 
