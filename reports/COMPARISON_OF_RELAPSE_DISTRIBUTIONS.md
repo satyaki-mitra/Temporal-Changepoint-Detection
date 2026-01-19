@@ -4,7 +4,6 @@
 ## Exponential vs. Gamma vs. Lognormal Relapse Distributions
 
 **Datasets Compared**: 3 Relapse Distributions (Lognormal, Gamma and Exponential)
-
 **Comparison Method**: Multi-criteria scoring with weighted composite metric  
 
 </div>
