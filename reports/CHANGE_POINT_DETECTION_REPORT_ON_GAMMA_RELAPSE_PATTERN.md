@@ -47,7 +47,7 @@
 > **Selection Rationale**: *PELT-L1 chosen over tied PELT-RBF for computational efficiency (O(n) vs O(n²)) and interpretability (median-based cost function).*
 
 
-![Model Comparison Grid](results/detection/gamma/plots/model_comparison_grid.png)
+![Model Comparison Grid](../results/detection/gamma/plots/model_comparison_grid.png)
 
 > *Figure 1: Side-by-side comparison showing PELT variants agree on 3 CPs while BOCPD over-segments with 8 CPs*
 
@@ -135,7 +135,7 @@
 
 > **Root Cause**: *Hazard tuning selected λ=10.0, expecting change points **every 10 days** (clinically implausible).*
 
-![BOCPD Posterior](results/detection/gamma/plots/bocpd_gaussian_heuristic_posterior.png)
+![BOCPD Posterior](../results/detection/gamma/plots/bocpd_gaussian_heuristic_posterior.png)
 
 > *Figure 2: BOCPD posterior shows uniform low probabilities (0.10) - barely above threshold, indicating weak evidence for 8 CPs*
 
