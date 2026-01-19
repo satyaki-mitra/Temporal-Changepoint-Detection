@@ -3,9 +3,7 @@
 # Change Point Detection Report
 ## Gamma Relapse Distribution - Comprehensive Analysis
  
-**Dataset**: `synthetic_phq9_data_gamma.csv`  
-**Study Period**: 365 days | Population: 1,000 patients  
-**Detection Methods**: PELT (4 variants), BOCPD (2 variants)
+**Dataset**: `synthetic_phq9_data_gamma.csv` | **Study Period**: 365 days | Population: 1,000 patients  | **Detection Methods**: PELT (4 variants), BOCPD (2 variants)
 
 </div>
 
