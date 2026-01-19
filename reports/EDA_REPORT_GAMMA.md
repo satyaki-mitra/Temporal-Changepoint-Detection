@@ -14,7 +14,7 @@
 
 ## Executive Summary
 
-This report presents a comprehensive exploratory data analysis of a synthetic longitudinal PHQ-9 dataset with **Gamma relapse distribution**. The dataset simulates real-world depression monitoring with realistic sparsity, temporal dependencies, and heterogeneous treatment response patterns.
+This report presents a comprehensive `Exploratory Data Analysis (EDA)` of a synthetic `longitudinal PHQ-9 dataset` with **Gamma relapse distribution**. The dataset simulates real-world depression monitoring with realistic `sparsity`, `temporal dependencies`, and `heterogeneous` treatment response patterns.
 
 ### Key Findings
 
