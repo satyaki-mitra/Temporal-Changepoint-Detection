@@ -385,6 +385,7 @@ PELT-L1 and PELT-RBF scored identically (0.806). Selection based on:
 | 5.690+ | 0 | -1828.3 | No CPs detected |
 
 > **BIC Optimization**: *Tested 50 penalty values on log scale [0.01, 10.0]*
+>
 > **Optimal Penalty**: *0.1677 (selected by minimum BIC = -2015.3)*
 
 
