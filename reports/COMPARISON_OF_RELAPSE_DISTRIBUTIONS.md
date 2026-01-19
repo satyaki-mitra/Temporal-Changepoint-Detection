@@ -43,7 +43,7 @@ This report compares three synthetic PHQ-9 datasets, each with a different relap
 
 ### 1.1 Composite Score Ranking
 
-![Dataset Ranking](results/comparison/comparison_summary/composite_scores.png)
+![Dataset Ranking](../results/comparison/comparison_summary/composite_scores.png)
 
 **Key Observations**:
 1. **Extremely close competition**: All three datasets score above 91/100
@@ -54,7 +54,7 @@ This report compares three synthetic PHQ-9 datasets, each with a different relap
 
 ### 1.2 Metric-by-Metric Breakdown
 
-![Quality Comparison](results/comparison/comparison_summary/distribution_comparison.png)
+![Quality Comparison](../results/comparison/comparison_summary/distribution_comparison.png)
 
 #### **Temporal Stability** (Weight: 35%)
 
