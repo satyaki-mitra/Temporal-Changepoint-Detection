@@ -1,10 +1,10 @@
 <div align="center">
 
-# Distribution Comparison Report
+# Relapse Distribution Comparison
 ## Exponential vs. Gamma vs. Lognormal Relapse Distributions
 
-**Datasets Compared**: 3 Relapse Distributions (Lognormal, Gamma and Exponential)
-**Comparison Method**: Multi-criteria scoring with weighted composite metric  
+**Datasets**: 3 synthetic PHQ-9 datasets with different relapse distributions  
+**Comparison**: Multi-criteria scoring with weighted composite metric 
 
 </div>
 
@@ -224,10 +224,6 @@ This report compares three synthetic PHQ-9 datasets, each with a different relap
 - More consistent autocorrelation
 - Lower day-to-day variance
 
-**Impact on Change Point Detection**:
-- Gamma: Easier to detect phase transitions
-- Lognormal/Exponential: Noisier signal, may require longer segments
-
 
 ### 3.2 Clinical Realism (30% weight)
 
@@ -361,77 +357,9 @@ This report compares three synthetic PHQ-9 datasets, each with a different relap
 
 ---
 
-## 5. Impact on Change Point Detection
+## 5. Recommendation & Rationale
 
-### 5.1 Expected Detection Sensitivity
-
-**Based on Temporal Stability Scores**:
-
-| Dataset | Temporal Stability | Detection Ease |
-|---------|-------------------|----------------|
-| **Gamma** | 87.1% | Easiest (clearest boundaries) |
-| Lognormal | 86.5% | Moderate (some noise from heavy tail) |
-| Exponential | 86.5% | Moderate (early clustering may blur boundaries) |
-
-**Recommendation**: Use **Gamma** for:
-- Maximum detection power
-- Clearest phase transitions
-- Most reliable change point estimates
-
-Use **Lognormal** for:
-- Testing robustness to outliers
-- Modeling catastrophic events
-- Heavy-tailed real-world data
-
-Use **Exponential** for:
-- Benchmark comparisons (standard model)
-- Testing memoryless assumptions
-- Simplest mathematical properties
-
-
-### 5.2 Algorithm-Specific Considerations
-
-#### **PELT (Offline, Frequentist)**
-
-| Dataset | Expected Performance |
-|---------|---------------------|
-| **Gamma** | Best - Clear cost function minima |
-| Lognormal | Good - May detect outliers as CPs |
-| Exponential | Good - May miss subtle transitions due to early noise |
-
-**Recommendation**: All three suitable; Gamma preferred for maximum accuracy.
-
-#### **BOCPD (Online, Bayesian)**
-
-| Dataset | Expected Performance |
-|---------|---------------------|
-| **Gamma** | Best - Stable run-length posteriors |
-| Lognormal | Moderate - Heavy tail may cause false positives |
-| Exponential | Moderate - Memoryless property matches constant hazard |
-
-**Recommendation**: Gamma for clearest posteriors; Exponential for methodological alignment (both memoryless).
-
-
-### 5.3 Cross-Distribution Stability
-
-**Key Question**: Are change point locations **consistent** across distributions?
-
-**Expected Behavior**:
-- **Major phase transitions** (e.g., Day ~43: acute → maintenance) should be detected in all three
-- **Minor change points** may vary due to distribution differences
-- **Relapse clusters** will differ by distribution
-
-**Testing Strategy**:
-1. Run detection on all three datasets
-2. Compare detected change points
-3. Assess **agreement** (how many CPs are within ±5 days across datasets?)
-4. Validate with clustering results (should align with cluster boundaries)
-
----
-
-## 6. Recommendation & Rationale
-
-### 6.1 Primary Recommendation
+### 5.1 Primary Recommendation
 
 **We can move forward with `synthetic_phq9_data_gamma` for change point detection task further**
 
@@ -445,7 +373,7 @@ Use **Exponential** for:
 6. **Stress Accumulation Model** - More realistic than memoryless exponential
 
 
-### 6.2 Alternative Use Cases
+### 5.2 Alternative Use Cases
 
 **Use Lognormal if:**
 - Modeling **catastrophic life events** (trauma, loss)
@@ -458,7 +386,7 @@ Use **Exponential** for:
 - Testing **early relapse clustering** scenarios
 
 
-### 6.3 All Three Are Excellent
+### 5.3 All Three Are Excellent
 
 **Important**: The score differences are **minimal** (<0.2%). All three datasets:
 - Pass all quality checks
@@ -470,80 +398,12 @@ Use **Exponential** for:
 
 ---
 
-## 7. Limitations
-
-### 7.1 Comparison Methodology
-
-1. **Scoring Weights**: The 35/30/20/15 split is somewhat arbitrary
-2. **Single Replication**: Only one dataset per distribution
-3. **No Ground Truth**: Cannot validate detected change points
-4. **Synthetic Data**: Real-world data may differ
-
-
-### 7.2 Distribution Modeling
-
-1. **Simplified Relapses**: Real relapses are multifactorial (not just distribution shape)
-2. **No Covariates**: Missing patient-level risk factors (comorbidities, adherence)
-3. **Fixed Parameters**: Shape/scale parameters not optimized for real data
-4. **Single Mechanism**: Real relapses may involve multiple mechanisms
-
-
-### 7.3 Clinical Applicability
-
-1. **Treatment-Resistant Sample**: 72% non-responders may not generalize
-2. **No Treatment Switching**: Real patients would have treatment changes
-3. **Simplified Dropout**: Real dropout is complex (not just exponential timing)
-
----
-
-## 8. Next Steps
-
-1. **Run change point detection** on all three datasets using PELT and BOCPD
-2. **Compare detected change points** across distributions
-3. **Assess cross-distribution stability** (are CPs consistent?)
-4. **Generate detection results report** comparing model performance
-
----
-
-## 9. Conclusions
-
-### 9.1 Key Takeaways
+## 6. Conclusions
 
 1. **All three datasets are excellent** - Scores within 0.16 points (91.20-91.36)
 2. **Gamma recommended** - Best temporal stability (87.1%) for detection
 3. **Minimal practical differences** - Clinical realism nearly identical (86.3-86.4%)
 4. **Perfect data quality** - All datasets pass integrity checks (100%)
 5. **Distribution matters** - Relapse timing and magnitude differ meaningfully
-
-
-### 9.2 Final Recommendation
-
-**Use `synthetic_phq9_data_gamma` as the primary dataset** for change point detection research, with **Lognormal and Exponential as comparisons** to assess algorithm robustness across relapse mechanisms.
-
-All three datasets are **publication-ready** and suitable for methodological research in longitudinal mental health data analysis.
-
----
-
-## Appendix: Scoring Details
-
-### A.1 Composite Score Formula
-
-```
-Composite Score = 0.35 × Temporal Stability + 
-                  0.30 × Clinical Realism + 
-                  0.20 × Statistical Quality + 
-                  0.15 × Metadata Consistency
-```
-
-
-### A.2 Detailed Scores
-
-| Dataset | Temporal | Clinical | Statistical | Metadata | Composite | Rank |
-|---------|----------|----------|-------------|----------|-----------|------|
-| **Gamma** | 87.09 | 86.28 | 100.0 | 100.0 | **91.36** | 1 |
-| **Lognormal** | 86.54 | 86.38 | 100.0 | 100.0 | **91.20** | 2 |
-| **Exponential** | 86.54 | 86.37 | 100.0 | 100.0 | **91.20** | 3 |
-
-**Conclusion**: All three datasets are **statistically tied** within measurement error. The ranking reflects **marginal preference**, not definitive superiority.
 
 ---
