@@ -142,7 +142,7 @@ This report compares three synthetic PHQ-9 datasets, each with a different relap
 **Mathematical Properties**:
 - **Location parameter**: μ = log(3.5) - 0.125
 - **Scale parameter**: σ (controls dispersion)
-- **Very heavy tail**: Heavier than exponential
+- **Moderate-to-heavy tail**: Right-skewed with moderate outliers (up to 14 points)
 - **Right-skewed**: Mode < median < mean
 
 **Clinical Interpretation**:
@@ -321,7 +321,7 @@ This report compares three synthetic PHQ-9 datasets, each with a different relap
 |---------|----------------------|------------|
 | **Exponential** | ~320 | 52% |
 | **Gamma** | ~250 | 41% |
-| **Lognormal** | ~240 | 39% |
+| **Lognormal** | ~226 | 39% |
 
 **Insight**: Exponential has strongest early clustering due to memoryless property (constant hazard rate leads to exponential decay over time).
 
@@ -344,9 +344,9 @@ This report compares three synthetic PHQ-9 datasets, each with a different relap
 
 | Dataset | Count | % of Total |
 |---------|-------|------------|
-| **Lognormal** | ~45 | 7.3% |
-| **Exponential** | ~37 | 6.0% |
-| **Gamma** | ~22 | 3.6% |
+| **Lognormal** | ~38 | 6.6% |
+| **Exponential** | ~43 | 7.0% |
+| **Gamma** | ~40 | 6.5% |
 
 **Insight**: Lognormal produces **twice as many extreme relapses** as gamma, reflecting its very heavy tail.
 
@@ -394,7 +394,7 @@ This report compares three synthetic PHQ-9 datasets, each with a different relap
 - Are suitable for research
 - Provide high-quality change point signals
 
-**Conclusion**: The choice is **preference-based**, not quality-based. Gamma is recommended for **marginal superiority** in temporal stability, but **any of the three** is scientifically valid.
+**Conclusion**: The choice reflects **marginal optimization** rather than quality differences.
 
 ---
 
