@@ -1,14 +1,17 @@
-# PHQ-9 Change Point Detection Analysis
-
 <div align="center">
 
-**Statistical Detection of Treatment Response Transitions in Longitudinal Depression Data**
+# Temporal Change-Point Detection on PHQ-9 Data
 
-[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Production-success.svg)]()
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![ruptures](https://img.shields.io/badge/ruptures-1.1.8-orange.svg)](https://centre-borelli.github.io/ruptures-docs/)
+[![scikit-learn](https://img.shields.io/badge/sklearn-1.3+-red.svg)](https://scikit-learn.org/)
 
-*Automated change point detection for PHQ-9 time series using PELT and BOCPD algorithms*
+> **End-to-end pipeline for detecting regime shifts in population-level mental health data through clinically grounded synthesis, rigorous exploratory analysis, and dual-algorithm change point detection.**
 
 </div>
 
