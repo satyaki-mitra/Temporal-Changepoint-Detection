@@ -3,5 +3,5 @@ pelt_l1,pelt,3,3,True,,2.210020166602149
 pelt_l2,pelt,3,2,True,,1.6689597208364362
 pelt_rbf,pelt,3,3,True,,2.210020166602149
 pelt_ar,pelt,2,1,True,,1.7280452240055413
-bocpd_gaussian_heuristic,bocpd,8,0,True,bayesian,0.0
-bocpd_gaussian_predictive_ll,bocpd,8,0,True,bayesian,0.0
+bocpd_student_t_heuristic,bocpd,2,0,True,bayesian,0.0
+bocpd_student_t_predictive_ll,bocpd,2,0,True,bayesian,0.0

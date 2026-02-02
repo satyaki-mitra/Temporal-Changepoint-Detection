@@ -1,0 +1,52 @@
+{
+    "model_id": "bocpd_student_t_heuristic",
+    "method": "bocpd",
+    "algorithm": "BOCPD",
+    "variant": "bocpd_student_t",
+    "n_changepoints": 2,
+    "signal_length": 365,
+    "change_points": [
+        0.08767123287671233,
+        0.18904109589041096
+    ],
+    "validation": {
+        "n_changepoints": 2,
+        "normalized_positions": [
+            0.08767123287671233,
+            0.18904109589041096
+        ],
+        "detected_indices": [
+            32,
+            69
+        ],
+        "posterior_threshold": 0.011133575227296466,
+        "persistence": 5,
+        "test_family": "bayesian",
+        "overall_significant": true,
+        "rejection_reason": null,
+        "summary": {
+            "mean_posterior_at_cp": 0.013553612408019729,
+            "max_posterior_at_cp": 0.014330580982302632,
+            "coverage_ratio": 0.005479452054794521,
+            "max_posterior_overall": 0.014330580982302632,
+            "mean_posterior_overall": 0.008007035206534133
+        }
+    },
+    "timestamp": "2026-02-02T18:36:29.815132",
+    "hazard_lambda": 100.0,
+    "hazard_rate": 0.01,
+    "posterior_threshold": 0.011133575227296466,
+    "max_run_length_used": 365,
+    "hazard_tuning": {
+        "optimal_hazard_lambda": 100.0,
+        "optimal_hazard_rate": 0.01,
+        "lambdas_tested": [
+            100.0
+        ],
+        "scores": null,
+        "criterion": "heuristic_variance",
+        "method": "heuristic",
+        "strategy": "variance",
+        "notes": "Variance-based: 91 rough CPs \u2192 median segment=3.0, clipped to [100.0, 500.0] \u2192 100.0"
+    }
+}

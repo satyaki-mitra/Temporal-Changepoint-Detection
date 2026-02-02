@@ -12,3 +12,6 @@ venv/
 
 # Backups
 *.backup
+
+results/detection/gamma_gaussian
+results/detection/gamma_student_t

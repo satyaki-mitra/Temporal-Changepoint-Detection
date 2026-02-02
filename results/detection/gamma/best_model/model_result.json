@@ -191,7 +191,7 @@
                 "change_point_index": 24,
                 "test_name": "Permutation Test",
                 "test_statistic": -0.03397533295722527,
-                "p_value": 0.0327,
+                "p_value": 0.0312,
                 "cohens_d": 1.8565141407186905,
                 "test_family": "frequentist",
                 "before_mean": 0.26249781920371773,
@@ -200,14 +200,14 @@
                 "significant": true,
                 "meaningful_effect": true,
                 "normalized_position": 0.06575342465753424,
-                "p_value_corrected": 0.0327,
+                "p_value_corrected": 0.0312,
                 "significant_after_correction": true
             },
             "CP_2_at_57": {
                 "change_point_index": 57,
                 "test_name": "Permutation Test",
                 "test_statistic": -0.07423370514032807,
-                "p_value": 0.0069,
+                "p_value": 0.0088,
                 "cohens_d": 2.368519847095038,
                 "test_family": "frequentist",
                 "before_mean": 0.3131239294492442,
@@ -216,14 +216,14 @@
                 "significant": true,
                 "meaningful_effect": true,
                 "normalized_position": 0.15616438356164383,
-                "p_value_corrected": 0.01035,
+                "p_value_corrected": 0.0132,
                 "significant_after_correction": true
             },
             "CP_3_at_133": {
                 "change_point_index": 133,
                 "test_name": "Permutation Test",
                 "test_statistic": -0.08957078800171914,
-                "p_value": 0.0063,
+                "p_value": 0.0071,
                 "cohens_d": 2.405026511992719,
                 "test_family": "frequentist",
                 "before_mean": 0.34831085683845425,
@@ -232,7 +232,7 @@
                 "significant": true,
                 "meaningful_effect": true,
                 "normalized_position": 0.3643835616438356,
-                "p_value_corrected": 0.01035,
+                "p_value_corrected": 0.0132,
                 "significant_after_correction": true
             }
         },

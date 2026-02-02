@@ -1,7 +1,0 @@
-model_id,method,n_changepoints,n_significant,overall_significant,test_family,mean_effect_size
-pelt_l1,pelt,3,2,True,,1.7809389065768784
-pelt_l2,pelt,3,2,True,,1.6517717084500874
-pelt_rbf,pelt,3,2,True,,1.736810655066585
-pelt_ar,pelt,6,2,True,,0.39119355052443
-bocpd_gaussian_heuristic,bocpd,11,0,True,bayesian,0.0
-bocpd_gaussian_predictive_ll,bocpd,11,0,True,bayesian,0.0

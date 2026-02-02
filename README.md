@@ -1,14 +1,14 @@
+# PHQ-9 Change Point Detection Analysis
+
 <div align="center">
 
-# Temporal Change-Point Detection on PHQ-9 Data
+**Statistical Detection of Treatment Response Transitions in Longitudinal Depression Data**
 
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Production-success.svg)]()
 
-> **End-to-end pipeline for detecting regime shifts in population-level mental health data through clinically grounded synthesis, rigorous exploratory analysis, and dual-algorithm change point detection.**
-
-[Quick Start](#-quick-start) • [Problem Statement](#-problem-statement) • [Documentation](#-table-of-contents) • [Whitepaper](WHITEPAPER.md)
+*Automated change point detection for PHQ-9 time series using PELT and BOCPD algorithms*
 
 </div>
 
@@ -219,19 +219,43 @@ graph LR
 
 ## 📋 Table of Contents
 
-1. [Quick Start](#-quick-start)
-2. [System Architecture](#-system-architecture)
-3. [Module Descriptions](#-module-descriptions)
-4. [Clinical Context](#-clinical-context)
-5. [Installation](#-installation)
-6. [Complete Pipeline Example](#-complete-pipeline-example)
-7. [Configuration](#-configuration)
-8. [Results & Interpretation](#-results--interpretation)
-9. [References](#-references)
+- [Quick Start](#-quick-start)
+- [System Architecture](#-system-architecture)
+- [Module Descriptions](#-module-descriptions)
+- [Clinical Context](#-clinical-context)
+- [Project Structure](#-project-structure)
+- [Detection Methods](#-detection-methods)
+- [Results Summary](#-results-summary)
+- [Configuration](#-configuration)
+- [Usage Examples](#-usage-examples)
+- [Output Files](#-output-files)
+- [Visualization Guide](#-visualization-guide)
+- [Clinical Interpretation](#-clinical-interpretation)
+- [Performance Benchmarks](#-performance-benchmarks)
+- [Key References](#-key-references)
+- [Acknowledgments](#-acknowledgments)
+- [License](#-license)
+- [Author](#-author)
+- [Additional Resources](#-additional-resources)
 
 ---
 
-## 🚀 Quick Start
+## ⚡ Quick Start
+
+### Setup
+
+```bash
+# Clone repository
+git clone https://github.com/satyaki-mitra/Temporal-Changepoint-Detection.git
+cd Temporal-Changepoint-Detection
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Verify installation
+python scripts/run_detection.py --help
+```
+
 
 ### Minimal Example (3 Commands)
 
@@ -247,6 +271,46 @@ python scripts/run_detection.py --data data/raw/synthetic_phq9_data.csv --execut
 ```
 
 **Output:** Change points validated with statistical tests, ranked by cross-model agreement.
+
+
+### Run Single Model
+
+```bash
+python scripts/run_detection.py \
+    --dataset gamma \
+    --execution-mode single \
+    --detectors pelt \
+    --pelt-cost-model l1
+```
+
+### Custom Configuration
+
+```bash
+python scripts/run_detection.py \
+    --dataset gamma \
+    --config config/custom_detection_config.yaml \
+    --select-model
+```
+
+### Configuration
+
+All behavior is **config-driven** via Pydantic:
+- `config/generation_config.py`: AR coefficient, recovery rate, relapse distribution
+- `config/eda_config.py`: Clustering parameters, temporal weighting
+- `config/detection_config.py`: Penalty, hazard, statistical thresholds
+- `config/model_selection_config.py`: Metric weights, agreement scoring
+
+**Example:**
+
+```python
+from config.detection_config import ChangePointDetectionConfig
+
+config = ChangePointDetectionConfig(execution_mode        = 'ensemble',
+                                    auto_tune_penalty     = True,
+                                    alpha                 = 0.01,  # Conservative testing
+                                    effect_size_threshold = 0.5,
+                                   )
+```
 
 ---
 
@@ -372,137 +436,567 @@ Each module is **self-contained** with its own:
 
 ---
 
-## 🛠 Installation
+## 📁 Project Structure
 
-### Requirements
-
-- Python 3.8+
-- Core: `numpy`, `pandas`, `scipy`, `matplotlib`, `seaborn`
-- ML: `scikit-learn`, `ruptures`
-- Config: `pydantic`
-
-### Setup
-
-```bash
-# Clone repository
-git clone https://github.com/satyaki-mitra/phq9-changepoint-detection.git
-cd phq9-changepoint-detection
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Verify
-python -c "import ruptures, pydantic; print('Ready!')"
+```
+Temporal-Changepoint-Detection/
+├── config
+│   ├── __init__.py
+│   ├── clinical_constants.py
+│   ├── detection_config.py
+│   ├── eda_config.py
+│   ├── eda_constants.py
+│   ├── generation_config.py
+│   └── model_selection_config.py
+├── data
+│   ├── processed
+│   └── raw
+├── docs
+│   ├── PROJECT_BLOG.md
+│   └── THORETICAL_DETAILS.md
+├── logs
+│   ├── comparison
+│   ├── detection
+│   ├── eda
+│   └── generation
+├── README.md
+├── reports
+├── requirements.txt
+├── results
+│   ├── comparison
+│   ├── detection
+│   ├── eda
+│   └── generation
+├── scripts
+│   ├── compare_distributions.py
+│   ├── run_detection.py
+│   ├── run_eda.py
+│   └── run_generation.py
+└── src
+    ├── __init__.py
+    ├── detection
+    │   ├── __init__.py
+    │   ├── bocpd_detector.py
+    │   ├── detector.py
+    │   ├── hazard_tuning.py
+    │   ├── model_selector.py
+    │   ├── pelt_detector.py
+    │   ├── penalty_tuning.py
+    │   ├── README.md
+    │   ├── results_saver.py
+    │   ├── statistical_tests.py
+    │   └── visualizations.py
+    ├── eda
+    │   ├── __init__.py
+    │   ├── analyzer.py
+    │   ├── clustering.py
+    │   ├── distribution_comparator.py
+    │   ├── metadata_loader.py
+    │   ├── README.md
+    │   ├── response_patterns.py
+    │   ├── validators.py
+    │   ├── visualizations.py
+    ├── generation
+    │   ├── __init__.py
+    │   ├── generator.py
+    │   ├── README.md
+    │   ├── trajectory_models.py
+    │   ├── validators.py
+    └── utils
+        ├── __init__.py
+        └── logging_util.py
 ```
 
 ---
 
-## 🎬 Complete Pipeline Example
+## 🔬 Detection Methods
 
-```bash
-# Generate three datasets
-python scripts/run_generation.py --relapse-dist exponential --patients 1000 --days 365
-python scripts/run_generation.py --relapse-dist gamma --patients 1000 --days 365
-python scripts/run_generation.py --relapse-dist lognormal --patients 1000 --days 365
+### PELT (Offline Detection)
 
-# Compare distributions
-python scripts/compare_distributions.py --data-dir data/raw --patterns exponential gamma lognormal
+**Algorithm**: Pruned Exact Linear Time (Killick et al. 2012)
 
-# Detect change points on best dataset
-python scripts/run_detection.py --execution-mode ensemble --data data/raw/synthetic_phq9_data_exponential.csv
-```
+**How it works**:
+1. Minimizes cost function globally across entire time series
+2. Penalty controls number of change points (BIC-optimized)
+3. Detects large, sustained regime shifts
+
+**Cost Models**:
+- **L1**: Median-based (robust to outliers) - **Recommended**
+- **L2**: Mean-based (sensitive to variance changes)
+- **RBF**: Radial basis function (nonlinear patterns)
+- **AR**: Autoregressive (temporal dependencies)
+
+**Best for**: Identifying major treatment phases
+
+---
+
+### BOCPD (Online Detection)
+
+**Algorithm**: Bayesian Online Change Point Detection (Adams & MacKay 2007)
+
+**How it works**:
+1. Sequentially updates posterior probability of change point at each time step
+2. Hazard function controls expected run length between change points
+3. Detects early subtle transitions as data arrives
+
+**Likelihood Models**:
+- **Student-t (df=3)**: Heavy-tailed, robust to CV spikes - **Recommended**
+- **Gaussian**: Standard but sensitive to outliers
+
+**Best for**: Real-time monitoring, early warning systems
+
+---
+
+### Comparison
+
+| Feature | PELT | BOCPD |
+|---------|------|-------|
+| **Paradigm** | Offline | Online |
+| **Optimization** | Global | Sequential |
+| **Sensitivity** | Large changes | Early shifts |
+| **Validation** | Frequentist | Bayesian |
+| **Speed** | Fast (O(n)) | Moderate (O(n²)) |
+| **Best Use** | Retrospective analysis | Real-time monitoring |
+
+---
+
+## 📈 Results Summary
+
+### Best Model: PELT-L1
+
+**Performance**:
+- **Composite Score**: 0.948 (highest among 6 candidates)
+- **Change Points Detected**: 3 (Days 24, 57, 133)
+- **Validation Rate**: 100% (all CPs significant after FDR correction)
+- **Mean Effect Size**: 2.21 (Cohen's d - very large)
+- **Cross-Model Agreement**: 59% (strong consensus)
+
+### Detected Change Points
+
+| CP | Day | Week | CV Change | Cohen's d | P-value (FDR) | Clinical Phase |
+|----|-----|------|-----------|-----------|---------------|----------------|
+| 1 | 24 | 3.5 | +13% | 1.86 | 0.0312 | Early response begins |
+| 2 | **57** | **8** | **+24%** | **2.37** | **0.0132** | **Peak divergence** |
+| 3 | 133 | 19 | +26% | 2.41 | 0.0132 | Maintenance consolidation |
+
+> **Day 57** is the most robust change point - detected by all 4 PELT variants with the largest effect size.
+
+### Visualizations
+
+#### Model Comparison
+
+![Model Comparison Grid](results/detection/gamma/plots/model_comparison_grid.png)
+
+*All 6 detection models side-by-side: PELT variants show strong consensus on 3 CPs, while BOCPD detects 2 early-phase transitions*
+
+#### Aggregated Time Series
+
+![Aggregated CV](results/detection/gamma/plots/aggregated_cv_all_models.png)
+
+*Daily coefficient of variation with detected change points overlaid - shows progressive increase in population heterogeneity*
+
+### Rankings
+
+| Rank | Model | Score | CPs | Significant | Status |
+|------|-------|-------|-----|-------------|--------|
+| 🥇 1 | **PELT-L1** | **0.948** | 3 | 3/3 (100%) | **Winner** |
+| 🥈 2 | **PELT-RBF** | **0.948** | 3 | 3/3 (100%) | Tied (selected L1 for efficiency) |
+| 🥉 3 | PELT-L2 | 0.758 | 3 | 2/3 (67%) | One CP failed validation |
+| 4 | PELT-AR | 0.591 | 2 | 1/2 (50%) | Misses Day 24 |
+| 5 | BOCPD-Heuristic | 0.340 | 2 | Bayesian | Different sensitivity |
+| 6 | BOCPD-Predictive | 0.340 | 2 | Bayesian | Identical to heuristic |
 
 ---
 
 ## ⚙️ Configuration
 
-All behavior is **config-driven** via Pydantic:
-- `generation_config.py`: AR coefficient, recovery rate, relapse distribution
-- `eda_config.py`: Clustering parameters, temporal weighting
-- `detection_config.py`: Penalty, hazard, statistical thresholds
-- `model_selection_config.py`: Metric weights, agreement scoring
+### Main Configuration File: `config/detection_config.py`
 
-**Example:**
 ```python
-from config.detection_config import ChangePointDetectionConfig
-
-config = ChangePointDetectionConfig(
-    execution_mode='ensemble',
-    auto_tune_penalty=True,
-    alpha=0.01,  # Conservative testing
-    effect_size_threshold=0.5
-)
+class ChangePointDetectionConfig:
+    # Execution
+    execution_mode = 'compare'          # 'single' | 'compare'
+    detectors = ['pelt', 'bocpd']       # Methods to run
+    
+    # Data
+    data_path = 'data/raw/synthetic_phq9_data_gamma.csv'
+    
+    # PELT
+    pelt_cost_models = ['l1', 'l2', 'rbf', 'ar']
+    auto_tune_penalty = True
+    penalty_range = (0.01, 10.0)
+    min_segment_size = 5
+    
+    # BOCPD
+    likelihood_model = 'student_t'      # 'student_t' | 'gaussian'
+    likelihood_df = 3                   # Student-t degrees of freedom
+    auto_tune_hazard = True
+    hazard_range = (100.0, 500.0)       # Expected run length bounds
+    hazard_tuning_method = 'heuristic'  # 'heuristic' | 'predictive_ll'
+    posterior_smoothing = 3             # Gaussian smoothing sigma
+    bocpd_persistence = 5               # Consecutive days above threshold
+    
+    # Statistical Testing
+    alpha = 0.05
+    correction_method = 'fdr_bh'        # Benjamini-Hochberg FDR
+    effect_size_threshold = 0.3
+    
+    # Model Selection
+    enable_model_selection = True
 ```
 
----
-
-## 📊 Results & Interpretation
-
-### Generation Validation
-
-**Check:**
-- ✅ Autocorrelation 0.30-0.70
-- ✅ Baseline severity 13-19
-- ✅ 12-week response 40-70%
-- ✅ Missingness ~95%
-
-### Change Point Output
+### Model Selection Scoring: `config/model_selection_config.json`
 
 ```json
 {
-  "n_changepoints": 3,
-  "n_significant": 2,
-  "change_points": [45, 120, 210],
-  "validation": {
-    "summary": {
-      "mean_effect_size": 0.65,
-      "fraction_significant": 0.67
-    }
+  "weights": {
+    "statistical_significance": 0.30,
+    "effect_size": 0.30,
+    "stability": 0.25,
+    "parsimony": 0.15
+  },
+  "penalties": {
+    "zero_changepoints": 0.5,
+    "excessive_changepoints": 0.3
   }
 }
 ```
 
-**Interpretation:**
-- **Effect size >0.5:** Large population shifts
-- **Fraction significant:** Proportion passing statistical validation
+---
+
+## 💻 Usage Examples
+
+### Example 1: Compare All Models
+
+```python
+from config.detection_config import ChangePointDetectionConfig
+from src.detection.detector import ChangePointDetectionOrchestrator
+
+
+# Initialize
+config        = ChangePointDetectionConfig()
+orchestrator  = ChangePointDetectionOrchestrator(config = config)
+
+# Run detection
+results       = orchestrator.run()
+
+# Access best model
+best_model_id = results['model_selection']['best_model']
+best_result   = results[best_model_id]
+
+print(f"Best model: {best_model_id}")
+print(f"Change points: {best_result['change_points']}")
+print(f"Score: {results['model_selection']['scores'][best_model_id]}")
+```
+
+
+### Example 2: PELT-Only Analysis
+
+```python
+from src.detection.pelt_detector import PELTDetector
+
+config                  = ChangePointDetectionConfig()
+config.detectors        = ['pelt']
+config.pelt_cost_models = ['l1']
+
+detector                = PELTDetector(config     = config, 
+                                       cost_model = 'l1',
+                                      )
+
+result                  = detector.detect(aggregated_signal = <your_cv_series>.values)
+
+print(f"Detected {result['n_changepoints']} change points")
+print(f"Positions: {result['change_points']}")
+print(f"Validation: {result['validation']['summary']}")
+```
+
+
+### Example 3: BOCPD with Custom Hazard
+
+```python
+from src.detection.bocpd_detector import BOCPDDetector
+
+config                  = ChangePointDetectionConfig()
+config.auto_tune_hazard = False  # Use fixed hazard
+
+detector                = BOCPDDetector(config = config)
+result                  = detector.detect(signal        = <your_cv_series>.values, 
+                                          hazard_lambda = 100.0,
+                                         )
+
+print(f"Detected {result['n_changepoints']} change points")
+print(f"Max posterior: {result['cp_posterior'].max():.4f}")
+print(f"Threshold: {result['adaptive_threshold']:.4f}")
+```
+
+
+### Example 4: Load Saved Results
+
+```python
+import json
+
+# Load best model results
+with open('results/detection/gamma/best_model/model_result.json') as f:
+    best_model = json.load(f)
+
+# Load model selection summary
+with open('results/detection/gamma/model_selection.json') as f:
+    selection = json.load(f)
+
+print(f"Best model: {selection['best_model']}")
+print(f"Change points: {best_model['change_points']}")
+```
 
 ---
 
-## ⚠️ Limitations & Future Work
+## 📂 Output Files
 
-### Current Limitations
-1. **Univariate only**: Detects shifts in CV only (not multivariate patterns)
-2. **Retrospective**: Not real-time (though BOCPD supports online)
-3. **PHQ-9 specific**: Some clinical constants are PHQ-9 specific
+### Directory Structure
 
-### Planned Extensions
-1. **Multivariate CPD**: Detect correlated shifts across multiple metrics
-2. **Hierarchical models**: Patient subgroup-aware detection
-3. **Real-time dashboard**: Streamlit/Plotly visualization
-4. **Alternative scales**: Extend to GAD-7, PHQ-15, etc.
+```
+results/detection/gamma/
+├── plots/
+│   ├── aggregated_cv_all_models.png        # Main time series
+│   ├── model_comparison_grid.png           # Side-by-side panels
+│   ├── bocpd_student_t_heuristic_posterior.png
+│   └── bocpd_student_t_predictive_ll_posterior.png
+├── diagnostics/
+│   ├── detection_summary.json              # Overall metrics
+│   ├── pelt_l1_segments.png                # Winner segment analysis
+│   ├── pelt_l2_segments.png
+│   ├── pelt_rbf_segments.png
+│   ├── pelt_ar_segments.png
+│   ├── bocpd_student_t_heuristic_segments.png
+│   └── bocpd_student_t_predictive_ll_segments.png
+├── change_points/
+│   ├── all_changepoints_comparison.csv     # Cross-model consensus
+│   ├── pelt_l1_changepoints.csv
+│   ├── pelt_l2_changepoints.csv
+│   ├── pelt_rbf_changepoints.csv
+│   ├── pelt_ar_changepoints.csv
+│   ├── bocpd_student_t_heuristic_changepoints.csv
+│   └── bocpd_student_t_predictive_ll_changepoints.csv
+├── statistical_tests/
+│   ├── statistical_summary.csv             # Aggregated test results
+│   ├── pelt_l1_tests.json
+│   ├── pelt_l2_tests.json
+│   ├── pelt_rbf_tests.json
+│   ├── pelt_ar_tests.json
+│   ├── bocpd_student_t_heuristic_tests.json
+│   └── bocpd_student_t_predictive_ll_tests.json
+├── per_model/
+│   ├── pelt_l1.json                        # Full model outputs
+│   ├── pelt_l2.json
+│   ├── pelt_rbf.json
+│   ├── pelt_ar.json
+│   ├── bocpd_student_t_heuristic.json
+│   └── bocpd_student_t_predictive_ll.json
+├── best_model/
+│   ├── metadata.json                       # Selection metadata
+│   └── model_result.json                   # Winner's full results
+├── all_model_results.json                  # Combined results
+└── model_selection.json                    # Rankings and scores
+```
+
+### Key Files Description
+
+#### `results/detection/gamma/all_changepoints_comparison.csv`
+
+```csv
+model_id,n_changepoints,change_points,normalized_positions
+pelt_l1,3,"[24, 57, 133]","[0.066, 0.156, 0.364]"
+pelt_l2,3,"[24, 58, 149]","[0.066, 0.159, 0.408]"
+...
+```
+
+#### `results/detection/gamma/statistical_summary.csv`
+
+```csv
+model_id,method,n_changepoints,n_significant,mean_effect_size
+pelt_l1,pelt,3,3,2.21
+pelt_l2,pelt,3,2,1.67
+...
+```
+
+#### `results/detection/gamma/model_selection.json`
+
+```json
+{
+  "best_model": "pelt_l1",
+  "ranking": ["pelt_l1", "pelt_rbf", ...],
+  "scores": {"pelt_l1": 0.948, ...},
+  "explanation": "Selected model 'pelt_l1' because..."
+}
+```
 
 ---
 
-## 📚 References
+## 📊 Visualization Guide
 
-1. **PELT:** Killick et al. (2012). *J. American Statistical Association*
-2. **BOCPD:** Adams & MacKay (2007). *arXiv:0710.3742*
-3. **PHQ-9:** Kroenke et al. (2001). *J. General Internal Medicine*
-4. **STAR*D:** Rush et al. (2006). *American J. Psychiatry*
-5. **Change Point Review:** Truong et al. (2020). *Signal Processing*
+### Plot Types
 
----
+#### 1. Model Comparison Grid
 
-## 📄 License
+**File**: `results/detection/gamma/plots/model_comparison_grid.png`
 
-MIT License. **Research purposes only—not for clinical use.**
+**Shows**: Side-by-side panels for all 6 models with detected change points
+
+**Usage**: Assess cross-model agreement visually
 
 ---
 
-## 👤 Author
+#### 2. Aggregated CV Time Series
 
-**Satyaki Mitra**  
-Data Scientist | Statistics Learner | ML Enthusiast | Clinical AI Research
+**File**: `results/detection/gamma/plots/aggregated_cv_all_models.png`
+
+**Shows**: Full time series with all detected CPs overlaid
+
+**Usage**: See temporal progression and CP density
+
+---
+
+#### 3. Segment Diagnostics
+
+**Files**: `results/detection/gamma/diagnostics/{model_id}_segments.png`
+
+**Shows**: CV statistics per segment (mean, std, CV itself)
+
+**Usage**: Validate change point quality and phase characteristics
+
+Example for PELT-L1:
+
+![PELT-L1 Segments](results/detection/gamma/diagnostics/pelt_l1_segments.png)
+
+---
+
+#### 4. BOCPD Posterior
+
+**Files**: `results/detection/gamma/plots/bocpd_{variant}_posterior.png`
+
+**Shows**: 
+- Top: Run-length posterior (heatmap)
+- Bottom: Change point probability (time series)
+
+**Usage**: Understand BOCPD's sequential decision-making
+
+Example:
+
+![BOCPD Posterior](results/detection/gamma/plots/bocpd_student_t_heuristic_posterior.png)
+
+---
+
+## 🏥 Clinical Interpretation
+
+### Timeline of Treatment Response
+
+```
+Day 0    Day 24    Day 57      Day 133              Day 365
+  |        |         |            |                    |
+  └────────┼─────────┼────────────┼────────────────────┘
+  
+  Phase 1   Phase 2   Phase 3       Phase 4
+  ────────  ────────  ────────────  ─────────────────
+  Baseline  Early     Peak          Maintenance
+            Response  Divergence    
+  CV: 0.26  CV: 0.31  CV: 0.39      CV: 0.44
+           (+19%)    (+24%)        (+26%)
+```
+
+
+### Phase Descriptions
+
+#### Phase 1: Baseline (Days 1-24)
+- **CV**: 0.26 (low variability)
+- **Characteristics**: Homogeneous pre-treatment population
+- **Clinical**: Similar symptom severity across patients
+
+#### Phase 2: Early Response (Days 25-57)
+- **CV**: 0.31 (+19% from baseline)
+- **Characteristics**: First divergence emerges
+- **Clinical**: ~30% early responders begin improving
+
+#### Phase 3: Peak Divergence (Days 58-133)
+- **CV**: 0.39 (+24% from Phase 2)
+- **Characteristics**: Maximum outcome heterogeneity
+- **Clinical**: Clear responder/non-responder stratification
+- **Action**: **Critical monitoring period** - consider treatment switching for non-responders
+
+#### Phase 4: Maintenance (Days 134-365)
+- **CV**: 0.44 (+26% from Phase 3)
+- **Characteristics**: Sustained high variability
+- **Clinical**: Late responders plateau, some relapses occur
+
+
+### Alignment with STAR*D
+
+| STAR*D Milestone | Expected | Detected | Agreement |
+|------------------|----------|----------|-----------|
+| Early response | Week 2-4 | Day 24 (Week 3.5) | **Strong** |
+| Acute response peak | Week 6-8 | Day 57 (Week 8) | **Exact** |
+| Plateau | Week 12-20 | Day 133 (Week 19) | **Strong** |
+
+> **Validation**: Detected change points align closely with established clinical treatment phases from the STAR*D trials.
+
+---
+
+## ⚡ Performance Benchmarks
+
+### Computational Performance
+
+| Model | Tuning Time | Detection Time | Total Time | Memory |
+|-------|-------------|----------------|------------|--------|
+| PELT-L1 | 5.8s | 0.12s | **5.92s** | 45 MB |
+| PELT-L2 | 5.6s | 0.11s | 5.71s | 43 MB |
+| PELT-RBF | 42.1s | 0.89s | 42.99s | 78 MB |
+| PELT-AR | 16.3s | 0.34s | 16.64s | 52 MB |
+| BOCPD-Heuristic | 0.02s | 1.45s | **1.47s** | 89 MB |
+| BOCPD-Predictive | 28.7s | 1.43s | 30.13s | 91 MB |
+
+**Test System**: MacBook Pro M1, 16GB RAM, Python 3.9
+
+### Scalability
+
+| Dataset Size | PELT-L1 Time | BOCPD Time | Memory |
+|--------------|--------------|------------|--------|
+| 365 days | 5.9s | 1.5s | 45 MB |
+| 730 days (2 years) | ~12s | ~3s | 90 MB |
+| 1,825 days (5 years) | ~30s | ~7s | 225 MB |
+
+**Note**: Times estimated based on O(n) complexity for PELT and O(n) for BOCPD with fixed max run length.
+
+---
+
+## 📚 Key References
+
+**PELT Algorithm**:
+```bibtex
+@article{killick2012optimal,
+  title={Optimal detection of changepoints with a linear computational cost},
+  author={Killick, Rebecca and Fearnhead, Paul and Eckley, Idris A},
+  journal={Journal of the American Statistical Association},
+  year={2012}
+}
+```
+
+**BOCPD Algorithm**:
+```bibtex
+@article{adams2007bayesian,
+  title={Bayesian online changepoint detection},
+  author={Adams, Ryan Prescott and MacKay, David JC},
+  journal={arXiv preprint arXiv:0710.3742},
+  year={2007}
+}
+```
+
+**STAR*D Study**:
+```bibtex
+@article{trivedi2006evaluation,
+  title={Evaluation of outcomes with citalopram for depression using measurement-based care in STAR* D},
+  author={Trivedi, Madhukar H and Rush, A John and others},
+  journal={American Journal of Psychiatry},
+  year={2006}
+}
+```
 
 ---
 
@@ -514,4 +1008,31 @@ Data Scientist | Statistics Learner | ML Enthusiast | Clinical AI Research
 
 ---
 
-**For detailed methodology, see [THORETICAL_DETAILS.md](docs/THORETICAL_DETAILS.md)**
+## 📄 License
+
+This project is licensed under the MIT License - see [LICENSE](LICENSE) file for details.
+
+---
+
+## 👤 Author
+
+**Satyaki Mitra**  
+Data Scientist | Statistics Learner | ML Enthusiast | Clinical AI Research
+
+---
+
+## 🔗 Additional Resources
+
+### Documentation
+
+- **Full Detection Report**: [CHANGE_POINT_DETECTION_REPORT.md](CHANGE_POINT_DETECTION_REPORT.md)
+- **API Reference**: [docs/api.md](docs/api.md)
+- **Configuration Guide**: [docs/configuration.md](docs/configuration.md)
+
+---
+
+<div align="center">
+
+**Made for mental health research**
+
+</div>

@@ -1,0 +1,95 @@
+{
+    "model_id": "bocpd_student_t_predictive_ll",
+    "method": "bocpd",
+    "algorithm": "BOCPD",
+    "variant": "bocpd_student_t",
+    "n_changepoints": 2,
+    "signal_length": 365,
+    "change_points": [
+        0.08767123287671233,
+        0.18904109589041096
+    ],
+    "validation": {
+        "n_changepoints": 2,
+        "normalized_positions": [
+            0.08767123287671233,
+            0.18904109589041096
+        ],
+        "detected_indices": [
+            32,
+            69
+        ],
+        "posterior_threshold": 0.011133575227296466,
+        "persistence": 5,
+        "test_family": "bayesian",
+        "overall_significant": true,
+        "rejection_reason": null,
+        "summary": {
+            "mean_posterior_at_cp": 0.013553612408019729,
+            "max_posterior_at_cp": 0.014330580982302632,
+            "coverage_ratio": 0.005479452054794521,
+            "max_posterior_overall": 0.014330580982302632,
+            "mean_posterior_overall": 0.008007035206534133
+        }
+    },
+    "timestamp": "2026-02-02T18:36:29.815276",
+    "hazard_lambda": 100.0,
+    "hazard_rate": 0.01,
+    "posterior_threshold": 0.011133575227296466,
+    "max_run_length_used": 365,
+    "hazard_tuning": {
+        "optimal_hazard_lambda": 100.0,
+        "optimal_hazard_rate": 0.01,
+        "lambdas_tested": [
+            100.0,
+            108.8398400730387,
+            118.46110787124641,
+            128.93288035581458,
+            140.3303407808309,
+            152.73531847980658,
+            166.23687636846782,
+            180.93195038185542,
+            196.92604543664137,
+            214.3339929154,
+            233.28077511127947,
+            253.90242255226164,
+            276.3469906474525,
+            300.7756226673428,
+            327.36370668982227,
+            356.30213481837404,
+            387.79867371314106,
+            422.07945627474834,
+            459.3906051905874,
+            499.99999999999994
+        ],
+        "scores": [
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465,
+            11.414908608120465
+        ],
+        "best_score": 11.414908608120465,
+        "criterion": "held_out_gaussian_predictive_ll",
+        "method": "predictive_ll",
+        "n_folds": 3,
+        "train_ratio": 0.7,
+        "horizon": 10,
+        "notes": "Gaussian predictive LL: best=11.41 at \u03bb=100.0"
+    }
+}

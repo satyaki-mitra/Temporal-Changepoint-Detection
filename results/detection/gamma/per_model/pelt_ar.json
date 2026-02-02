@@ -17,7 +17,7 @@
                 "change_point_index": 57,
                 "test_name": "Permutation Test",
                 "test_statistic": -0.07423370514032807,
-                "p_value": 0.0088,
+                "p_value": 0.0075,
                 "cohens_d": 2.368519847095038,
                 "test_family": "frequentist",
                 "before_mean": 0.3131239294492442,
@@ -26,14 +26,14 @@
                 "significant": true,
                 "meaningful_effect": true,
                 "normalized_position": 0.15616438356164383,
-                "p_value_corrected": 0.0176,
+                "p_value_corrected": 0.015,
                 "significant_after_correction": true
             },
             "CP_2_at_149": {
                 "change_point_index": 149,
                 "test_name": "Permutation Test",
                 "test_statistic": -0.07460596957524623,
-                "p_value": 0.1179,
+                "p_value": 0.1166,
                 "cohens_d": 1.0875706009160444,
                 "test_family": "frequentist",
                 "before_mean": 0.38088831698239894,
@@ -42,7 +42,7 @@
                 "significant": false,
                 "meaningful_effect": true,
                 "normalized_position": 0.40821917808219177,
-                "p_value_corrected": 0.1179,
+                "p_value_corrected": 0.1166,
                 "significant_after_correction": false
             }
         },
@@ -56,7 +56,7 @@
             "max_effect_size": 2.368519847095038
         }
     },
-    "timestamp": "2026-01-18T19:39:02.046840",
+    "timestamp": "2026-02-02T18:36:29.814780",
     "penalty_used": 0.04714866363457394,
     "penalty_source": "auto_bic",
     "min_segment_size_used": 5,

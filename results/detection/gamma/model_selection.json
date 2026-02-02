@@ -5,18 +5,18 @@
         "pelt_rbf",
         "pelt_l2",
         "pelt_ar",
-        "bocpd_gaussian_heuristic",
-        "bocpd_gaussian_predictive_ll"
+        "bocpd_student_t_heuristic",
+        "bocpd_student_t_predictive_ll"
     ],
     "scores": {
-        "pelt_l1": 0.8064484049741277,
-        "pelt_l2": 0.7175890839939756,
-        "pelt_rbf": 0.8064484049741277,
-        "pelt_ar": 0.6744756963792783,
-        "bocpd_gaussian_heuristic": 0.3332862244952624,
-        "bocpd_gaussian_predictive_ll": 0.3332862244952624
+        "pelt_l1": 0.94838103604059,
+        "pelt_l2": 0.7578946415070144,
+        "pelt_rbf": 0.94838103604059,
+        "pelt_ar": 0.5911212118756308,
+        "bocpd_student_t_heuristic": 0.3404190084154493,
+        "bocpd_student_t_predictive_ll": 0.3404190084154493
     },
-    "explanation": "Selected model 'pelt_l1' (PELT) because it:\n- Achieved the highest overall score (0.806)\n- Showed strong cross-model agreement (stability=0.54)\n- Demonstrated meaningful effect size (d=2.21, n_significant=3)\n- Detected 3 change points at positions: ['6.58%', '15.62%', '36.44%']\n- Outperformed runner-up 'pelt_rbf' by 0.000 points",
+    "explanation": "Selected model 'pelt_l1' (PELT) because it:\n- Achieved the highest overall score (0.948)\n- Showed strong cross-model agreement (stability=0.59)\n- Demonstrated meaningful effect size (d=2.21, n_significant=3)\n- Detected 3 change points at positions: ['6.58%', '15.62%', '36.44%']\n- Outperformed runner-up 'pelt_rbf' by 0.000 points",
     "n_candidates": 6,
     "n_valid": 6
 }

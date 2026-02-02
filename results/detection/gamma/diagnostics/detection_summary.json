@@ -1,13 +1,13 @@
 {
-    "timestamp": "2026-01-18T19:39:02.055020",
+    "timestamp": "2026-02-02T18:36:29.870943",
     "n_models": 6,
     "models": [
         "pelt_l1",
         "pelt_l2",
         "pelt_rbf",
         "pelt_ar",
-        "bocpd_gaussian_heuristic",
-        "bocpd_gaussian_predictive_ll"
+        "bocpd_student_t_heuristic",
+        "bocpd_student_t_predictive_ll"
     ],
     "configuration": {
         "Execution": {
@@ -51,18 +51,18 @@
             "Jump": 1
         },
         "BOCPD": {
+            "Likelihood model": "student_t",
+            "Likelihood df": 3,
             "Hazard tuning": "auto",
             "Hazard range": [
-                10.0,
-                300.0
+                100.0,
+                500.0
             ],
             "Hazard method": "heuristic",
-            "Likelihood model": "gaussian",
-            "Prior type": "empirical (data-adaptive)",
-            "Max run length": 500,
-            "Posterior threshold": 0.1,
+            "Hazard lambda (default)": 75.0,
+            "Max run length": 365,
             "Posterior smoothing": 3,
-            "bocpd_persistence": 3,
+            "Persistence": 5,
             "Reset on CP": true
         },
         "Model Selection": {
@@ -91,14 +91,14 @@
             "n_changepoints": 2,
             "is_valid": true
         },
-        "bocpd_gaussian_heuristic": {
+        "bocpd_student_t_heuristic": {
             "method": "bocpd",
-            "n_changepoints": 8,
+            "n_changepoints": 2,
             "is_valid": true
         },
-        "bocpd_gaussian_predictive_ll": {
+        "bocpd_student_t_predictive_ll": {
             "method": "bocpd",
-            "n_changepoints": 8,
+            "n_changepoints": 2,
             "is_valid": true
         }
     }

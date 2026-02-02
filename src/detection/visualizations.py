@@ -348,7 +348,6 @@ class DetectionVisualizer:
         ax3.set_title("Segment Statistics", fontsize = 13)
         ax3.grid(True, alpha = 0.3)
 
-        plt.tight_layout()
         self._save_or_show(save_path = save_path)
 
 

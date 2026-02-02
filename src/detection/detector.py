@@ -235,7 +235,7 @@ class ChangePointDetectionOrchestrator:
                 self.logger.info(f"Running BOCPD with {len(methods)} hazard tuning methods...")
             
             for idx, method in enumerate(methods):
-                model_id = f"bocpd_gaussian_{method}"
+                model_id = f"bocpd_{self.config.likelihood_model}_{method}"
 
                 if self.logger:
                     self.logger.info(f"  [{idx+1}/{len(methods)}] {model_id}")
@@ -289,7 +289,7 @@ class ChangePointDetectionOrchestrator:
                     if (result.get('run_length_posterior') is not None):
                         self.visualizer.plot_bocpd_posterior(run_length_posterior = result["run_length_posterior"],
                                                              cp_posterior         = result["cp_posterior"],
-                                                             posterior_threshold  = self.config.cp_posterior_threshold,
+                                                             posterior_threshold  = result["adaptive_threshold"],
                                                              save_path            = self.config.results_base_directory / "plots" / f"{model_id}_posterior.png",
                                                             )
                     
