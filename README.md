@@ -260,60 +260,327 @@ python scripts/run_detection.py --help
 ```
 
 
-### Minimal Example (3 Commands)
+### Step 1: Data Generation:
+
+Generate synthetic PHQ-9 datasets with different relapse patterns.
+
+#### Generate Single Dataset (Gamma Distribution)
 
 ```bash
-# 1. Generate synthetic data with clinical realism
-python scripts/run_generation.py --patients 1000 --days 365 --enable-response-patterns
-
-# 2. Perform exploratory analysis
-python scripts/run_eda.py --data data/raw/synthetic_phq9_data.csv
-
-# 3. Detect change points
-python scripts/run_detection.py --data data/raw/synthetic_phq9_data.csv --execution-mode ensemble
+python scripts/run_generation.py \
+    --patients 1000 \
+    --days 365 \
+    --relapse-dist gamma \
+    --enable-response-patterns \
+    --enable-plateau
 ```
 
-**Output:** Change points validated with statistical tests, ranked by cross-model agreement.
+**Output**: `data/raw/synthetic_phq9_data_gamma.csv` + metadata
+
+> **Relapse Distributions**: Choose from `exponential`, `gamma`, or `lognormal`
 
 
-### Run Single Model
+#### Generate All Three Distributions at Once
+
+```bash
+# Exponential
+python scripts/run_generation.py \
+    --patients 1000 \
+    --days 365 \
+    --relapse-dist exponential \
+    --enable-response-patterns \
+    --enable-plateau \
+    --output data/raw/synthetic_phq9_data_exponential.csv
+
+# Gamma
+python scripts/run_generation.py \
+    --patients 1000 \
+    --days 365 \
+    --relapse-dist gamma \
+    --enable-response-patterns \
+    --enable-plateau \
+    --output data/raw/synthetic_phq9_data_gamma.csv
+
+# Log-Normal
+python scripts/run_generation.py \
+    --patients 1000 \
+    --days 365 \
+    --relapse-dist lognormal \
+    --enable-response-patterns \
+    --enable-plateau \
+    --output data/raw/synthetic_phq9_data_lognormal.csv
+```
+
+**Output**: Three datasets in `data/raw/` with corresponding `.metadata.json` files
+
+
+### Step 2: Exploratory Data Analysis (EDA):
+
+Validate and characterize generated datasets before detection.
+
+#### Run EDA on Single Dataset
+
+```bash
+python scripts/run_eda.py \
+    --data data/raw/synthetic_phq9_data_gamma.csv \
+    --output-dir results/eda/gamma
+```
+
+**Output**: Summary statistics, clustering, response patterns, visualizations in `results/eda/gamma/`
+
+
+#### Run EDA on All Datasets (Sequential):
+
+```bash
+# Exponential
+python scripts/run_eda.py \
+    --data data/raw/synthetic_phq9_data_exponential.csv \
+    --output-dir results/eda/exponential
+
+# Gamma
+python scripts/run_eda.py \
+    --data data/raw/synthetic_phq9_data_gamma.csv \
+    --output-dir results/eda/gamma
+
+# Log-Normal
+python scripts/run_eda.py \
+    --data data/raw/synthetic_phq9_data_lognormal.csv \
+    --output-dir results/eda/lognormal
+```
+
+**Output**: Separate EDA reports for each distribution
+
+
+#### Compare All Distributions (Recommended):
+
+This ranks datasets by clinical realism and recommends the best for change point detection.
+
+```bash
+python scripts/compare_distributions.py \
+    --data-dir data/raw \
+    --output-dir results/comparison \
+    --patterns exponential gamma lognormal
+```
+
+**Output**: Composite ranking in `results/comparison/comparison_summary/`
+
+**Example Output**:
+```
+🏆 DATASET RECOMMENDATION
+Best dataset: synthetic_phq9_data_gamma
+Composite score: 87.45/100
+
+Use this dataset for change-point detection:
+  data/raw/synthetic_phq9_data_gamma.csv
+```
+
+> **Why Compare?** Different relapse distributions create different change point patterns. Comparison identifies the most realistic dataset for your analysis goals.
+
+
+### Step 3: Change Point Detection:
+
+Run detection on the best dataset (identified in Step 2).
+
+#### Full Analysis (All Models + Model Selection)
+
+```bash
+python scripts/run_detection.py \
+    --dataset gamma \
+    --detectors pelt bocpd \
+    --select-model
+```
+
+**Output**: 
+- All model results in `results/detection/gamma/`
+- Best model automatically selected
+- 35 files including plots, statistical tests, and diagnostics
+
+> **Note**: `--dataset gamma` assumes the file is at `data/raw/synthetic_phq9_data_gamma.csv`
+
+
+#### Detection on Custom Dataset
+
+If you used a custom filename from Step 1:
+
+```bash
+python scripts/run_detection.py \
+    --data path/to/your_custom_data.csv \
+    --detectors pelt bocpd \
+    --output-dir results/detection/custom \
+    --select-model
+```
+
+
+#### Run Detection on All Datasets
+
+```bash
+python scripts/run_detection.py \
+    --all-datasets \
+    --detectors pelt bocpd \
+    --select-model
+```
+
+**Output**: Cross-dataset comparison in logs + results for each dataset
+
+
+### Complete Pipeline (One Command Per Step):
+
+For a full end-to-end analysis:
+
+```bash
+# 1. Generate data (Gamma distribution - best for heterogeneous response)
+python scripts/run_generation.py \
+    --patients 1000 \
+    --days 365 \
+    --relapse-dist gamma \
+    --enable-response-patterns \
+    --enable-plateau
+
+# 2. Validate with EDA
+python scripts/run_eda.py \
+    --data data/raw/synthetic_phq9_data_gamma.csv \
+    --output-dir results/eda/gamma
+
+# 3. Detect change points
+python scripts/run_detection.py \
+    --dataset gamma \
+    --detectors pelt bocpd \
+    --select-model
+```
+
+**Total Time**: ~2 minutes for 1,000 patients × 365 days
+
+
+### Advanced Options:
+
+#### Generate with Custom Parameters:
+
+```bash
+python scripts/run_generation.py \
+    --patients 500 \
+    --days 180 \
+    --relapse-dist gamma \
+    --baseline 15.0 \
+    --recovery-rate 0.05 \
+    --ar-coef 0.85 \
+    --seed 42
+```
+
+#### EDA with Temporal Clustering:
+
+```bash
+python scripts/run_eda.py \
+    --data data/raw/synthetic_phq9_data_gamma.csv \
+    --temporal \
+    --n-clusters 6
+```
+
+> **Temporal clustering** penalizes distant days in the same cluster, creating more realistic temporal segmentation.
+
+#### Detection with Single Model (PELT-only):
 
 ```bash
 python scripts/run_detection.py \
     --dataset gamma \
     --execution-mode single \
     --detectors pelt \
-    --pelt-cost-model l1
+    --cost-model l1 \
+    --auto-tune-penalty
 ```
 
-### Custom Configuration
+#### Detection with Custom BOCPD Parameters:
 
 ```bash
 python scripts/run_detection.py \
     --dataset gamma \
-    --config config/custom_detection_config.yaml \
-    --select-model
+    --detectors bocpd \
+    --hazard-lambda 100.0 \
+    --posterior-threshold 0.12 \
+    --bocpd-persistence 3
 ```
 
-### Configuration
 
-All behavior is **config-driven** via Pydantic:
-- `config/generation_config.py`: AR coefficient, recovery rate, relapse distribution
-- `config/eda_config.py`: Clustering parameters, temporal weighting
-- `config/detection_config.py`: Penalty, hazard, statistical thresholds
-- `config/model_selection_config.py`: Metric weights, agreement scoring
+### Expected Results:
 
-**Example:**
+After running the complete pipeline:
 
-```python
-from config.detection_config import ChangePointDetectionConfig
-
-config = ChangePointDetectionConfig(execution_mode        = 'ensemble',
-                                    auto_tune_penalty     = True,
-                                    alpha                 = 0.01,  # Conservative testing
-                                    effect_size_threshold = 0.5,
-                                   )
 ```
+results/
+├── eda/
+│   └── gamma/
+│       ├── summary_statistics.csv
+│       ├── response_pattern_analysis.csv
+│       └── visualizations/
+│           ├── scatter_plot.png
+│           ├── response_patterns.png
+│           └── relapse_events.png
+├── comparison/
+│   └── comparison_summary/
+│       ├── dataset_comparison.csv          # ← Best dataset ranking
+│       └── composite_scores.png
+└── detection/
+    └── gamma/
+        ├── model_selection.json            # ← Best model: pelt_l1
+        ├── best_model/
+        │   └── model_result.json
+        ├── plots/
+        │   ├── model_comparison_grid.png   # ← Side-by-side comparison
+        │   └── aggregated_cv_all_models.png
+        └── statistical_tests/
+            └── statistical_summary.csv     # ← p-values, effect sizes
+```
+
+
+### Verification
+
+Check that everything worked:
+
+```bash
+# Check generation
+ls -lh data/raw/synthetic_phq9_data_*.csv
+
+# Check EDA
+ls -lh results/eda/gamma/summary_statistics.csv
+
+# Check detection
+cat results/detection/gamma/model_selection.json | grep best_model
+
+# Expected output:
+# "best_model": "pelt_l1"
+```
+
+
+### What Each Step Does:
+
+| Step | Purpose | Key Output |
+|------|---------|------------|
+| **Generation** | Create synthetic PHQ-9 data with realistic patterns | CSV + metadata |
+| **EDA** | Validate data quality and identify response patterns | Statistics + visualizations |
+| **Comparison** | Rank datasets by clinical realism | Best dataset recommendation |
+| **Detection** | Find statistically significant change points | Change points + validation |
+
+
+### Pro Tips:
+
+1. **Always run comparison** when using multiple relapse distributions
+   - Identifies the most realistic dataset
+   - Provides quantitative ranking (not just visual inspection)
+
+2. **Check metadata alignment** in EDA reports
+   - Confirms observed patterns match generation parameters
+   - Validates data quality before detection
+
+3. **Use `--select-model` flag** unless you need all model outputs
+   - Automatically identifies best detector configuration
+   - Saves time reviewing 6 different models
+
+4. **Start with gamma distribution** for most use cases
+   - Best balance of heterogeneity and realism
+   - Aligns well with STAR*D clinical trial patterns
+
+5. **Enable response patterns and plateau** in generation
+   - Creates clinically realistic trajectories
+   - Essential for meaningful change point detection
 
 ---
 

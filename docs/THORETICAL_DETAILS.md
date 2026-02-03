@@ -664,10 +664,21 @@ P(r_t | y_{1:t}) ∝ P(y_t | r_{t-1}, y_{1:t-1}) × [
 - `λ`: Expected run length
 - `P(y_t | r_{t-1}, ...)`: Predictive likelihood
 
-**Predictive likelihood** (Gaussian):
+**Predictive likelihood** (Student-t or Gaussian):
+
+**Primary (Student-t, recommended for CV data)**:
+```
+P(y_t | r_{t-1}) = Student-t(y_t | μ_{r_{t-1}}, σ²_{r_{t-1}}, df=3)
+```
+- Heavy tails handle outliers and relapse spikes
+- Robust to population heterogeneity
+- df=3-5 recommended for coefficient of variation
+
+**Alternative (Gaussian)**:
 ```
 P(y_t | r_{t-1}) = N(y_t | μ_{r_{t-1}}, σ²_{r_{t-1}} + σ²_obs)
 ```
+- Less robust but computationally simpler
 
 **Sufficient statistics** (Welford's online algorithm):
 ```
@@ -680,31 +691,47 @@ n_new = n_old + 1
 #### 6.3.2 Hazard Tuning
 
 **Method 1: Heuristic** (default, fast)
-```
-λ ≈ T / (k + 1)
-```
-- Assumes k expected change points
-- Default k = 3
-- Deterministic, no cross-validation
 
-**Method 2: Predictive Log-Likelihood** (accurate, slow)
-- Time-series cross-validation
-- Gaussian plug-in predictive likelihood
-- Test λ values in [10, 300] on log scale
-- Select λ maximizing held-out likelihood
+**Strategy: Variance-based** (recommended)
+- Detect rough change points using rolling variance differences
+- Compute median segment length → λ estimate
+- **Enforced minimum**: λ ≥ 50 (clinical plausibility)
+- **Typical range**: [100, 500]
+- Fallback: λ = T/5 if no clear changes detected
 
-**Note**: Full BOCPD posterior predictive (intractable) replaced with Gaussian approximation.
+**Alternative: Autocorrelation-based**
+```
+λ ≈ -1 / log(ρ₁)
+```
+Where ρ₁ is lag-1 autocorrelation
+
+**Method 2: Predictive Log-Likelihood** (cross-validated, slower)
+- Time-series CV with 3 folds
+- Tests 20 λ values in log-space [100, 500]
+- Gaussian plug-in predictive likelihood on held-out data
+- Select λ maximizing average likelihood
+
+**Clinical plausibility checks**:
+- λ < 50: Warning (very aggressive, >7 CPs/year expected)
+- λ > 200: Info (conservative, <2 CPs/year expected)
 
 
 #### 6.3.3 Change Point Declaration
 
 **Criteria**:
-1. **Posterior threshold**: P(r_t = 0) ≥ 0.6 (default)
-2. **Persistence filter**: Threshold exceeded for ≥3 consecutive timesteps
+1. **Adaptive posterior threshold**: 
+   - Computed as: `threshold = mean(P(r_t=0)) + 1.5 × std(P(r_t=0))`
+   - Typically: 0.01-0.02 (much lower than fixed 0.6)
+   - Data-driven, adjusts to signal characteristics
+   - Clipped to [0.01, 0.99] for numerical stability
+
+2. **Persistence filter**: Threshold exceeded for ≥ **5** consecutive timesteps
+   - Filters transient spikes
+   - Marks change point at **peak** posterior within persistent region
 
 **Optional smoothing**: Gaussian filter (σ = 3) on posterior probabilities
 
-**Output**: Change point days with posterior probabilities
+**Output**: Change point days with posterior probabilities and adaptive threshold used
 
 ### 6.4 Model Selection
 
@@ -930,7 +957,7 @@ P(change point at t | data) > threshold
 - Response patterns are discrete, not continuous
 - Plateau timing is deterministic given pattern
 - Relapse events are independent (no cumulative stress model)
-- Gaussian noise only (no heavy-tailed alternatives)
+- ✅ **IMPLEMENTED**: Student-t likelihood (df=3-10) for heavy-tailed data
 
 **EDA**:
 - Clustering on days, not patients (by design, but limits trajectory analysis)
@@ -938,7 +965,7 @@ P(change point at t | data) > threshold
 - Relapse detection uses fixed threshold (not adaptive)
 
 **Detection**:
-- BOCPD uses Gaussian likelihood only (Student-t planned)
+- ✅ **IMPLEMENTED**: BOCPD now defaults to Student-t likelihood (df=3)
 - No uncertainty quantification for change points (bootstrap CIs planned)
 - Model selection weights are heuristic (no Bayesian model averaging)
 - Aggregation uses CV only (entropy, IQR alternatives not explored)
