@@ -4,9 +4,8 @@
 
 ## Rigorous Statistical Assessment of Univariate vs Multivariate Signal Contribution
 
-**Author**: Satyaki Mitra  
-**Date**: February 13, 2026  
-**Dataset**: `synthetic_phq9_data_gamma.csv`  
+**Author**: Satyaki Mitra 
+**Dataset**: `synthetic_phq9_data_gamma.csv` | `gamma/per_model.pelt_l1.json`
 **Analysis Type**: Retrospective Decomposition of PELT-L1 Detected Change Points
 
 ---
