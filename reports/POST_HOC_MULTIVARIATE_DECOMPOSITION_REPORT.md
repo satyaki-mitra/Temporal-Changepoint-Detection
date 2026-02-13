@@ -178,20 +178,7 @@ flowchart TB
         E2 --> E3
     end
 
-    subgraph Validation["✅ Evidence Synthesis Layer"]
-        direction TB
-        V1["Criterion 1:<br>Distinct Drivers"]
-        V2["Criterion 2:<br>Orthogonal Info"]
-        V3["Criterion 3:<br>Contribution Diversity"]
-        V4["Criterion 4:<br>Clinical Interpretability"]
-        
-        V1 --> V1a["✅ CONFIRMED<br>Mean→Median→CV"]
-        V2 --> V2a["✅ CONFIRMED<br>3/6 features \|r\|<0.5"]
-        V3 --> V3a["✅ CONFIRMED<br>Entropy=0.74 (>0.6)"]
-        V4 --> V4a["❌ REJECTED<br>0/3 hypotheses"]
-    end
-
-    subgraph Decomp["🔍 Feature Decomposition by Change Point"]
+    subgraph Decomp["🔍 Feature Decomposition Layer"]
         direction TB
         
         subgraph CP1["Day 24: Early Response"]
@@ -215,6 +202,19 @@ flowchart TB
         end
     end
 
+    subgraph Validation["✅ Evidence Synthesis Layer"]
+        direction TB
+        V1["Criterion 1:<br>Distinct Drivers"]
+        V2["Criterion 2:<br>Orthogonal Info"]
+        V3["Criterion 3:<br>Contribution Diversity"]
+        V4["Criterion 4:<br>Clinical Interpretability"]
+        
+        V1 --> V1a["✅ CONFIRMED<br>Mean→Median→CV"]
+        V2 --> V2a["✅ CONFIRMED<br>3/6 features \|r\|<0.5"]
+        V3 --> V3a["✅ CONFIRMED<br>Entropy=0.74 (>0.6)"]
+        V4 --> V4a["❌ REJECTED<br>0/3 hypotheses"]
+    end
+
     subgraph Output["🎯 Decision Layer"]
         O1["Evidence Count:<br>3/4 Criteria Confirmed"]
         O2["<b>🚀 RECOMMENDATION:<br>PROCEED with Multivariate PELT</b>"]
@@ -222,20 +222,21 @@ flowchart TB
         O1 --> O2
     end
 
+    %% Corrected flow: Analysis → Decomp → Validation → Output
     A --> Feature
     Feature --> Segment
     Segment --> Analysis
-    Analysis --> Validation
-    Validation --> Decomp
-    Decomp --> Output
+    Analysis --> Decomp
+    Decomp --> Validation
+    Validation --> Output
 
     %% Styling
     classDef input fill:#e1f5fe,stroke:#01579b,stroke-width:2px
     classDef feature fill:#fff3e0,stroke:#ff6f00,stroke-width:2px
     classDef segment fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
     classDef analysis fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef validation fill:#fff9c4,stroke:#f57f17,stroke-width:2px
     classDef decomp fill:#ffebee,stroke:#b71c1c,stroke-width:2px
+    classDef validation fill:#fff9c4,stroke:#f57f17,stroke-width:2px
     classDef output fill:#e0f2f1,stroke:#004d40,stroke-width:2px
     classDef highlight fill:#ffcdd2,stroke:#b71c1c,stroke-width:3px
     
@@ -243,8 +244,8 @@ flowchart TB
     class B1,B2 feature
     class C,C1,C2,C3,D segment
     class E1,E2,E3 analysis
-    class V1,V2,V3,V4 validation
     class CP1,CP2,CP3 decomp
+    class V1,V2,V3,V4 validation
     class O1,O2 output
     class CP2d,CP3d highlight
 ```
