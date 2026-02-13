@@ -1,0 +1,98 @@
+{
+    "analysis_metadata": {
+        "date": "2026-02-13",
+        "dataset": "synthetic_phq9_data_gamma.csv",
+        "change_points": [
+            24,
+            57,
+            133
+        ],
+        "n_features_analyzed": 7,
+        "n_comparisons": 21
+    },
+    "hypothesis_tests": [
+        {
+            "cp": 24,
+            "driver": "mean",
+            "name": "H1",
+            "description": "Early Response (Mean decrease)",
+            "confirmed": false,
+            "expected_driver": "mean",
+            "actual_top_driver": "mean",
+            "driver_rank": 1,
+            "driver_contribution": 26.08472693350724,
+            "driver_cohens_d": -1.7818377334048003,
+            "driver_significant": true,
+            "is_top_ranked": true,
+            "meets_threshold": false,
+            "interpretation": "Large"
+        },
+        {
+            "cp": 57,
+            "driver": "cv",
+            "name": "H2",
+            "description": "Polarization (CV increase)",
+            "confirmed": false,
+            "expected_driver": "cv",
+            "actual_top_driver": "median",
+            "driver_rank": 3,
+            "driver_contribution": 24.239820806160832,
+            "driver_cohens_d": 1.1760219910776113,
+            "driver_significant": false,
+            "is_top_ranked": false,
+            "meets_threshold": false,
+            "interpretation": "Large"
+        },
+        {
+            "cp": 133,
+            "driver": "skewness",
+            "name": "H3",
+            "description": "Maintenance Tail (Skewness increase)",
+            "confirmed": false,
+            "expected_driver": "skewness",
+            "actual_top_driver": "cv",
+            "driver_rank": 6,
+            "driver_contribution": 6.278987292539255,
+            "driver_cohens_d": 0.17473383581152474,
+            "driver_significant": false,
+            "is_top_ranked": false,
+            "meets_threshold": false,
+            "interpretation": "Trivial"
+        }
+    ],
+    "evidence_synthesis": {
+        "evidence_1_distinct_drivers": true,
+        "evidence_2_orthogonal_info": true,
+        "evidence_3_contribution_diversity": true,
+        "evidence_4_clinical_interpretability": false,
+        "total_evidence": 3,
+        "recommendation": "proceed",
+        "top_drivers": {
+            "24": "mean",
+            "57": "median",
+            "133": "cv"
+        }
+    },
+    "key_findings": {
+        "cp_24": {
+            "top_driver": "mean",
+            "contribution": 26.08472693350724,
+            "cohens_d": -1.7818377334048003
+        },
+        "cp_57": {
+            "top_driver": "median",
+            "contribution": 26.48004202922119,
+            "cohens_d": -1.2847088268535658
+        },
+        "cp_133": {
+            "top_driver": "cv",
+            "contribution": 35.120655532755784,
+            "cohens_d": 0.9773497813485662
+        }
+    },
+    "statistical_summary": {
+        "bonferroni_alpha": 0.002380952380952381,
+        "n_significant_shifts": 1,
+        "mean_effect_size": 0.6888289627611105
+    }
+}
