@@ -6,15 +6,19 @@
 
 ### Author: Satyaki Mitra 
 
-**Dataset**: `synthetic_phq9_data_gamma.csv` | `gamma/per_model.pelt_l1.json` | **Analysis Type**: Retrospective Decomposition of PELT-L1 Detected Change Points
+</div>
 
 ---
+
+**Datasets**: 
+- 1. `data/raw/synthetic_phq9_data_gamma.csv` 
+- 2. `results/detection/gamma/per_model/pelt_l1.json` 
+
+**Analysis Type**: Retrospective Decomposition of PELT-L1 Detected Change Points
 
 **Research Question**: Do different distributional moments exhibit distinct shift patterns at each change point, providing evidence that multivariate signals contain unique clinical information beyond univariate CV detection?
 
 **Answer**: **YES** - Strong evidence from 3 out of 4 independent validation criteria
-
-</div>
 
 ---
 
