@@ -4,11 +4,11 @@
 
 ## Rigorous Statistical Assessment of Univariate vs Multivariate Signal Contribution
 
-**Author**: Satyaki Mitra 
-**Dataset**: `synthetic_phq9_data_gamma.csv` | `gamma/per_model.pelt_l1.json`
-**Analysis Type**: Retrospective Decomposition of PELT-L1 Detected Change Points
+### **Author**: Satyaki Mitra 
 
----
+**Dataset**: `synthetic_phq9_data_gamma.csv` | `gamma/per_model.pelt_l1.json`
+
+**Analysis Type**: Retrospective Decomposition of PELT-L1 Detected Change Points
 
 **Research Question**: Do different distributional moments exhibit distinct shift patterns at each change point, providing evidence that multivariate signals contain unique clinical information beyond univariate CV detection?
 
