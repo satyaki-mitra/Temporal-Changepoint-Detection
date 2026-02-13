@@ -128,14 +128,122 @@ Different metrics capture distinct clinical phenomena:
 
 **Pipeline**:
 ```mermaid
-graph LR
-    A[Raw PHQ-9 Data] --> B[Daily Feature Engineering]
-    B --> C[Segment Creation ±10 days]
-    C --> D[Effect Size Computation Cohen's d]
-    D --> E[Statistical Testing Mann-Whitney U]
-    E --> F[Dominant Driver Ranking]
-    F --> G[Mahalanobis Decomposition]
-    G --> H[Evidence Synthesis]
+%%{init: {'theme': 'base', 'themeVariables': {
+  'primaryColor': '#FF4D4D',
+  'primaryBorderColor': '#B30000',
+  'primaryTextColor': '#000',
+  'lineColor': '#666',
+  'secondaryColor': '#0066CC',
+  'tertiaryColor': '#fff'
+}}}%%
+flowchart TB
+    subgraph Input["📊 Raw Data Layer"]
+        A["PHQ-9 Longitudinal Data<br>synthetic_phq9_data_gamma.csv"]
+    end
+
+    subgraph Feature["🧮 Feature Engineering Layer"]
+        direction TB
+        B1["Standard Moments<br><i>Sensitive to outliers</i>"]
+        B2["Robust Equivalents<br><i>Resistant to outliers</i>"]
+        
+        B1 --> B1a["Mean (μ)"]
+        B1 --> B1b["CV (σ/μ)"]
+        B1 --> B1c["Skewness (γ)"]
+        B1 --> B1d["%Severe (≥20)"]
+        
+        B2 --> B2a["Median (Q₂)"]
+        B2 --> B2b["Quartile CV<br>(Q₃-Q₁)/Q₂"]
+        B2 --> B2c["Bowley Skewness<br>(Q₃-2Q₂+Q₁)/(Q₃-Q₁)"]
+    end
+
+    subgraph Segment["🎯 Segmentation Layer"]
+        C["Change Point Detection<br>PELT-L1 on CV Signal"]
+        C --> C1["CP1: Day 24<br>Early Response"]
+        C --> C2["CP2: Day 57<br>Peak Heterogeneity"]
+        C --> C3["CP3: Day 133<br>Maintenance Phase"]
+        
+        C1 & C2 & C3 --> D["±10 Day Windows<br>Pre/Post Segments"]
+    end
+
+    subgraph Analysis["📈 Analysis Layer"]
+        direction TB
+        E1["Effect Size<br>Cohen's d"]
+        E2["Statistical Test<br>Mann-Whitney U"]
+        E3["Multiple Testing<br>Bonferroni (α=0.0024)"]
+        
+        D --> E1 & E2
+        E2 --> E3
+    end
+
+    subgraph Validation["✅ Evidence Synthesis Layer"]
+        direction TB
+        V1["Criterion 1:<br>Distinct Drivers"]
+        V2["Criterion 2:<br>Orthogonal Info"]
+        V3["Criterion 3:<br>Contribution Diversity"]
+        V4["Criterion 4:<br>Clinical Interpretability"]
+        
+        V1 --> V1a["✅ CONFIRMED<br>Mean→Median→CV"]
+        V2 --> V2a["✅ CONFIRMED<br>3/6 features \|r\|<0.5"]
+        V3 --> V3a["✅ CONFIRMED<br>Entropy=0.74 (>0.6)"]
+        V4 --> V4a["❌ REJECTED<br>0/3 hypotheses"]
+    end
+
+    subgraph Decomp["🔍 Feature Decomposition by Change Point"]
+        direction TB
+        
+        subgraph CP1["Day 24: Early Response"]
+            CP1a["Rank 1: Mean ↓<br>d=-1.78, 26.1%*"]
+            CP1b["Rank 2: Median ↓<br>d=-1.48, 21.7%"]
+            CP1c["Rank 3: CV ↑<br>d=+1.41, 20.6%"]
+        end
+        
+        subgraph CP2["Day 57: Peak Heterogeneity"]
+            CP2a["Rank 1: Median ↓<br>d=-1.28, 26.5%"]
+            CP2b["Rank 2: Mean ↓<br>d=-1.22, 25.2%"]
+            CP2c["Rank 3: CV ↑<br>d=+1.18, 24.2%"]
+            CP2d["<b>✨ Multi-dimensional shift<br>Top 3 ≈ equal (25% each)</b>"]
+        end
+        
+        subgraph CP3["Day 133: Maintenance"]
+            CP3a["Rank 1: CV ↑<br>d=+0.98, 35.1%"]
+            CP3b["Rank 2: Bowley Skew ↑<br>d=+0.51, 18.2%"]
+            CP3c["Rank 6: Skewness ↑<br>d=+0.17, 6.3%"]
+            CP3d["<b>⚠️ Robust metrics<br>outperform standard</b>"]
+        end
+    end
+
+    subgraph Output["🎯 Decision Layer"]
+        O1["Evidence Count:<br>3/4 Criteria Confirmed"]
+        O2["<b>🚀 RECOMMENDATION:<br>PROCEED with Multivariate PELT</b>"]
+        
+        O1 --> O2
+    end
+
+    A --> Feature
+    Feature --> Segment
+    Segment --> Analysis
+    Analysis --> Validation
+    Validation --> Decomp
+    Decomp --> Output
+
+    %% Styling
+    classDef input fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef feature fill:#fff3e0,stroke:#ff6f00,stroke-width:2px
+    classDef segment fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef analysis fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef validation fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    classDef decomp fill:#ffebee,stroke:#b71c1c,stroke-width:2px
+    classDef output fill:#e0f2f1,stroke:#004d40,stroke-width:2px
+    classDef highlight fill:#ffcdd2,stroke:#b71c1c,stroke-width:3px
+    
+    class A input
+    class B1,B2 feature
+    class C,C1,C2,C3,D segment
+    class E1,E2,E3 analysis
+    class V1,V2,V3,V4 validation
+    class CP1,CP2,CP3 decomp
+    class O1,O2 output
+    class CP2d,CP3d highlight
 ```
 
 
