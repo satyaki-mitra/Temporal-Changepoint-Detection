@@ -30,9 +30,8 @@
 7. [Statistical Validation](#7-statistical-validation)
 8. [Mahalanobis Distance Analysis](#8-mahalanobis-distance-analysis)
 9. [Comparison: Univariate vs Multivariate](#9-comparison-univariate-vs-multivariate)
-10. [Recommendations for Future Work](#10-recommendations-for-future-work)
-11. [Limitations](#11-limitations)
-12. [Conclusions](#12-conclusions)
+10. [Limitations](#11-limitations)
+11. [Conclusions](#12-conclusions)
 
 ---
 
