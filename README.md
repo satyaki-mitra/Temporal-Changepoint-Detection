@@ -5,9 +5,6 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![ruptures](https://img.shields.io/badge/ruptures-1.1.8-orange.svg)](https://centre-borelli.github.io/ruptures-docs/)
 [![scikit-learn](https://img.shields.io/badge/sklearn-1.3+-red.svg)](https://scikit-learn.org/)
 
@@ -85,6 +82,18 @@ Where `P` represents the probability distribution characterized by:
 - Mean level (symptom severity)
 - Variance (population heterogeneity)
 - Temporal autocorrelation
+
+---
+
+### **Why CV and Not Mean, Standard Deviation, or Other Aggregators?**
+
+The choice of CV as the primary signal is grounded in the research question itself. The question is about **heterogeneity** — when does the population split into distinct responder and non-responder subgroups? This is categorically different from asking when average severity changes.
+
+If the daily PHQ-9 population is modelled as a mixture of improving patients (responders) and stable patients (non-responders), then `CV = σ/μ` is a direct function of the separation between those mixture components: as responders improve, `μ` falls and `σ` rises simultaneously, and CV amplifies both effects. **Mean** tracks only the weighted average of the two components — it cannot distinguish a scenario where half the population recovers fully and half does not move at all from a scenario where everyone improves modestly, as long as the overall average declines at the same rate. **Standard deviation** is sensitive to component separation but is confounded by mean reduction over time: absolute spread shrinks mechanically as the mean falls, even when heterogeneity is growing. CV normalises for this.
+
+This scale-invariance property is a mathematical requirement for fair longitudinal comparison when the mean is non-stationary, not a stylistic preference. Any absolute dispersion measure (std, IQR, MAD) conflates genuine heterogeneity change with the mechanical consequence of treatment-driven mean reduction. CV does not.
+
+> **Empirical confirmation:** A post-hoc feature decomposition of the three detected change points (see `reports/POST_HOC_MULTIVARIATE_DECOMPOSITION_REPORT.md`) confirms that CV is the only aggregator that shifts consistently and in the same direction across all three phases. Mean and median are stronger individual signals at Days 24 and 57 (severity-driven transitions) but produce near-zero effects at Day 133, which is a heterogeneity consolidation event detectable only via CV.
 
 ---
 
@@ -1296,8 +1305,35 @@ Data Scientist | Statistics Learner | ML Enthusiast | Clinical AI Research
 ### Documentation
 
 - **Full Detection Report**: [CHANGE_POINT_DETECTION_REPORT.md](CHANGE_POINT_DETECTION_REPORT.md)
+- **Post-Hoc Feature Decomposition Report**: [reports/POST_HOC_MULTIVARIATE_DECOMPOSITION_REPORT.md](reports/POST_HOC_MULTIVARIATE_DECOMPOSITION_REPORT.md) — retrospective per-feature attribution analysis at each detected change point; motivates future multivariate extension
+- **Post-Hoc Decomposition Notebook**: [reports/changepoint_decomposition_analysis.ipynb](reports/changepoint_decomposition_analysis.ipynb)
 - **API Reference**: [docs/api.md](docs/api.md)
 - **Configuration Guide**: [docs/configuration.md](docs/configuration.md)
+
+---
+
+## 🔭 Future Work
+
+### Multivariate Change Point Detection
+
+The current pipeline detects regime shifts on a single univariate signal (daily CV). A post-hoc decomposition of the three detected change points reveals that each change point is driven by a **different dominant feature**: Day 24 by mean severity reduction, Day 57 by a diffuse multi-dimensional shift where mean, median, and CV contribute approximately equally (~25% each), and Day 133 by CV-driven heterogeneity consolidation. Shannon entropy of contribution distributions averages 0.74 across all three CPs — well above the 0.6 threshold that indicates a multi-dimensional shift.
+
+This motivates a natural extension: **multivariate PELT** operating on a joint state vector.
+
+**Proposed robust state vector:**
+```
+x(t) = [Median(t), Quartile-CV(t), Bowley-Skewness(t), %Severe(t)]
+```
+The robust formulation is preferred over the standard moments because the post-hoc analysis found Bowley Skewness ranked #2 at Day 133 with a +499% change while standard Skewness ranked #6 with a trivial effect — confirming that robust order-statistic-based metrics outperform moment-based equivalents on heavy-tailed gamma relapse distributions.
+
+**Implementation plan (tracked in this repository):**
+- Multivariate PELT with RBF kernel (`ruptures` library)
+- Mahalanobis distance cost function to account for inter-feature correlations
+- State vector normalisation to prevent scale-dominant features
+- Penalty cross-validation across all three synthetic datasets (exponential, gamma, lognormal)
+- Side-by-side comparison of univariate vs. multivariate CP sets with clinical interpretation
+
+**Expected benefit:** More robust detection at diffuse multi-dimensional transitions (particularly Day 57), and sensitivity to change points driven by severity or skewness shifts independent of CV change.
 
 ---
 

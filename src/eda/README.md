@@ -27,7 +27,7 @@ It is designed to validate, characterize, and compare PHQ-9 time-series before a
 |-------|--------|------------------|-------------|--------|
 | Data validation | Metadata-aware checks | Dataset | Shape, missingness, score bounds, metadata consistency | Validation report | 
 | Summary statistics | Descriptive statistics | Day × Patient | Mean, variance, missingness, severity bands | summary_statistics.csv |
-| Clustering | KMeans / Agglomerative / Temporal | Day | Groups days by severity and stability | cluster_labels.csv |
+| Clustering | KMeans / Temporal | Day | Groups days by severity and stability | cluster_labels.csv |
 | Cluster evaluation | Silhouette, inertia | Cluster set | Quantifies cluster separability and stability | cluster_characteristics.csv |
 | Response pattern analysis | Trajectory slope & improvement | Patient | Classifies responders vs non-responders | response_pattern_analysis.csv |
 | Plateau detection | Variance + slope windows | Patient | Detects symptom stabilization phases | Pattern annotations | 
@@ -36,6 +36,7 @@ It is designed to validate, characterize, and compare PHQ-9 time-series before a
 | Distribution comparison | Weighted scoring | Dataset | Ranks datasets for downstream use | dataset_comparison.csv |
 
 > *This table corresponds directly to the implementation in src/eda/analyzer.py and related modules.*
+> *fit_agglomerative() is available in ClusteringEngine as an API method but is not invoked by the default pipeline.*
 
 ### EDA Methods → Implementation Mapping
 
@@ -161,11 +162,11 @@ python scripts/compare_distributions.py \
 ```text
 
 🏆 RECOMMENDATION
-Best dataset: synthetic_phq9_data_exponential
-Composite score: 87.45 / 100
+Best dataset: synthetic_phq9_data_gamma
+Composite score: 91.36 / 100
 
 Use this dataset for downstream change-point detection:
-  data/raw/synthetic_phq9_data_exponential.csv
+  data/raw/synthetic_phq9_data_gamma.csv
 ```
 
 ### Metadata Integration
@@ -189,7 +190,6 @@ analyzer.load_data()
 - Number of patients and study duration
 - Missingness rate consistency
 - Response pattern distribution consistency
-- Plateau and relapse statistics (if present)
 
 
 ### Execution View
