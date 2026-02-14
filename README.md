@@ -248,7 +248,7 @@ graph LR
 - [Acknowledgments](#-acknowledgments)
 - [License](#-license)
 - [Author](#-author)
-- [Additional Resources](#-additional-resources)
+- [Documentation](#-documentation)
 
 ---
 
@@ -1296,19 +1296,22 @@ This project is licensed under the MIT License - see [LICENSE](LICENSE) file for
 ## 👤 Author
 
 **Satyaki Mitra**  
-Data Scientist | Statistics Learner | ML Enthusiast | Clinical AI Research
+Data Scientist | Statistics Learner | Machine Learning Enthusiast | Clinical AI Research
 
 ---
 
-## 🔗 Additional Resources
+## 🔗 Documentation
 
-### Documentation
+- **Data Generation Validation Report**: [DATA_GENERATION_VALIDATION_ANALYSIS](reports/DATA_GENERATION_VALIDATION_ANALYSIS.md)
+- **Relapse Distributions Comparison Report**: [COMPARISON_OF_RELAPSE_DISTRIBUTIONS](reports/COMPARISON_OF_RELAPSE_DISTRIBUTIONS.md)
+- **Exploratory Data Analysis Reports**:
+  - 1. **EDA REPORT OF LOGNORMAL RELAPSE**: [EDA_REPORT_LOGNORMAL](reports/EDA_REPORT_LOGNORMAL.md)
+  - 2. **EDA REPORT OF EXPONENTIAL RELAPSE**: [EDA_REPORT_EXPONENTIAL](reports/EDA_REPORT_EXPONENTIAL.md)
+  - 3. **EDA REPORT OF GAMMA RELAPSE**: [EDA_REPORT_GAMMA](reports/EDA_REPORT_GAMMA.md)
 
-- **Full Detection Report**: [CHANGE_POINT_DETECTION_REPORT.md](CHANGE_POINT_DETECTION_REPORT.md)
-- **Post-Hoc Feature Decomposition Report**: [reports/POST_HOC_MULTIVARIATE_DECOMPOSITION_REPORT.md](reports/POST_HOC_MULTIVARIATE_DECOMPOSITION_REPORT.md) — retrospective per-feature attribution analysis at each detected change point; motivates future multivariate extension
-- **Post-Hoc Decomposition Notebook**: [reports/changepoint_decomposition_analysis.ipynb](reports/changepoint_decomposition_analysis.ipynb)
-- **API Reference**: [docs/api.md](docs/api.md)
-- **Configuration Guide**: [docs/configuration.md](docs/configuration.md)
+- **Full Detection Report**: [CHANGE_POINT_DETECTION_REPORT_ON_GAMMA_RELAPSE_PATTERN](reports/CHANGE_POINT_DETECTION_REPORT_ON_GAMMA_RELAPSE_PATTERN.md)
+- **Post-Hoc Feature Decomposition Report**: [POST_HOC_MULTIVARIATE_DECOMPOSITION_REPORT](reports/POST_HOC_MULTIVARIATE_DECOMPOSITION_REPORT.md) — retrospective per-feature attribution analysis at each detected change point; motivates future multivariate extension
+- **Post-Hoc Decomposition Notebook**: [POST_HOC_CHANGEPOINT_DECOMPOSITION_ANALYSIS](post_hoc_analysis/changepoint_decomposition_analysis.ipynb)
 
 ---
 
